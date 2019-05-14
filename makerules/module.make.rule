@@ -1,0 +1,7 @@
+targets = $(shell ls *.make)
+
+MAKE_MODULES:
+	$(patsubst %, make -f %;, $(targets))
+
+CLEAN_MODULES:
+	$(patsubst %, make clean -f %;, $(targets))

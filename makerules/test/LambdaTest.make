@@ -1,4 +1,4 @@
-CXX     = $(GLOBAL_CXX)
+CC      = $(GLOBAL_CXX)
 CFLAGS  = $(GLOBAL_CFLAGS)
 LDFLAGS = $(GLOBAL_LDFLAGS)
 
@@ -7,14 +7,16 @@ sources     = LambdaTest.cpp
 objects     = $(sources:.cpp=.o)
 dependence := $(sources:.cpp=.d)
 
+build: all
+
 include $(dependence)
 
 include $(MAKE_RULE)/dependency.make.rule
 
 all: $(objects)
-	$(CXX) $^ $(LDFLAGS) -o $(TARGET)
+	$(CC) $^ $(LDFLAGS) -o $(TARGET)
 
 clean:
 	rm -f $(TARGET) $(objects) $(dependence)
 
-.PHONY: clean
+.PHONY: build clean
