@@ -20,16 +20,7 @@ export
 
 exclude_dirs = out
 
-dirs := $(shell find . -maxdepth 1 -type d)
-dirs := $(basename $(patsubst ./%, %, $(dirs)))
-MAKE_SUB_MODULES  := $(filter-out $(exclude_dirs), $(dirs))
-CLEAN_SUB_MODULES := $(addprefix clean_, $(MAKE_SUB_MODULES))
-
-$(MAKE_SUB_MODULES):
-	$(GLOBAL_MAKE) $(GLOBAL_MAKEFLAGS) -C $@ all
-
-$(CLEAN_SUB_MODULES):
-	$(GLOBAL_MAKE) $(GLOBAL_MAKEFLAGS) -C $@ clean
+include $(MAKE_RULE)/submodule.makerule
 
 all: $(MAKE_SUB_MODULES)
 
