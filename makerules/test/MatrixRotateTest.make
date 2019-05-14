@@ -9,7 +9,7 @@ dependence := $(sources:.c=.d)
 
 include $(dependence)
 
-include $(MAKE_RULE)/dependency.makerule
+include $(MAKE_RULE)/dependency.make.rule
 
 all: $(objects)
 	$(CC) $^ $(LDFLAGS) -o $(TARGET)

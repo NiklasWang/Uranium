@@ -7,4 +7,4 @@ $(MAKE_SUB_MODULES):
 	$(GLOBAL_MAKE) $(GLOBAL_MAKEFLAGS) -C $@ all
 
 $(CLEAN_SUB_MODULES):
-	$(GLOBAL_MAKE) $(GLOBAL_MAKEFLAGS) -C $@ clean
+	$(GLOBAL_MAKE) $(GLOBAL_MAKEFLAGS) -C $(patsubst clean_%, %, $@) clean

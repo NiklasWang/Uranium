@@ -8,7 +8,7 @@ GLOBAL_CXXFLAGS  = -std=c++11 -Wall
 GLOBAL_LDFLAGS   =
 GLOBAL_ARFLAGS   =
 GLOBAL_MAKE      = make
-GLOBAL_MAKEFLAGS = -j6
+GLOBAL_MAKEFLAGS =
 
 ROOT_DIR  = $(shell pwd)
 MAKE_RULE = $(ROOT_DIR)/makerules
@@ -18,12 +18,14 @@ BIN_DIR   = $(OUT_DIR)/bin
 
 export
 
+build: all
+
 exclude_dirs = out
 
-include $(MAKE_RULE)/submodule.makerule
+include $(MAKE_RULE)/submodule.make.rule
 
 all: $(MAKE_SUB_MODULES)
 
 clean: $(CLEAN_SUB_MODULES)
 
-.PHONY: all clean $(MAKE_SUB_MODULES) $(CLEAN_SUB_MODULES)
+.PHONY: build all clean $(MAKE_SUB_MODULES) $(CLEAN_SUB_MODULES)
