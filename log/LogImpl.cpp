@@ -1,22 +1,14 @@
 #include <unistd.h>
 #include <stdio.h>
+#include <stdarg.h>
 #include <string.h>
 #include <fcntl.h>
+#include <limits.h>
+#include <signal.h>
+#include <pthread.h>
+#include <sys/time.h>
 
 #include "LogImpl.h"
-
-//#define SAVE_FILE_FS
-
-#ifdef DBG_ASSERT_RAISE_TRAP
-#include "signal.h"
-#endif
-
-#ifdef PRINT_LOGCAT_LOG
-#include <utils/Log.h>
-
-#undef LOG_TAG
-#define LOG_TAG PROJNAME VERSION
-#endif
 
 namespace sirius {
 
@@ -71,11 +63,10 @@ static const char *const gLogType[] = {
 };
 
 static char    gProcess[PATH_MAX] = { '\0' };
-#ifdef SAVE_FILE_FS
+
 static int32_t gLogfd = -1;
 static char    gLogLine[LOG_MAX_LEN_PER_LINE];
 static pthread_mutex_t gWriteLock = PTHREAD_MUTEX_INITIALIZER;
-#endif
 
 static int32_t getMaxInvalidId(char *text, int32_t len)
 {
@@ -201,15 +192,9 @@ void __debug_log(const ModuleType module, const LogType type,
     __log_vsnprintf(buf, DBG_LOG_MAX_LEN, fmt, args);
     va_end(args);
 
-#ifdef PRINT_LOGCAT_LOG
-    print_log(type, "%s %s%s: %s:+%d: %s",
-        getProcessName(), getModuleShortName(module),
-        getLogType(type), func, line, buf);
-#else
     print_log(type, "%s %s%s: %s:+%d: %s\n",
         getProcessName(), getModuleShortName(module),
         getLogType(type), func, line, buf);
-#endif
 
     save_log("%s %s%s: %s:+%d: %s", getProcessName(),
         getModuleShortName(module),
@@ -235,16 +220,16 @@ void __assert_log(const ModuleType module, const unsigned char cond,
             getProcessName(), getModuleShortName(module),
             "<ASSERT>", func, line, buf);
 
-#ifdef DBG_ASSERT_RAISE_TRAP
         save_log("[<! ASSERT !>] Process will suicide now.",
             getProcessName(), getModuleShortName(MODULE_OTHERS),
             getLogType(LOG_TYPE_FATAL), __FUNCTION__, __LINE__, buf);
+
         raise(SIGTRAP);
-#endif
     }
 }
 
-#ifdef SAVE_FILE_FS
+extern int64_t getThreadId();
+
 static void save_log(const char *fmt, char *process,
     const char *module, const char *type,
     const char *func, const int line, const char *buf)
@@ -301,7 +286,7 @@ static void save_log(const char *fmt, char *process,
 
         pthread_mutex_lock(&gWriteLock);
         snprintf(gLogLine, sizeof(gLogLine) - 1, "%s.%03ld pid %d tid %ld ",
-            timeBuf, tv.tv_usec / 1000, getpid(), pthread_self());
+            timeBuf, tv.tv_usec / 1000, getpid(), getThreadId());
         int32_t cnt = strlen(gLogLine);
         snprintf(gLogLine + cnt, sizeof(gLogLine) - cnt - 1,
             fmt, process, module,
@@ -311,7 +296,7 @@ static void save_log(const char *fmt, char *process,
         ssize_t len = write(gLogfd, gLogLine, cnt);
         if (cnt > len) {
             char tmp[255];
-            sprintf(tmp, "Log len %d bytes, written %d bytes.",
+            sprintf(tmp, "Log len %d bytes, written %ld bytes.",
                 cnt, len);
             print_log(LOG_TYPE_ERROR, fmt,
                 process, getModuleShortName(MODULE_OTHERS),
@@ -320,42 +305,12 @@ static void save_log(const char *fmt, char *process,
         pthread_mutex_unlock(&gWriteLock);
     }
 }
-#else
-static void save_log(const char * /*fmt*/, char * /*process*/,
-    const char * /*module*/, const char * /*type*/,
-    const char * /*func*/, const int /*line*/, const char * /*buf*/)
-{
-}
-#endif
 
 static void print_log(const LogType logt __attribute__((unused)),
     const char *fmt, char *process, const char *module, const char *type,
     const char *func, const int line, const char *buf)
 {
-#ifdef PRINT_LOGCAT_LOG
-    switch (logt) {
-        case LOG_TYPE_NONE:
-        case LOG_TYPE_DEBUG:
-            ALOGD(fmt, process, module, type, func, line, buf);
-            break;
-        case LOG_TYPE_INFO:
-            ALOGI(fmt, process, module, type, func, line, buf);
-            break;
-        case LOG_TYPE_WARN:
-            ALOGW(fmt, process, module, type, func, line, buf);
-            break;
-        case LOG_TYPE_ERROR:
-        case LOG_TYPE_FATAL:
-            ALOGE(fmt, process, module, type, func, line, buf);
-            break;
-        case LOG_TYPE_MAX_INVALID:
-        default:
-            ALOGE(fmt, process, module, type, func, line, buf);
-            break;
-    }
-#else
     printf(fmt, process, module, type, func, line, buf);
-#endif
 }
 
 };

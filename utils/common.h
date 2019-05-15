@@ -125,6 +125,8 @@ enum err_raeson {
 #define align_len_to_size(len, size) ({                    \
         (((len) + (size) - 1) & ~((size) - 1)); });
 
+extern int64_t getThreadId();
+
 class noncopyable {
 protected:
     noncopyable() {}
