@@ -1,23 +1,28 @@
-CC = g++
-CPPFLAGS =
-LDFLAGS =
-TARGET = tester
-sources = $(wildcard *.cpp)
-objects = $(sources:.cpp=.o)
-dependence:=$(sources:.cpp=.d)
+CXX      = $(GLOBAL_CXX)
+CXXFLAGS = $(GLOBAL_CXXFLAGS)
+LDFLAGS  = $(GLOBAL_LDFLAGS)
+INCLUDES = . $(ROOT_DIR) $(GLOBAL_INCLUDES)
 
-all: $(objects)
-	$(CC) $^ -o $(TARGET)
+TARGET      = libmemory.so
+sources     = $(wildcard *.cpp)
+objects     = $(sources:.cpp=.o)
+dependence := $(sources:.cpp=.d)
+
+build: all
+
+CXXFLAGS += $(patsubst %, -I$(ROOT_DIR)/%, $(INCLUDES))
+LDFLAGS  += -fPIC -shared
 
 include $(dependence)
 
-%.d: %.cpp
-	@set -e; rm -f $@; \
-	$(CC) -MM $(CPPFLAGS) $< > $@.$$$$; \
-	sed 's,\($*\)\.o[ :]*,\1.o $@ : ,g' < $@.$$$$ > $@; \
-	rm -f $@.$$$$
+include $(MAKE_RULE)/dependency.make.rule
 
-.PHONY: clean
+include $(MAKE_RULE)/submodule.make.rule
 
-clean:
+all: $(objects) $(MAKE_SUB_MODULES)
+	$(CXX) $^ $(LDFLAGS) -o $(TARGET)
+
+clean: $(CLEAN_SUB_MODULES)
 	rm -f $(TARGET) $(objects) $(dependence)
+
+.PHONY: build clean $(MAKE_SUB_MODULES) $(CLEAN_SUB_MODULES)
