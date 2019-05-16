@@ -4,7 +4,8 @@ GLOBAL_CXX       = $(GLOBAL_CROSS)g++
 GLOBAL_LD        = $(GLOBAL_CROSS)ld
 GLOBAL_AR        = $(GLOBAL_CROSS)ar
 GLOBAL_CFLAGS    = -std=c99 -Wall -fPIC
-GLOBAL_CXXFLAGS  = -std=c++11 -Wall -fPIC
+GLOBAL_CXXFLAGS  = -std=gnu++11 -Wall -fPIC
+
 GLOBAL_LDFLAGS   =
 GLOBAL_ARFLAGS   =
 GLOBAL_MAKE      = make
@@ -16,6 +17,8 @@ MAKE_RULE = $(ROOT_DIR)/makerules
 OUT_DIR   = $(ROOT_DIR)/out
 OBJ_DIR   = $(OUT_DIR)/obj
 BIN_DIR   = $(OUT_DIR)/bin
+LIB_EXT   = $(if $(findstring CYGWIN, $(shell uname)), .dll, .so)
+EXE_EXT   = $(if $(findstring CYGWIN, $(shell uname)), .exe, )
 
 build: all
 

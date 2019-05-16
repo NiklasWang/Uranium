@@ -3,6 +3,8 @@
 #include <string.h>
 #include <pthread.h>
 
+namespace sirius {
+
 int64_t getThreadId()
 {
     char str[sizeof(pthread_t) + 3] = { '\0' };
@@ -22,3 +24,5 @@ int64_t getThreadId()
 
     return result;
 }
+
+};

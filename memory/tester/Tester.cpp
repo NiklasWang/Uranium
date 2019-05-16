@@ -142,7 +142,7 @@ int SystemDefaultAllocatorTest_VarLen()
     return 0;
 }
 
-int main()
+int __main(int argc, char **argv)
 {
     SystemDefaultAllocatorTest_VarLen();
     return VALMemoryPoolTester();
