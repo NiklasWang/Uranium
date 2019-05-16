@@ -3,8 +3,8 @@ GLOBAL_CC        = $(GLOBAL_CROSS)gcc
 GLOBAL_CXX       = $(GLOBAL_CROSS)g++
 GLOBAL_LD        = $(GLOBAL_CROSS)ld
 GLOBAL_AR        = $(GLOBAL_CROSS)ar
-GLOBAL_CFLAGS    = -std=c99 -Wall
-GLOBAL_CXXFLAGS  = -std=c++11 -Wall
+GLOBAL_CFLAGS    = -std=c99 -Wall -fPIC
+GLOBAL_CXXFLAGS  = -std=c++11 -Wall -fPIC
 GLOBAL_LDFLAGS   =
 GLOBAL_ARFLAGS   =
 GLOBAL_MAKE      = make

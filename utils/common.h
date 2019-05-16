@@ -16,7 +16,6 @@
 #include "version.h"
 #include "modules.h"
 #include "logs.h"
-#include "SiriusServerIntf.h"
 
 namespace sirius {
 

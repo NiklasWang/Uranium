@@ -1,7 +1,7 @@
 CXX      = $(GLOBAL_CXX)
 CXXFLAGS = $(GLOBAL_CXXFLAGS)
 LDFLAGS  = $(GLOBAL_LDFLAGS)
-INCLUDES = . $(ROOT_DIR) $(GLOBAL_INCLUDES)
+INCLUDES = $(patsubst $(ROOT_DIR)/%, %, $(shell pwd)) $(GLOBAL_INCLUDES)
 
 TARGET      = libmemory.so
 sources     = $(wildcard *.cpp)
