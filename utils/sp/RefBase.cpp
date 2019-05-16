@@ -21,7 +21,7 @@
 #include <sys/types.h>
 #include <typeinfo>
 #include <unistd.h>
-#include <stdatomic.h>
+#include <atomic>
 
 #include "modules.h"
 #include "logs.h"

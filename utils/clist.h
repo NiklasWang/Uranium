@@ -3,9 +3,15 @@
 
 namespace sirius {
 
-#define member_of(ptr, type, member) ({ \
-  const decltype(((type *)0)->member) *__mptr = (ptr); \
-  (type *)((char *)__mptr - offsetof(type,member));})
+#ifndef offsetof
+#define offsetof(TYPE, MEMBER) \
+    ((size_t) &((TYPE *)0)->MEMBER)
+#endif
+
+#define member_of(ptr, type, member) ({                  \
+    const decltype(((type *)0)->member) *__mptr = (ptr); \
+    (type *)((char *)__mptr - offsetof(type, member));   \
+  })
 
 struct clist {
   struct clist *next, *prev;

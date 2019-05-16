@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <stdint.h>
 #include <string.h>
 #include <pthread.h>
 
@@ -17,7 +18,7 @@ int64_t getThreadId()
         strncat(str, tmp, sizeof(tmp));
     }
     
-    sscanf(str, "%x", &result);
+    sscanf(str, "%lx", &result);
 
     return result;
 }

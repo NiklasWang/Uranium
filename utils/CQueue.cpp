@@ -1,5 +1,6 @@
 #include <stdlib.h>
 #include <string.h>
+
 #include "clist.h"
 #include "CQueue.h"
 #include "logs.h"

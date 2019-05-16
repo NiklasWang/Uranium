@@ -17,11 +17,13 @@ OUT_DIR   = $(ROOT_DIR)/out
 OBJ_DIR   = $(OUT_DIR)/obj
 BIN_DIR   = $(OUT_DIR)/bin
 
-export
-
 build: all
 
-exclude_dirs = out
+exclude_dirs  = out
+compile_order = log utils memory threads
+
+export
+unexport exclude_dirs compile_order
 
 include $(MAKE_RULE)/submodule.make.rule
 

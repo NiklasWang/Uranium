@@ -1,6 +1,8 @@
 #ifndef _SYNC_TYPE_H_
 #define _SYNC_TYPE_H_
 
+#include <stdint.h>
+
 #include "Semaphore.h"
 
 namespace sirius {
