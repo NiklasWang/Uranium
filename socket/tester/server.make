@@ -15,7 +15,7 @@ LDFLAGS  += -L $(ROOT_DIR)/log -Wl,-Bstatic -llog
 LDFLAGS  += -L $(ROOT_DIR)/utils -lutils -Wl,-Bdynamic
 LDFLAGS  += -L $(ROOT_DIR)/socket -lsocket
 
-include $(dependence)
+-include $(dependence)
 
 include $(MAKE_RULE)/dependency.make.rule
 

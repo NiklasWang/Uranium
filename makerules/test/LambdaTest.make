@@ -9,7 +9,7 @@ dependence := $(sources:.cpp=.d)
 
 build: all
 
-include $(dependence)
+-include $(dependence)
 
 include $(MAKE_RULE)/dependency.make.rule
 

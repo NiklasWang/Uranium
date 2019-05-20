@@ -16,7 +16,7 @@ LDFLAGS  += -fPIC -shared
 LDFLAGS  += -L $(ROOT_DIR)/log -Wl,-Bstatic -llog
 LDFLAGS  += -L $(ROOT_DIR)/utils -lutils -Wl,-Bdynamic
 
-include $(dependence)
+-include $(dependence)
 
 include $(MAKE_RULE)/dependency.make.rule
 

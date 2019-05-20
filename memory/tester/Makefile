@@ -15,7 +15,7 @@ LDFLAGS  += -pthread
 LDFLAGS  += -L $(ROOT_DIR)/log -Wl,-Bstatic -llog
 LDFLAGS  += -L $(ROOT_DIR)/memory -Wl,-Bdynamic -lmemory
 
-include $(dependence)
+-include $(dependence)
 
 include $(MAKE_RULE)/dependency.make.rule
 

@@ -13,7 +13,7 @@ build: all
 
 CXXFLAGS += $(patsubst %, -I$(ROOT_DIR)/%, $(INCLUDES))
 
-include $(dependence)
+-include $(dependence)
 
 include $(MAKE_RULE)/dependency.make.rule
 
