@@ -1,6 +1,7 @@
 #include <sys/socket.h>
 #include <sys/un.h>
 #include <poll.h>
+#include <limits.h>
 
 #include "common.h"
 #include "configuration.h"

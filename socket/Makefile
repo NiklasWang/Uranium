@@ -11,9 +11,10 @@ dependence := $(sources:.cpp=.d)
 build: all
 
 CXXFLAGS += $(patsubst %, -I$(ROOT_DIR)/%, $(INCLUDES))
-LDFLAGS  += -fPIC -shared
+LDFLAGS  += -fPIC -shared -pthread
 LDFLAGS  += -L $(ROOT_DIR)/log -Wl,-Bstatic -llog
-LDFLAGS  += -L $(ROOT_DIR)/utils -lutils -Wl,-Bdynamic
+LDFLAGS  += -L $(ROOT_DIR)/utils -lutils
+LDFLAGS  += -L $(ROOT_DIR)/utils/sp -lsp -Wl,-Bdynamic
 
 include $(dependence)
 

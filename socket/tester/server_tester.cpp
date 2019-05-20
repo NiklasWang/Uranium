@@ -1,10 +1,9 @@
-#include "../common.h"
-#include "../configuration.h"
-#include "../server.h"
+#include "common.h"
+#include "configuration.h"
+#include "socket_server.h"
 
 #define TEST_FILE_NAME "/tmp/sirius_shared_file"
-#undef SERVER_SOCKET_PATH
-#define SERVER_SOCKET_PATH "/tmp/"
+#define SOCKET_NAME    "sirius_socket"
 
 namespace sirius {
 
@@ -23,46 +22,49 @@ int _main_server_tester()
     if (SUCCEED(rc)) {
         filefd = open(TEST_FILE_NAME, O_RDWR | O_CREAT | O_TRUNC, 0777);
         if (filefd < 0) {
-            LOGE("Failed to create file %s, %s",
+            LOGE(MODULE_TESTER, "Failed to create file %s, %s",
                 TEST_FILE_NAME, strerror(errno));
             rc = UNKNOWN_ERROR;
         }
     }
 
     if (SUCCEED(rc)) {
-        rc = start_server(&sockfd);
+        rc = start_server(&sockfd, SOCKET_NAME);
         if (!SUCCEED(rc)) {
-            LOGE("Failed to start server, %d", rc);
+            LOGE(MODULE_TESTER, "Failed to start server, %d", rc);
         }
     }
 
     if (SUCCEED(rc)) {
-        rc = poll_accept_wait(sockfd, &clientfd);
+        bool cancel = false;
+        rc = poll_accept_wait(sockfd, &clientfd, &cancel);
         if (!SUCCEED(rc)) {
-            LOGE("Failed to poll data while sleeping, %d", rc);
+            LOGE(MODULE_TESTER, "Failed to poll data while sleeping, %d", rc);
         }
     }
 
     if (SUCCEED(rc)) {
-        data[0] = '\0';
-        rc = poll_read_wait(clientfd, data, sizeof(data), &read_len);
+        bool cancel = false;
+        data[0] = '\0';        
+        rc = poll_read_wait(clientfd, data, sizeof(data), &read_len, &cancel);
         if (!SUCCEED(rc)) {
-            LOGE("Failed to poll data while sleeping, %d", rc);
+            LOGE(MODULE_TESTER, "Failed to poll data while sleeping, %d", rc);
         }
     }
 
     if (SUCCEED(rc)) {
         rc = sc_send_fd(clientfd, filefd);
         if (!SUCCEED(rc)) {
-            LOGE("Failed to send fd %d to client", filefd);
+            LOGE(MODULE_TESTER, "Failed to send fd %d to client", filefd);
         }
     }
 
     if (SUCCEED(rc)) {
+        bool cancel = false;
         data[0] = '\0';
-        rc = poll_read_wait(clientfd, data, sizeof(data), &read_len);
+        rc = poll_read_wait(clientfd, data, sizeof(data), &read_len, &cancel);
         if (!SUCCEED(rc)) {
-            LOGE("Failed to poll data while sleeping, %d", rc);
+            LOGE(MODULE_TESTER, "Failed to poll data while sleeping, %d", rc);
         }
     }
 
@@ -74,7 +76,7 @@ int _main_server_tester()
             disconnect_client(clientfd);
         }
         if (sockfd > 0) {
-            stop_server(sockfd);
+            stop_server(sockfd, SOCKET_NAME);
         }
     }
 

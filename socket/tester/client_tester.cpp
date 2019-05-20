@@ -1,9 +1,6 @@
-#include "../common.h"
-#include "../configuration.h"
-#include "../client.h"
-
-#undef SERVER_SOCKET_PATH
-#define SERVER_SOCKET_PATH "/tmp/"
+#include "common.h"
+#include "configuration.h"
+#include "socket_client.h"
 
 namespace sirius {
 
@@ -22,7 +19,7 @@ int _main_client_tester()
     if (SUCCEED(rc)) {
         rc = connect_to_server(&sockfd);
         if (!SUCCEED(rc)) {
-            LOGE("Failed to connect server, %d", rc);
+            LOGE(MODULE_TESTER, "Failed to connect server, %d", rc);
         }
     }
 
@@ -30,14 +27,15 @@ int _main_client_tester()
         strcpy(data, GREETING_STR);
         rc = sc_send_data(sockfd, data, strlen(data) + 1, CLIENT);
         if (!SUCCEED(rc)) {
-            LOGE("Failed to send data %s to server, %d", data, rc);
+            LOGE(MODULE_TESTER, "Failed to send data %s to server, %d", data, rc);
         }
     }
 
     if (SUCCEED(rc)) {
-        rc = poll_server_fd_wait(sockfd, &sharedfd);
+        bool cancel = false;
+        rc = poll_server_fd_wait(sockfd, &sharedfd, &cancel);
         if (!SUCCEED(rc)) {
-            LOGE("Failed to poll fd while sleeping, %d", rc);
+            LOGE(MODULE_TESTER, "Failed to poll fd while sleeping, %d", rc);
         }
     }
 
@@ -45,7 +43,7 @@ int _main_client_tester()
         strcpy(data, GOODBYE_STR);
         rc = sc_send_data(sockfd, data, strlen(data) + 1, CLIENT);
         if (!SUCCEED(rc)) {
-            LOGE("Failed to send data %s to server, %d", data, rc);
+            LOGE(MODULE_TESTER, "Failed to send data %s to server, %d", data, rc);
         }
     }
 
@@ -53,7 +51,7 @@ int _main_client_tester()
         strcpy(data, WRITE_SHARED_FD_STR);
         write_len = write(sharedfd, data, strlen(data));
         if (write_len < 0) {
-            LOGE("Failed to write shared fd, %s", strerror(errno));
+            LOGE(MODULE_TESTER, "Failed to write shared fd, %s", strerror(errno));
             rc = UNKNOWN_ERROR;
         }
     }
