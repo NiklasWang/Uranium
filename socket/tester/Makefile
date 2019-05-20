@@ -1,7 +1,9 @@
-targets = $(shell find . -name '*.make')
+build: all
 
-all:
-	$(patsubst %, make -f %;, $(targets))
+include $(MAKE_RULE)/module.make.rule
 
-clean:
-	$(patsubst %, make clean -f %;, $(targets))
+all: MAKE_MODULES
+
+clean: CLEAN_MODULES
+
+.PHONY: build all clean MAKE_MODULES CLEAN_MODULES
