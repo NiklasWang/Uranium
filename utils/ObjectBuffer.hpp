@@ -3,7 +3,7 @@
 
 #include "ObjectBuffer.h"
 #include "logs.h"
-#include "Atomic.h"
+#include "atomic/atomic.h"
 
 namespace sirius {
 

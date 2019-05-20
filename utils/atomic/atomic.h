@@ -3,7 +3,8 @@
 
 #include <stdint.h>
 #include <sys/types.h>
-#include <stdatomic.h>
+
+#include "stdatomic.h"
 
 #ifndef UTILS_ATOMIC_INLINE
 #define UTILS_ATOMIC_INLINE static inline

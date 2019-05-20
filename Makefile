@@ -10,7 +10,7 @@ GLOBAL_LDFLAGS   =
 GLOBAL_ARFLAGS   =
 GLOBAL_MAKE      = make
 GLOBAL_MAKEFLAGS =
-GLOBAL_INCLUDES  = . memory threads log utils utils/sp
+GLOBAL_INCLUDES  = . memory threads log $(shell find utils -type d)
 
 ROOT_DIR  = $(shell pwd)
 MAKE_RULE = $(ROOT_DIR)/makerules
