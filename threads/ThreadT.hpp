@@ -293,7 +293,9 @@ int32_t ThreadT<T>::construct()
     }
 
     if (SUCCEED(rc)) {
+        #ifdef _GNU_SOURCE
         pthread_setname_np(mTid, mName.c_str());
+        #endif
         mReadySignal.wait();
         mStatus = THREAD_STATUS_RUNNING;
     }
