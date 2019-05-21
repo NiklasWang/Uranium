@@ -2,14 +2,14 @@ include $(MAKE_RULE)/color.print.make.rule
 
 %.d: %.c
 	@set -e; rm -f $@; \
-	echo -e $(NOTICE_COLOR)"Generating dependencies for $(shell pwd)/$< ..."$(RESTORE_COLOR); \
+	echo $(NOTICE_COLOR)"Generating dependencies for $(shell pwd)/$< ..."$(RESTORE_COLOR); \
 	$(CC) -MM $(CFLAGS) $< > $@.$$$$; \
 	sed 's,\($*\)\.o[ :]*,\1.o $@ : ,g' < $@.$$$$ > $@; \
 	rm -f $@.$$$$
 
 %.d: %.cpp
 	@set -e; rm -f $@; \
-	echo -e $(NOTICE_COLOR)"Generating dependencies for $(shell pwd)/$< ..."$(RESTORE_COLOR); \
+	echo $(NOTICE_COLOR)"Generating dependencies for $(shell pwd)/$< ..."$(RESTORE_COLOR); \
 	$(CXX) -MM $(CXXFLAGS) $< > $@.$$$$; \
 	sed 's,\($*\)\.o[ :]*,\1.o $@ : ,g' < $@.$$$$ > $@; \
 	rm -f $@.$$$$
