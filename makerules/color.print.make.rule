@@ -1,5 +1,9 @@
 # background color and text color
 
+ifneq ($strip $(COLORLOADED),y)
+
+COLORLOADED = y
+
 BLACKBG     = 40
 CRIMSONBG   = 41
 GREENBG     = 42
@@ -27,3 +31,5 @@ NOTICE_COLOR  = "\033[$(BLACKBG);$(GREENFG)m"
 SUCCEED_COLOR = "\033[$(GREENBG);$(WHITEFG)m"
 FAILURE_COLOR = "\033[$(CRIMSONBG);$(WHITEFG)m"
 FINISH_COLOR  = "\033[$(BLUEBG);$(WHITEFG)m"
+
+endif

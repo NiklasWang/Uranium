@@ -19,8 +19,18 @@ MAKE_RULE = $(ROOT_DIR)/makerules
 OUT_DIR   = $(ROOT_DIR)/out
 OBJ_DIR   = $(OUT_DIR)/obj
 BIN_DIR   = $(OUT_DIR)/bin
-LIB_EXT   = $(if $(findstring CYGWIN, $(shell uname)), .dll, .so)
-EXE_EXT   = $(if $(findstring CYGWIN, $(shell uname)), .exe, )
+
+DYLIB_EXT = .so
+STLIB_EXT = .a
+EXE_EXT   =
+
+include $(MAKE_RULE)/precheck.make.rule
+
+ifeq ($(strip $(ISCYGWIN)),y)
+  DYLIB_EXT = .dll
+  STLIB_EXT = .a
+  EXE_EXT   = .exe
+endif
 
 build: all
 
