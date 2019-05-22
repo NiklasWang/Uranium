@@ -1,0 +1,15 @@
+PROJNAME = $(shell \
+  awk '{ \
+    split($0, words, " "); \
+    for (i in words) { \
+      if (index(words[i], "PROJNAME") != 0) { \
+        word = words[i + 1]; \
+        gsub("\"", "", word); \
+        print word; \
+        break; \
+      } \
+    } \
+  }' version.h \
+)
+
+$(error PROJNAME = $(PROJNAME))
