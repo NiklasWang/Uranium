@@ -1,15 +1,36 @@
-PROJNAME = $(shell \
-  awk '{ \
-    split($0, words, " "); \
-    for (i in words) { \
-      if (index(words[i], "PROJNAME") != 0) { \
-        word = words[i + 1]; \
-        gsub("\"", "", word); \
-        print word; \
-        break; \
-      } \
-    } \
-  }' version.h \
-)
+# Origin awk command:
+# awk '{ split($0, words, " "); for (i in words) { \
+#   if (index(words[i], "PROJNAME") != 0) { \
+#     word = words[i + 1]; gsub("\"", "", word); print word; break; } } }' version.h
 
-$(error PROJNAME = $(PROJNAME))
+PROJNAME_KEYWORD = "PROJNAME"
+VERSION_KEYWORD  = "VERSION"
+
+define GetPropValue
+  $(shell \
+    awk '{ \
+      split($$0, words, " "); \
+      for (i in words) { \
+        if (index(words[i], $$(1)) != 0) { \
+          word = words[i + 1]; \
+          gsub("\"", "", word); \
+          print word; \
+          break; \
+        } \
+      } \
+    }' version.h \
+  )
+endef
+
+ifndef PROJNAME
+  PROJNAME = $(strip \
+    $(call GetPropValue, $(PROJNAME_KEYWORD)) \
+  )
+endif
+
+ifndef VERSION
+  VERSION = $(strip \
+    $(call GetPropValue, $(VERSION_KEYWORD)) \
+  )
+endif
+
