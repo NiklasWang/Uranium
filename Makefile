@@ -25,6 +25,7 @@ STLIB_EXT = .a
 EXE_EXT   =
 
 include $(MAKE_RULE)/precheck.make.rule
+include $(MAKE_RULE)/project.info.make.rule
 
 ifeq ($(strip $(ISCYGWIN)),y)
   DYLIB_EXT = .dll
