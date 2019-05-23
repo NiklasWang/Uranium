@@ -4,4 +4,7 @@
 #define PROJNAME "Uranium"
 #define VERSION  "1.0.1"
 
+#define AUTHOR   "Niklas Wang"
+#define MAIL     "niklas.wang@outlook.com"
+
 #endif

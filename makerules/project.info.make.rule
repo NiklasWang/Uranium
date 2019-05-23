@@ -1,24 +1,32 @@
+# This file demonstrate two method to analysis version.h file
+#
 # Origin awk command:
 # awk '{ split($0, words, " "); for (i in words) { \
 #   if (index(words[i], "PROJNAME") != 0) { \
 #     word = words[i + 1]; gsub("\"", "", word); print word; break; } } }' version.h
+#
+# Origin cpp command:
+# echo PROJNAME | cat version.h - | cpp -P | tr -d '"'
+# But this command needs to make sure, version.h have a blank line at end of file
+#
 
 PROJNAME_KEYWORD = "PROJNAME"
 VERSION_KEYWORD  = "VERSION"
+DATA_SRC_FILE    = version.h
 
 define GetPropValue
-  $(shell \
-    awk '{ \
-      split($$0, words, " "); \
-      for (i in words) { \
-        if (index(words[i], $$(1)) != 0) { \
-          word = words[i + 1]; \
-          gsub("\"", "", word); \
-          print word; \
-          break; \
-        } \
-      } \
-    }' version.h \
+  $(shell                                   \
+    awk '{                                  \
+      split($$0, words, " ");               \
+      for (i in words) {                    \
+        if (index(words[i], ""$(1)) != 0) { \
+          word = words[i + 1];              \
+          gsub("\"", "", word);             \
+          print word;                       \
+          break;                            \
+        }                                   \
+      }                                     \
+    }' $(DATA_SRC_FILE)                     \
   )
 endef
 
@@ -29,8 +37,5 @@ ifndef PROJNAME
 endif
 
 ifndef VERSION
-  VERSION = $(strip \
-    $(call GetPropValue, $(VERSION_KEYWORD)) \
-  )
+  VERSION = $(shell echo $(VERSION_KEYWORD) | cat $(DATA_SRC_FILE) - | cpp -P | tr -d '"')
 endif
-
