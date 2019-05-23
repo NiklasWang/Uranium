@@ -4,7 +4,7 @@
 #include <pthread.h>
 #include "clist.h"
 
-namespace sirius {
+namespace uranium {
 
 typedef bool (*match_fn_data_c)(void *data, void *user_data, void *match_data);
 typedef void (*release_data_fn_c)(void* data, void *user_data);

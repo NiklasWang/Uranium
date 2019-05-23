@@ -5,7 +5,7 @@
 
 #include "Semaphore.h"
 
-namespace sirius {
+namespace uranium {
 
 class SemaphoreTimeout :
     public Semaphore {

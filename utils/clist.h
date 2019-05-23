@@ -1,7 +1,7 @@
 #ifndef __Clist_H_
 #define __Clist_H_
 
-namespace sirius {
+namespace uranium {
 
 #ifndef offsetof
 #define offsetof(TYPE, MEMBER) \

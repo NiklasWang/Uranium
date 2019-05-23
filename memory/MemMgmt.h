@@ -7,7 +7,7 @@
 #include "common.h"
 #include "RWLock.h"
 
-namespace sirius {
+namespace uranium {
 
 #define MAX_TOTAL_ALLOC_SIZE (80 * 1024 * 1024)
 #define MAX_ALLOCABLE_SIZE   (32 * 1024 * 1024 + 1)

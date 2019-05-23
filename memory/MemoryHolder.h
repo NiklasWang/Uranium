@@ -8,7 +8,7 @@
 #include "CQueue.h"
 #include "RWLock.h"
 
-namespace sirius {
+namespace uranium {
 
 #define NO_BLOCK_LIMIT  0
 #define SAFE_HOLDER     true

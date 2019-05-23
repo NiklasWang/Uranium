@@ -14,7 +14,7 @@
 #define PrintWarning(fmt, args...) LOGI(MODULE_MEMORY_POOL, fmt, ##args)
 #define PrintError(fmt, args...)   LOGE(MODULE_MEMORY_POOL, fmt, ##args)
 
-namespace sirius {
+namespace uranium {
 
 /**
  * @brief Data length type, should aligned with CPU arch.

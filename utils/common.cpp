@@ -3,7 +3,7 @@
 #include <string.h>
 #include <pthread.h>
 
-namespace sirius {
+namespace uranium {
 
 int64_t getThreadId()
 {

@@ -5,7 +5,7 @@
 #include "logs.h"
 #include "atomic/atomic.h"
 
-namespace sirius {
+namespace uranium {
 
 template<typename T>
 ObjectBuffer<T>::ObjectInfo::ObjectInfo(T *aobj,

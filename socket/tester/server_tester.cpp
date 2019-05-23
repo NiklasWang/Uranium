@@ -2,10 +2,10 @@
 #include "configuration.h"
 #include "socket_server.h"
 
-#define TEST_FILE_NAME "/tmp/sirius_shared_file"
-#define SOCKET_NAME    "sirius_socket"
+#define TEST_FILE_NAME "/tmp/uranium_shared_file"
+#define SOCKET_NAME    "uranium_socket"
 
-namespace sirius {
+namespace uranium {
 
 #include <sys/stat.h>
 #include <fcntl.h>
@@ -87,7 +87,7 @@ int _main_server_tester()
 
 int main()
 {
-    return sirius::_main_server_tester();
+    return uranium::_main_server_tester();
 }
 
 

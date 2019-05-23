@@ -3,7 +3,7 @@
 
 #include <pthread.h>
 
-namespace sirius {
+namespace uranium {
 
 enum BlockType {
     BLOCK_TYPE,

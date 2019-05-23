@@ -1,12 +1,12 @@
-#ifndef _SIRIUS_SOCKET_SERVER_STATE_MACHINE__
-#define _SIRIUS_SOCKET_SERVER_STATE_MACHINE__
+#ifndef _SOCKET_SERVER_STATE_MACHINE__
+#define _SOCKET_SERVER_STATE_MACHINE__
 
 #include "common.h"
 #include "configuration.h"
 #include "SyncType.h"
 #include "ThreadT.h"
 
-namespace sirius {
+namespace uranium {
 
 class SocketServerStateMachine :
     public noncopyable {

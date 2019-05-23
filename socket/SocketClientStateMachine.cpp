@@ -3,7 +3,7 @@
 #include "socket_server.h"
 #include "configuration.h"
 
-namespace sirius {
+namespace uranium {
 
 int32_t SocketClientStateMachine::connectServer()
 {

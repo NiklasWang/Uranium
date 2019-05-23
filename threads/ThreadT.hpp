@@ -1,7 +1,7 @@
 #include "MemMgmt.h"
 #include "ThreadT.h"
 
-namespace sirius {
+namespace uranium {
 
 #define INTERNAL true
 

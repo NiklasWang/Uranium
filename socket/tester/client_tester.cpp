@@ -2,10 +2,10 @@
 #include "configuration.h"
 #include "socket_client.h"
 
-namespace sirius {
+namespace uranium {
 
-#define GREETING_STR "Hello, sirius."
-#define GOODBYE_STR  "Bye, sirius."
+#define GREETING_STR "Hello, uranium."
+#define GOODBYE_STR  "Bye, uranium."
 #define WRITE_SHARED_FD_STR "I'm client and I'm writting."
 
 int _main_client_tester()
@@ -73,6 +73,6 @@ int _main_client_tester()
 
 int main()
 {
-    return sirius::_main_client_tester();
+    return uranium::_main_client_tester();
 }
 

@@ -3,7 +3,7 @@
 
 #include "ThreadPool.h"
 
-namespace sirius {
+namespace uranium {
 
 class ThreadPoolEx :
     public ThreadPool {

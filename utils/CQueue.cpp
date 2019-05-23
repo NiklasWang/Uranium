@@ -5,7 +5,7 @@
 #include "CQueue.h"
 #include "logs.h"
 
-namespace sirius {
+namespace uranium {
 
 CQueue::CQueue()
 {

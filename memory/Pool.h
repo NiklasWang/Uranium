@@ -1,7 +1,7 @@
 #ifndef __POOL_H_
 #define __POOL_H_
 
-namespace sirius {
+namespace uranium {
 
 struct MemoryPool;
 

@@ -2,13 +2,13 @@
 
 #include "modules.h"
 
-namespace sirius {
+namespace uranium {
 
 static const char *const ModuleName[] = {
     [MODULE_OTHERS]                 = "others",
-    [MODULE_SIRIUS]                 = "sirius",
-    [MODULE_SIRIUS_IMPL]            = "sirius_impl",
-    [MODULE_SIRIUS_CORE]            = "sirius_core",
+    [MODULE_URANIUM]                = "uranium",
+    [MODULE_URANIUM_IMPL]           = "uranium_impl",
+    [MODULE_URANIUM_CORE]           = "uranium_core",
     [MODULE_SOCKET]                 = "socket",
     [MODULE_SOCKET_SERVER]          = "socket_server",
     [MODULE_SOCKET_SERVER_SM]       = "socket_sm",
@@ -23,7 +23,7 @@ static const char *const ModuleName[] = {
     [MODULE_MEMORY_POOL]            = "memory_pool",
     [MODULE_REQUEST_HANDLER]        = "request_handler",
     [MODULE_REQUEST_CLIENT_HANDLER] = "request_client_handler",
-    [MODULE_SIRIUS_CLIENT_CORE]     = "client_core",
+    [MODULE_URANIUM_CLIENT_CORE]    = "client_core",
     [MODULE_PREVIEW_REQUEST]        = "preview_request",
     [MODULE_YUV_PICTURE_REQUEST]    = "picture_request",
     [MODULE_BAYER_PICTURE_REQUEST]  = "bayer_pic_request",
@@ -40,9 +40,9 @@ static const char *const ModuleName[] = {
 
 static const char *const ModuleShortName[] = {
     [MODULE_OTHERS]                 = "[OTHER]",
-    [MODULE_SIRIUS]                 = "[SIRIU]",
-    [MODULE_SIRIUS_IMPL]            = "[ IMPL]",
-    [MODULE_SIRIUS_CORE]            = "[ CORE]",
+    [MODULE_URANIUM]                = "[SIRIU]",
+    [MODULE_URANIUM_IMPL]           = "[ IMPL]",
+    [MODULE_URANIUM_CORE]           = "[ CORE]",
     [MODULE_SOCKET]                 = "[ SOKT]",
     [MODULE_SOCKET_SERVER]          = "[ SSVR]",
     [MODULE_SOCKET_SERVER_SM]       = "[ SSSM]",
@@ -57,7 +57,7 @@ static const char *const ModuleShortName[] = {
     [MODULE_MEMORY_POOL]            = "[MMPOL]",
     [MODULE_REQUEST_HANDLER]        = "[  RHA]",
     [MODULE_REQUEST_CLIENT_HANDLER] = "[ RCHA]",
-    [MODULE_SIRIUS_CLIENT_CORE]     = "[CLCOR]",
+    [MODULE_URANIUM_CLIENT_CORE]    = "[CLCOR]",
     [MODULE_PREVIEW_REQUEST]        = "[ PRER]",
     [MODULE_YUV_PICTURE_REQUEST]    = "[ PICR]",
     [MODULE_BAYER_PICTURE_REQUEST]  = "[BAYPR]",
