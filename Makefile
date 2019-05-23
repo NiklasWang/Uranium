@@ -46,7 +46,7 @@ include $(MAKE_RULE)/submodule.make.rule
 include $(MAKE_RULE)/color.print.make.rule
 
 all: $(MAKE_SUB_MODULES)
-	@echo -e $(SUCCEED_COLOR)"Project $(PROJNAME) $(VERSION) build succeed."$(RESTORE_COLOR)
+	@echo -e $(SUCCEED_COLOR)"Project $(PROJNAME) $(VERSION) build on $(PLATFORM) succeed."$(RESTORE_COLOR)
 
 clean: $(CLEAN_SUB_MODULES)
 	@echo -e $(FINISH_COLOR)"Project $(PROJNAME) $(VERSION) all cleaned."$(RESTORE_COLOR)
