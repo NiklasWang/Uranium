@@ -5,9 +5,7 @@
 #ifndef UTIL_LINUX_C_H
 #define UTIL_LINUX_C_H
 
-#ifdef HAVE_CONFIG_H
 #include "config.h"
-#endif
 
 #include <limits.h>
 #include <stddef.h>
