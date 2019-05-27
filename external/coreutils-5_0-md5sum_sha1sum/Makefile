@@ -1,0 +1,26 @@
+CXX      = $(GLOBAL_CXX)
+AR       = $(GLOBAL_AR)
+CXXFLAGS = $(GLOBAL_CXXFLAGS)
+ARFLAGS  = $(GLOBAL_ARFLAGS) rcs
+INCLUDES = $(patsubst $(ROOT_DIR)/%, %, $(shell pwd)) $(GLOBAL_INCLUDES)
+
+TARGET      = libcrypto_md5_sha1$(strip $(STLIB_EXT))
+sources     = $(wildcard *.c)
+objects     = $(sources:.c=.o)
+dependence := $(sources:.c=.d)
+
+build:all
+
+CXXFLAGS += $(patsubst %, -I$(ROOT_DIR)/%, $(INCLUDES))
+
+-include $(dependence)
+include $(MAKE_RULE)/dependency.make.rule
+
+
+all:$(objects)
+	$(AR) $(ARFLAGS) $(TARGET) $^ 
+
+clean:
+	rm -rf $(TARGET) $(objects) $(dependence)
+
+.PHONY: all clean
