@@ -81,7 +81,11 @@ int main(int argc, char **argv)
     // aes.decryptStream("EncryFile", "DecryFile", key16);
     if (flageDecrypt)
     {
-        aes.decryptStream(origFile, destFile, key16, origChecsum, destChecsum);
+        ret = aes.decryptStream(origFile, destFile, key16, origChecsum, destChecsum);
+        if (ret != 0)
+        {
+            return ret;
+        }
         printf("File orig      checsum=");
         for (i = 0; i < 4; i++)
         {

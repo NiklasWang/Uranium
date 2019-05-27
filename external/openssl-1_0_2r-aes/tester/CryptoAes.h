@@ -20,8 +20,10 @@
 extern "C" {
 #endif //__cplusplus
 
+#define MAGIC_ID    (0xABBA)
 typedef struct
 {
+    unsigned int magicID;
     unsigned int checksum[4];
     unsigned int date_length;
     unsigned int reserve[3];

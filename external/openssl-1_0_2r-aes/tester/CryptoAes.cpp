@@ -61,6 +61,7 @@ int CryptoAes::encryptStream(const string& origFile, const string& destFile, con
 
     pAesExternHeader = reinterpret_cast<aes_data_head_t *>(pOrigBuffer);
     pFileStart = pOrigBuffer +  sizeof(aes_data_head_t);
+    pAesExternHeader->magicID = MAGIC_ID;
     /* storage file lenght to data header */
     pAesExternHeader->date_length = origFileLength;
 
@@ -196,6 +197,14 @@ int CryptoAes::decryptStream(const string& origFile, const string& destFile, con
     AES_cbc_encrypt((const unsigned char *)pOrigBuffer, (unsigned char *) pDestBuffer, origFileLength, &aesKs, iv, 0);
 
     pAesExternHeader = reinterpret_cast<aes_data_head_t *>(pDestBuffer);
+    /* examale decry file data is success */
+    if (pAesExternHeader->magicID != MAGIC_ID)
+    {
+        ret = -7;
+        cout << "decry file faild " << endl;
+        goto err;
+    }
+
     destFileLength = pAesExternHeader->date_length;
     pFileStart = pDestBuffer + sizeof(aes_data_head_t);
 
@@ -241,7 +250,12 @@ err:
 int CryptoAes::decryptStream(const std::string& origFile, const std::string& destFile, const unsigned char* key16,
                              unsigned int (&origChecksum)[4], unsigned int (&calculateChecksum)[4])
 {
-    decryptStream(origFile, destFile, key16);
+    int ret = 0;
+    if (0 != (ret = decryptStream(origFile, destFile, key16)))
+    {
+        return ret;
+    }
+
     memcpy(origChecksum, mOrigChecsum, sizeof(mOrigChecsum));
     memcpy(calculateChecksum, mCalculateChecksum, sizeof(mCalculateChecksum));
     return 0;

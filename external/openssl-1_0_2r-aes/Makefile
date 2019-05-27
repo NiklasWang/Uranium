@@ -23,7 +23,7 @@ lib:$(objects)
 
 all: lib $(MAKE_SUB_MODULES)
 
-clean:
+clean:$(CLEAN_SUB_MODULES)
 	rm -rf $(TARGET) $(objects) $(dependence) *.d.* *.o
 
 .PHONY: all clean $(MAKE_SUB_MODULES) $(CLEAN_SUB_MODULES)
