@@ -1,6 +1,6 @@
-CXX      = $(GLOBAL_CXX)
+CC       = $(GLOBAL_CC)
 AR       = $(GLOBAL_AR)
-CXXFLAGS = $(GLOBAL_CXXFLAGS)
+CFLAGS   = $(GLOBAL_CFLAGS)
 ARFLAGS  = $(GLOBAL_ARFLAGS) rcs
 INCLUDES = $(patsubst $(ROOT_DIR)/%, %, $(shell pwd)) $(GLOBAL_INCLUDES)
 
@@ -14,8 +14,8 @@ build:all
 CXXFLAGS += $(patsubst %, -I$(ROOT_DIR)/%, $(INCLUDES))
 
 -include $(dependence)
-include $(MAKE_RULE)/dependency.make.rule
 
+include $(MAKE_RULE)/dependency.make.rule
 
 all:$(objects)
 	$(AR) $(ARFLAGS) $(TARGET) $^ 

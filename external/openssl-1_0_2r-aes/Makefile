@@ -1,29 +1,30 @@
-CXX      = $(GLOBAL_CXX)
+CC       = $(GLOBAL_CC)
 AR       = $(GLOBAL_AR)
-CXXFLAGS = $(GLOBAL_CXXFLAGS)
+CFLAGS   = $(GLOBAL_CFLAGS)
 ARFLAGS  = $(GLOBAL_ARFLAGS) rcs
 INCLUDES = $(patsubst $(ROOT_DIR)/%, %, $(shell pwd)) $(GLOBAL_INCLUDES)
 
 TARGET      = libopenssl_aes$(strip $(STLIB_EXT))
 sources     = $(wildcard *.c)
 objects     = $(sources:.c=.o)
-	dependence := $(sources:.c=.d)
+dependence := $(sources:.c=.d)
 
-build:all
+build: all
 
 CXXFLAGS += $(patsubst %, -I$(ROOT_DIR)/%, $(INCLUDES))
 
 -include $(dependence)
+
 include $(MAKE_RULE)/dependency.make.rule
  
 include $(MAKE_RULE)/submodule.make.rule
 
-lib:$(objects)
-	$(AR) $(ARFLAGS) $(TARGET) $^ 
-
 all: lib $(MAKE_SUB_MODULES)
 
-clean:
-	rm -rf $(TARGET) $(objects) $(dependence) *.d.* *.o
+lib: $(objects)
+	$(AR) $(ARFLAGS) $(TARGET) $^
+
+clean: $(CLEAN_SUB_MODULES)
+	rm -rf $(TARGET) $(objects) $(dependence) *.d.*
 
 .PHONY: all clean $(MAKE_SUB_MODULES) $(CLEAN_SUB_MODULES)
