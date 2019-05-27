@@ -202,12 +202,13 @@ using std::atomic_uintmax_t;
 /*
  * 7.17.2 Initialization.
  */
-
 #if defined(__CLANG_ATOMICS)
 #define	ATOMIC_VAR_INIT(value)		(value)
 #define	atomic_init(obj, value)		__c11_atomic_init(obj, value)
 #else
+#ifndef ATOMIC_VAR_INIT
 #define	ATOMIC_VAR_INIT(value)		{ .__val = (value) }
+#endif //ATOMIC_VAR_INIT
 #define	atomic_init(obj, value)		((void)((obj)->__val = (value)))
 #endif
 
@@ -508,7 +509,9 @@ typedef struct {
 	atomic_bool	__flag;
 } atomic_flag;
 
+#ifndef ATOMIC_FLAG_INIT
 #define	ATOMIC_FLAG_INIT		{ ATOMIC_VAR_INIT(false) }
+#endif //ATOMIC_FLAG_INIT
 
 static __inline bool
 atomic_flag_test_and_set_explicit(volatile atomic_flag *__object,

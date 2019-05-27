@@ -11,8 +11,8 @@ dependence := $(sources:.c=.d)
 
 build:all
 
-CFLAGS += $(patsubst %, -I$(ROOT_DIR)/%, $(INCLUDES)) -I./ -I$(ROOT_DIR)/external/libuuid-1_0_3
-LDFLAGS  += -L$(ROOT_DIR)/external/libuuid-1_0_3 -luuid
+CFLAGS += $(patsubst %, -I$(ROOT_DIR)/%, $(INCLUDES)) -I./ -I$(ROOT_DIR)/external/libuuid
+LDFLAGS  += -L$(ROOT_DIR)/external/libuuid -luuid
 
 -include $(dependence)
 include $(MAKE_RULE)/dependency.make.rule

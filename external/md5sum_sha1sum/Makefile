@@ -4,7 +4,7 @@ CFLAGS   = $(GLOBAL_CFLAGS)
 ARFLAGS  = $(GLOBAL_ARFLAGS) rcs
 INCLUDES = $(patsubst $(ROOT_DIR)/%, %, $(shell pwd)) $(GLOBAL_INCLUDES)
 
-TARGET      = libcrypto_md5_sha1$(strip $(STLIB_EXT))
+TARGET      = libmd5sum_sha1sum$(strip $(STLIB_EXT))
 sources     = $(wildcard *.c)
 objects     = $(sources:.c=.o)
 dependence := $(sources:.c=.d)

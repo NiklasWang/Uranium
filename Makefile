@@ -36,7 +36,7 @@ endif
 build: all
 
 exclude_dirs  = out
-compile_order = log utils memory threads
+compile_order = log utils memory threads external encrypt
 
 export
 unexport exclude_dirs compile_order

@@ -43,7 +43,7 @@ int main(int argc, char **argv)
         0x34, 0x56, 0x78, 0x9a, 0xbc, 0xde, 0xf0, 0x12
     };
 
-    unsigned int c = 0;
+    int c = 0;
     while ((c = getopt_long(argc, argv, "edh", long_opts, NULL)) != -1)
     {
         switch (c)

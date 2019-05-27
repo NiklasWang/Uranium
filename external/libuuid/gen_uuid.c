@@ -99,6 +99,9 @@
 #define THREAD_LOCAL static
 #endif
 
+#undef LOCK_EX
+#undef LOCK_SH
+#undef LOCK_UN
 #ifndef LOCK_EX
 /* flock() replacement */
 #define LOCK_EX 1

@@ -12,9 +12,9 @@ dependence := $(sources:.cpp=.d)
 build:all
 
 CXXFLAGS += $(patsubst %, -I$(ROOT_DIR)/%, $(INCLUDES)) -I./
-CXXFLAGS += -I$(ROOT_DIR)/external/coreutils-5_0-md5sum_sha1sum -I$(ROOT_DIR)/external/openssl-1_0_2r-aes
-LDFLAGS  += -L $(ROOT_DIR)/external/coreutils-5_0-md5sum_sha1sum/ -Wl,-Bstatic -lcrypto_md5_sha1
-LDFLAGS  += -L $(ROOT_DIR)/external/openssl-1_0_2r-aes -lopenssl_aes -Wl,-Bdynamic
+CXXFLAGS += -I$(ROOT_DIR)/external/md5sum_sha1sum -I$(ROOT_DIR)/external/aes
+LDFLAGS  += -L $(ROOT_DIR)/external/md5sum_sha1sum/ -Wl,-Bstatic -lmd5sum_sha1sum
+LDFLAGS  += -L $(ROOT_DIR)/external/aes -laes -Wl,-Bdynamic
 
 -include $(dependence)
 include $(MAKE_RULE)/dependency.make.rule

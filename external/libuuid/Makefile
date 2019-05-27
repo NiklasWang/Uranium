@@ -11,7 +11,7 @@ dependence := $(sources:.c=.d)
 
 build:all
 
-CFLAGS += $(patsubst %, -I$(ROOT_DIR)/%, $(INCLUDES)) -I./
+CFLAGS += $(patsubst %, -I$(ROOT_DIR)/%, $(INCLUDES)) -I./ -Wno-cpp
 #LDFLAGS  += -L $(ROOT_DIR)/external/coreutils-5_0-md5sum_sha1sum/ -Wl,-Bstatic -lcrypto_md5_sha1
 #LDFLAGS  += -L $(ROOT_DIR)/external/openssl-1_0_2r-aes -lopenssl_aes -Wl,-Bdynamic
 
