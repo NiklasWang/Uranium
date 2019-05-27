@@ -5,7 +5,7 @@
 
 #include "Semaphore.h"
 
-namespace sirius {
+namespace uranium {
 
 enum sync_type {
     SYNC_TYPE,

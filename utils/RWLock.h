@@ -5,7 +5,7 @@
 #include <sys/types.h>
 #include <pthread.h>
 
-namespace sirius {
+namespace uranium {
 
 /*
  * Simple mutex class.  The implementation is system-dependent.

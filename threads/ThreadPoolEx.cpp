@@ -1,6 +1,6 @@
 #include "ThreadPoolEx.h"
 
-namespace sirius {
+namespace uranium {
 
 uint32_t ThreadPoolEx::gCnt = 0;
 

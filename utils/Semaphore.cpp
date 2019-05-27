@@ -1,6 +1,6 @@
 #include "Semaphore.h"
 
-namespace sirius {
+namespace uranium {
 
 Semaphore::Semaphore(int n)
 {

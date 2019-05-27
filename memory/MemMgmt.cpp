@@ -1,7 +1,7 @@
 #include "MemMgmt.h"
 #include "Pool.h"
 
-namespace sirius {
+namespace uranium {
 
 MemMgmt defaultMemPool;
 

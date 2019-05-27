@@ -1,10 +1,10 @@
-#ifndef _SIRIUS_CONFIGURATION_H_
-#define _SIRIUS_CONFIGURATION_H_
+#ifndef _CONFIGURATION_H_
+#define _CONFIGURATION_H_
 
-namespace sirius {
+namespace uranium {
 
 #define SERVER_SOCKET_PATH         "/data/misc/camera/"
-#define SERVER_SOCKET_NAME         "sirius_socket"
+#define SERVER_SOCKET_NAME         "uranium_socket"
 #define SOCKET_DATA_MAX_LEN        128 // byte
 #define SERVER_PULL_CLIENT_TIMEOUT 100 // ms
 #define SERVER_POLL_DATA_TIMEOUT   200
@@ -29,7 +29,7 @@ namespace sirius {
 #define REQUEST_HANDLER_MAX_MEMORY_NUM  10
 #define REQUEST_HANDLER_NO_MEMORY_SHARE 0
 
-#define TESTER_SOCKET_NAME       "sirius_tester_socket"
+#define TESTER_SOCKET_NAME       "uranium_tester_socket"
 #define TESTER_START_TEST        "Test start,"
 #define TESTER_SERVER_REPLY_OK   "OK"
 #define TESTER_SERVER_REPLY_FAIL "Failed"

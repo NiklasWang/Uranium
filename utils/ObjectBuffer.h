@@ -10,7 +10,7 @@
 
 //#define TRACKER_ALL_OBJECT
 
-namespace sirius {
+namespace uranium {
 
 template<typename T>
 class ObjectBuffer :

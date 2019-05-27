@@ -4,7 +4,7 @@
 #include "version.h"
 #include "modules.h"
 
-namespace sirius {
+namespace uranium {
 
 #define MODULE_NAME     PROJNAME
 #define DBG_LOG_MAX_LEN 256

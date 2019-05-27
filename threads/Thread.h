@@ -11,7 +11,7 @@
 #include "SyncType.h"
 #include "ObjectBuffer.h"
 
-namespace sirius {
+namespace uranium {
 
 class Thread :
     virtual public noncopyable {

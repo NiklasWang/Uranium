@@ -5,7 +5,7 @@
 #include "QueueT.h"
 #include "logs.h"
 
-namespace sirius {
+namespace uranium {
 
 template <typename T>
 QueueT<T>::QueueT()

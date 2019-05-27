@@ -1,6 +1,6 @@
 #include "ThreadPool.h"
 
-namespace sirius {
+namespace uranium {
 
 int32_t ThreadPool::run(std::function<int32_t ()> func)
 {

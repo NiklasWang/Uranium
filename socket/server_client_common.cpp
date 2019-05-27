@@ -1,7 +1,7 @@
 #include "common.h"
 #include "server_client_common.h"
 
-namespace sirius {
+namespace uranium {
 
 #include <sys/socket.h>
 

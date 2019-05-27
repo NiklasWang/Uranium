@@ -1,5 +1,5 @@
-#ifndef _SIRIUS_SOCKET_CLIENT_STATE_MACHINE__
-#define _SIRIUS_SOCKET_CLIENT_STATE_MACHINE__
+#ifndef _SOCKET_CLIENT_STATE_MACHINE__
+#define _SOCKET_CLIENT_STATE_MACHINE__
 
 #include "common.h"
 #include "SyncType.h"
@@ -7,7 +7,7 @@
 #include "configuration.h"
 #include "RWLock.h"
 
-namespace sirius {
+namespace uranium {
 
 class SocketClientStateMachine :
     public noncopyable {

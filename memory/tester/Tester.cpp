@@ -13,7 +13,7 @@
 #include <time.h>
 #include <sys/time.h>
 
-namespace sirius {
+namespace uranium {
 
 /**
  * @brief Longest length of string can allocate from pool.

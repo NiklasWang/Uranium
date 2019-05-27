@@ -48,7 +48,7 @@
 #include <assert.h>
 #include <limits.h>
 
-namespace sirius {
+namespace uranium {
 
 /**
  * @brief Max length of string pool can allocate, if bigger than this when creating, down to this size.

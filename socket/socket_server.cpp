@@ -7,7 +7,7 @@
 #include "configuration.h"
 #include "socket_server.h"
 
-namespace sirius {
+namespace uranium {
 
 int32_t start_server(int32_t *socketfd, const char *socketName)
 {

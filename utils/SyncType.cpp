@@ -1,7 +1,7 @@
 #include "SyncType.h"
 #include "common.h"
 
-namespace sirius {
+namespace uranium {
 
 const char * const SyncType::kTypeString[] = {
     [SYNC_TYPE]  = "sync",

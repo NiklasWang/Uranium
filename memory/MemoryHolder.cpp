@@ -2,7 +2,7 @@
 #include "MemoryHolder.h"
 #include "MemMgmt.h"
 
-namespace sirius {
+namespace uranium {
 
 int32_t MemoryHolder::add(int32_t id, void *dat, int32_t size, bool copy)
 {

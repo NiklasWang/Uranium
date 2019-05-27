@@ -1,8 +1,8 @@
-namespace sirius {
+namespace uranium {
     int __main(int argc, char **argv);
 }
 
 int main(int argc, char **argv)
 {
-    return sirius::__main(argc, argv);
+    return uranium::__main(argc, argv);
 }

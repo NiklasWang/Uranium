@@ -113,7 +113,7 @@ namespace android {
 
 #define INITIAL_STRONG_VALUE (1<<28)
 
-#define MODULE sirius::MODULE_UTILS
+#define MODULE uranium::MODULE_UTILS
 
 // ---------------------------------------------------------------------------
 

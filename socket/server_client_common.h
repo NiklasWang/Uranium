@@ -1,7 +1,7 @@
-#ifndef SIRIUS_SERVER_CLIENT_COMMON_H_
-#define SIRIUS_SERVER_CLIENT_COMMON_H_
+#ifndef _SERVER_CLIENT_COMMON_H_
+#define _SERVER_CLIENT_COMMON_H_
 
-namespace sirius {
+namespace uranium {
 
 #include <stdint.h>
 

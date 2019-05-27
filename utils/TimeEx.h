@@ -4,7 +4,7 @@
 #include <unistd.h>
 #include <sys/time.h>
 
-namespace sirius {
+namespace uranium {
 
 inline int64_t currentUs()
 {

@@ -10,19 +10,19 @@
 
 #include "LogImpl.h"
 
-namespace sirius {
+namespace uranium {
 
 #define MAX_PROCESS_NAME_LEN 16
-#define LOG_FILE_PATH        "/data/vendor/camera/sirius.log"
-#define LOG_FILE_PATH_LAST   "/data/vendor/camera/sirius.last.log"
+#define LOG_FILE_PATH        "/data/vendor/camera/uranium.log"
+#define LOG_FILE_PATH_LAST   "/data/vendor/camera/uranium.last.log"
 #define LOG_MAX_LEN_PER_LINE 10240 // Bytes
 
 int8_t gDebugController[][LOG_TYPE_MAX_INVALID + 1] = {
     // NONE,  DBG,  INF, WARN,  ERR, FATA, INVA
     {     0,    1,    1,    1,    1,    1,    0}, // MODULE_OTHERS
-    {     0,    1,    1,    1,    1,    1,    0}, // MODULE_SIRIUS
-    {     0,    1,    1,    1,    1,    1,    0}, // MODULE_SIRIUS_IMPL
-    {     0,    1,    1,    1,    1,    1,    0}, // MODULE_SIRIUS_CORE
+    {     0,    1,    1,    1,    1,    1,    0}, // MODULE_URANIUM
+    {     0,    1,    1,    1,    1,    1,    0}, // MODULE_URANIUM_IMPL
+    {     0,    1,    1,    1,    1,    1,    0}, // MODULE_URANIUM_CORE
     {     0,    1,    1,    1,    1,    1,    0}, // MODULE_SOCKET
     {     0,    1,    1,    1,    1,    1,    0}, // MODULE_SOCKET_SERVER
     {     0,    1,    1,    1,    1,    1,    0}, // MODULE_SOCKET_SERVER_SM
@@ -37,7 +37,7 @@ int8_t gDebugController[][LOG_TYPE_MAX_INVALID + 1] = {
     {     0,    1,    1,    1,    1,    1,    0}, // MODULE_MEMORY_POOL
     {     0,    1,    1,    1,    1,    1,    0}, // MODULE_REQUEST_HANDLER
     {     0,    1,    1,    1,    1,    1,    0}, // MODULE_REQUEST_CLIENT_HANDLER
-    {     0,    1,    1,    1,    1,    1,    0}, // MODULE_SIRIUS_CLIENT_CORE
+    {     0,    1,    1,    1,    1,    1,    0}, // MODULE_URANIUM_CLIENT_CORE
     {     0,    1,    1,    1,    1,    1,    0}, // MODULE_PREVIEW_REQUEST
     {     0,    1,    1,    1,    1,    1,    0}, // MODULE_YUV_PICTURE_REQUEST
     {     0,    1,    1,    1,    1,    1,    0}, // MODULE_BAYER_PICTURE_REQUEST

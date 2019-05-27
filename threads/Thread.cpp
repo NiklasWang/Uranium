@@ -1,7 +1,7 @@
 #include "MemMgmt.h"
 #include "Thread.h"
 
-namespace sirius {
+namespace uranium {
 
 int32_t Thread::run(std::function<int32_t ()> func,
     std::function<int32_t (Thread *)> cb)

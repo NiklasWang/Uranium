@@ -1,5 +1,5 @@
-#ifndef _SIRIUS_COMMON_H_
-#define _SIRIUS_COMMON_H_
+#ifndef _COMMON_H_
+#define _COMMON_H_
 
 #include <stdint.h>
 #include <stdio.h>
@@ -17,7 +17,7 @@
 #include "modules.h"
 #include "logs.h"
 
-namespace sirius {
+namespace uranium {
 
 enum err_raeson {
     NO_ERROR = 0,

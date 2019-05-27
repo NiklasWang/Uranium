@@ -4,7 +4,7 @@
 #include "Thread.h"
 #include "Semaphore.h"
 
-namespace sirius {
+namespace uranium {
 
 class ThreadPool :
     virtual public noncopyable {

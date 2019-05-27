@@ -1,10 +1,10 @@
-#ifndef _SIRIUS_CLIENT_H_
-#define _SIRIUS_CLIENT_H_
+#ifndef _CLIENT_H_
+#define _CLIENT_H_
 
 #include "configuration.h"
 #include "server_client_common.h"
 
-namespace sirius {
+namespace uranium {
 
 int32_t connect_to_server(int32_t *fd, const char *socketName = SERVER_SOCKET_NAME);
 

@@ -1,6 +1,6 @@
 #include "SemaphoreTimeout.h"
 
-namespace sirius {
+namespace uranium {
 
 int SemaphoreTimeout::wait()
 {

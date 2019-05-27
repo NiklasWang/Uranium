@@ -1,6 +1,6 @@
 #include "Thread.h"
 
-namespace sirius {
+namespace uranium {
 
 int32_t Thread::callFunc(TaskBase *task, bool release)
 {
