@@ -1,5 +1,3 @@
-build:all
-
 include $(MAKE_RULE)/submodule.make.rule
 
 all: $(MAKE_SUB_MODULES)

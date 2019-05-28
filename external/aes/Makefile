@@ -9,17 +9,13 @@ sources     = $(wildcard *.c)
 objects     = $(sources:.c=.o)
 dependence := $(sources:.c=.d)
 
-build: all
-
 CXXFLAGS += $(patsubst %, -I$(ROOT_DIR)/%, $(INCLUDES))
 
 -include $(dependence)
 
 include $(MAKE_RULE)/dependency.make.rule
 
-all: lib 
-
-lib: $(objects)
+all: $(objects)
 	$(AR) $(ARFLAGS) $(TARGET) $^
 
 clean:

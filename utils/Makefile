@@ -9,8 +9,6 @@ sources     = $(wildcard *.cpp)
 objects     = $(sources:.cpp=.o)
 dependence := $(sources:.cpp=.d)
 
-build: all
-
 CXXFLAGS += $(patsubst %, -I$(ROOT_DIR)/%, $(INCLUDES))
 
 -include $(dependence)
@@ -25,4 +23,4 @@ all: $(objects) $(MAKE_SUB_MODULES)
 clean: $(CLEAN_SUB_MODULES)
 	rm -f $(TARGET) $(objects) $(dependence)
 
-.PHONY: build clean $(MAKE_SUB_MODULES) $(CLEAN_SUB_MODULES)
+.PHONY: clean $(MAKE_SUB_MODULES) $(CLEAN_SUB_MODULES)

@@ -9,8 +9,6 @@ sources     = $(wildcard *.c)
 objects     = $(sources:.c=.o)
 dependence := $(sources:.c=.d)
 
-build:all
-
 CFLAGS += $(patsubst %, -I$(ROOT_DIR)/%, $(INCLUDES)) -I./ -I$(ROOT_DIR)/external/libuuid
 LDFLAGS  += -L$(ROOT_DIR)/external/libuuid -luuid
 
@@ -24,4 +22,4 @@ all:$(objects)
 clean:
 	rm -rf $(TARGET) $(objects) $(dependence) *.d.*
 
-.PHONY: build clean
+.PHONY: clean

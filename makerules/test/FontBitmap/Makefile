@@ -7,8 +7,6 @@ sources     = FontBitmapTest.c
 objects     = $(sources:.c=.o)
 dependence := $(sources:.c=.d)
 
-build: all
-
 -include $(dependence)
 
 include $(MAKE_RULE)/dependency.make.rule
@@ -19,4 +17,4 @@ all: $(objects)
 clean:
 	rm -f $(TARGET) $(objects) $(dependence)
 
-.PHONY: build clean
+.PHONY: clean
