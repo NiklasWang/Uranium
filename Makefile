@@ -31,6 +31,8 @@ ifeq ($(strip $(ISCYGWIN)),y)
   DYLIB_EXT = .dll
   STLIB_EXT = .a
   EXE_EXT   = .exe
+  GLOBAL_CFLAGS   += -D_CYGWIN_COMPILE_
+  GLOBAL_CXXFLAGS += -D_CYGWIN_COMPILE_
 endif
 
 build: all

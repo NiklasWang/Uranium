@@ -18,8 +18,8 @@ LDFLAGS  += -L $(ROOT_DIR)/external/aes -laes
 LDFLAGS  += -L$(ROOT_DIR)/log -llog -L$(ROOT_DIR)/utils -lutils -Wl,-Bdynamic
 
 -include $(dependence)
-include $(MAKE_RULE)/dependency.make.rule
 
+include $(MAKE_RULE)/dependency.make.rule
 
 all:$(objects)
 	$(CXX) $^ $(LDFLAGS) -o $(TARGET)

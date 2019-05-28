@@ -13,7 +13,9 @@
 #include <string.h>
 #include <sys/time.h>
 
+#ifndef _CYGWIN_COMPILE_
 #include <sys/syscall.h>
+#endif
 
 #include "randutils.h"
 

@@ -87,6 +87,10 @@
 #include <sys/syscall.h>
 #endif
 
+#ifdef _CYGWIN_COMPILE_
+#define HAVE_LOFF_T
+#endif
+
 #include "all-io.h"
 #include "uuidP.h"
 #include "uuidd.h"
@@ -107,9 +111,12 @@
 #define LOCK_EX 1
 #define LOCK_SH 2
 #define LOCK_UN 3
-#define LOCK_NB 4
 
-static int flock(int fd, int op)
+#ifndef _CYGWIN_COMPILE_
+#define LOCK_NB 4
+#endif
+
+int flock(int fd, int op)
 {
     int rc = 0;
 
