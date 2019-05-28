@@ -1,0 +1,15 @@
+
+format_linux.sh install 
+    step1: mkdir ~/bin
+    step2: cp -ar foramt* ~/bin
+           cp -ar astyle ~/bin
+    step3:
+           echo "export PATH=~/bin:${PATH}" >> ~/.bashrc
+How to use it:
+    Go to the code directory;
+    runing:
+            format_linux.sh xxx.cpp 
+            format_linux.sh xxx.h
+            format_linux.sh *.c
+            format_linux.sh *.*
+            .....
