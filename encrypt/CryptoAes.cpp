@@ -1,7 +1,9 @@
 
 #include <iostream>
 #include <string>
-#include <CryptoAes.h>
+#include "common.h"
+#include "logs.h"
+#include "CryptoAes.h"
 #include "md5.h"
 #include "sha.h"
 extern "C" {
@@ -10,9 +12,24 @@ extern "C" {
 #include "aes.h"
 }
 
+namespace uranium
+{
+
 using namespace std;
 
-CryptoAes::CryptoAes()
+#define CHECK_ERROR(cond, retval, lable, fmt, args...)  \
+do {                                                            \
+    if(cond) {                                                  \
+        LOGE(mModule, fmt, ##args);                             \
+        LOGE(mModule, "%s() return %d\n",                       \
+                __func__, retval);                              \
+        rc = retval;                                            \
+        goto lable;                                             \
+    }                                                           \
+} while(0)
+
+CryptoAes::CryptoAes():
+    mModule(MODULE_ENCRYPT)
 {
 
 }
@@ -33,16 +50,11 @@ int CryptoAes::encryptStream(const string& origFile, const string& destFile, con
     aes_data_head_t *pAesExternHeader = NULL;
     char *pFileStart = NULL;
     AES_KEY aesKs;
-    int ret = 0;
+    int rc = 0;
     size_t return_size = 0;
 
     pOrigStream = fopen(origFile.c_str(), "r");
-    if (NULL == pOrigStream)
-    {
-        cout << "open file=" << origFile << "failed\n" << endl;
-        ret = -1;
-        goto err;
-    }
+    CHECK_ERROR(ISNULL(pOrigStream), -1, err, "open file %s failed\n");
 
     /* get file lenght */
     fseek(pOrigStream, 0, SEEK_END);
@@ -51,12 +63,10 @@ int CryptoAes::encryptStream(const string& origFile, const string& destFile, con
 
     /* malloc a buffer to storage origFile data */
     pOrigBuffer = new char[origFileLength + sizeof(aes_data_head_t)];
-    if (NULL == pOrigBuffer)
-    {
-        ret = -2;
-        cout << "out of memory" << endl;
-        goto err;
-    }
+    /* examle pOrigBuffer is NULL */
+    CHECK_ERROR(ISNULL(pOrigBuffer), -2, err, "Out of memory");
+
+    /* memset */
     memset(pOrigBuffer, 0, (size_t) sizeof(pOrigBuffer));
 
     pAesExternHeader = reinterpret_cast<aes_data_head_t *>(pOrigBuffer);
@@ -67,34 +77,26 @@ int CryptoAes::encryptStream(const string& origFile, const string& destFile, con
 
     /* read file data */
     return_size = fread(pFileStart, 1, origFileLength, pOrigStream);
-    if (return_size != origFileLength)
-    {
-        ret = -3;
-        cout << "read file cout failed! origFileLenght=" << origFileLength << "readFileLenght=" << return_size << endl;
-        goto err;
-    }
+    CHECK_ERROR(!EQUALPTR(return_size, origFileLength), -3, err, "read file cout failed! origFileLenght=%ld readFileLenght=%ld \n",
+                origFileLength, return_size);
+
     /* calculate checksum */
     md5_buffer(pFileStart, pAesExternHeader->date_length, pAesExternHeader->checksum);
+
 #if 0
-    for (i = 0; i < 4; i++)
-    {
+    for (i = 0; i < 4; i++) {
         printf("%08x", pAesExternHeader->checksum[i]);
     }
     printf("\n");
 #endif
-    // printf("md5 = %s\n",md5_stream(pOrigStream, pAesExternHeader->checksum));
+
     /* let's 16-byte alignment */
     destFileLength = origFileLength + sizeof(aes_data_head_t);
     destFileLength = (destFileLength & 0xF) ? ((destFileLength + 0x10) & (~0xF)) : destFileLength;
 
     /* malloc buffer storage enc data */
     pDestBuffer = new char[destFileLength];
-    if (NULL == pDestBuffer)
-    {
-        ret = -4;
-        cout << "out of memory" << endl;
-        goto err;
-    }
+    CHECK_ERROR(ISNULL(pDestBuffer), -4, err, "out of memory\n");
 
     /* make keys */
     private_AES_set_encrypt_key(key16, 128, &aesKs);
@@ -104,35 +106,27 @@ int CryptoAes::encryptStream(const string& origFile, const string& destFile, con
 
     /* open or create new file to storage encry data */
     pDestStream = fopen(destFile.c_str(), "w+");
-    if (NULL == pDestStream)
-    {
-        cout << "open file=" << destFile << "failed\n" << endl;
-        ret = -5;
-        goto err;
-    }
+    CHECK_ERROR(ISNULL(pDestStream), -5, err, "open file %s failed!\n", destFile.c_str());
+
     /* write data to the opend file */
     fwrite(pDestBuffer, destFileLength, 1, pDestStream);
     cout << "encry file ok" << endl;
 
-    ret = 0;
+    rc = 0;
 err:
-    if (pOrigStream)
-    {
+    if (!ISNULL(pOrigStream)) {
         fclose(pOrigStream);
     }
-    if (pDestStream)
-    {
+
+    if (!ISNULL(pDestStream)) {
         fclose(pDestStream);
     }
-    if (pOrigBuffer)
-    {
-        delete (pOrigBuffer);
-    }
-    if (pDestBuffer)
-    {
-        delete (pDestBuffer);
-    }
-    return ret;
+
+    SECURE_DELETE(pOrigBuffer);
+
+    SECURE_DELETE(pDestBuffer);
+
+    return rc;
 }
 
 int CryptoAes::decryptStream(const string& origFile, const string& destFile, const unsigned char* key16)
@@ -146,16 +140,12 @@ int CryptoAes::decryptStream(const string& origFile, const string& destFile, con
     aes_data_head_t *pAesExternHeader = NULL;
     char *pFileStart = NULL;
     AES_KEY aesKs;
-    int ret = 0;
+    int rc = 0;
     size_t return_size = 0;
 
     pOrigStream = fopen(origFile.c_str(), "r");
-    if (NULL == pOrigStream)
-    {
-        cout << "open file=" << origFile << "failed\n" << endl;
-        ret = -1;
-        goto err;
-    }
+    CHECK_ERROR(ISNULL(pOrigStream), -1, err, "open file %s filed!\n", origFile.c_str());
+
 
     /* get file lenght */
     fseek(pOrigStream, 0, SEEK_END);
@@ -164,31 +154,18 @@ int CryptoAes::decryptStream(const string& origFile, const string& destFile, con
 
     /* malloc a buffer to storage origFile data */
     pOrigBuffer = new char[origFileLength];
-    if (NULL == pOrigBuffer)
-    {
-        ret = -2;
-        cout << "out of memory" << endl;
-        goto err;
-    }
+    CHECK_ERROR(ISNULL(pOrigBuffer), -2, err, "out of memory\n");
+
     memset(pOrigBuffer, 0, (size_t) sizeof(pOrigBuffer));
 
     /* read file data */
     return_size = fread(pOrigBuffer, 1, origFileLength, pOrigStream);
-    if (return_size != origFileLength)
-    {
-        ret = -3;
-        cout << "read file cout failed! origFileLenght=" << origFileLength << "readFileLenght=" << return_size << endl;
-        goto err;
-    }
+    CHECK_ERROR(!EQUALPTR(return_size, origFileLength), -3, err, "read file cout failed! origFileLenght=%ld readFileLenght=%ld\n",
+                origFileLength, return_size);
 
     /* malloc buffer storage enc data */
     pDestBuffer = new char[origFileLength];
-    if (NULL == pDestBuffer)
-    {
-        ret = -4;
-        cout << "out of memory" << endl;
-        goto err;
-    }
+    CHECK_ERROR(ISNULL(pDestBuffer), -4, err, "out of memory!\n");
 
     /* make keys */
     private_AES_set_decrypt_key(key16, 128, &aesKs);
@@ -198,12 +175,7 @@ int CryptoAes::decryptStream(const string& origFile, const string& destFile, con
 
     pAesExternHeader = reinterpret_cast<aes_data_head_t *>(pDestBuffer);
     /* examale decry file data is success */
-    if (pAesExternHeader->magicID != MAGIC_ID)
-    {
-        ret = -7;
-        cout << "decry file faild " << endl;
-        goto err;
-    }
+    CHECK_ERROR(!EQUALPTR(pAesExternHeader->magicID, MAGIC_ID), -7, err, "decry file failed!\n");
 
     destFileLength = pAesExternHeader->date_length;
     pFileStart = pDestBuffer + sizeof(aes_data_head_t);
@@ -216,47 +188,38 @@ int CryptoAes::decryptStream(const string& origFile, const string& destFile, con
     md5_buffer(pFileStart, destFileLength, mCalculateChecksum);
     /* open or create new file to storage encry data */
     pDestStream = fopen(destFile.c_str(), "w+");
-    if (NULL == pDestStream)
-    {
-        cout << "open file=" << destFile << "failed\n" << endl;
-        ret = -5;
-        goto err;
-    }
+    CHECK_ERROR(ISNULL(pDestStream), -5, err, "open faile %s failed!\n", destFile.c_str());
+
     /* write data to the opend file */
     fwrite(pFileStart, destFileLength, 1, pDestStream);
     cout << "decry file ok" << endl;
-    ret = 0;
+    rc = 0;
 
 err:
-    if (pOrigStream)
-    {
+    if (!ISNULL(pOrigStream)) {
         fclose(pOrigStream);
     }
-    if (pDestStream)
-    {
+    if (!ISNULL(pDestStream)) {
         fclose(pDestStream);
     }
-    if (pOrigBuffer)
-    {
-        delete (pOrigBuffer);
-    }
-    if (pDestBuffer)
-    {
-        delete (pDestBuffer);
-    }
-    return ret;
+
+    SECURE_DELETE(pOrigBuffer);
+    SECURE_DELETE(pDestBuffer);
+
+    return rc;
 }
 
 int CryptoAes::decryptStream(const std::string& origFile, const std::string& destFile, const unsigned char* key16,
                              unsigned int (&origChecksum)[4], unsigned int (&calculateChecksum)[4])
 {
-    int ret = 0;
-    if (0 != (ret = decryptStream(origFile, destFile, key16)))
-    {
-        return ret;
+    int rc = 0;
+    rc = decryptStream(origFile, destFile, key16);
+    if (FAILED(rc)) {
+        return rc;
     }
 
     memcpy(origChecksum, mOrigChecsum, sizeof(mOrigChecsum));
     memcpy(calculateChecksum, mCalculateChecksum, sizeof(mCalculateChecksum));
     return 0;
 }
+} /* namespace sirius */

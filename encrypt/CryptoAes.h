@@ -1,7 +1,7 @@
 /**
- * @file aes_extern_data.h
+ * @file CryptoAes.h
  * @brief aes data extension header file
- * @author lihb13  <NULL.com>
+ * @author lenovo <lenovo.com>
  * @version 1.0.0
  * @date 2019-05-24
  */
@@ -15,14 +15,14 @@
 #define __CRYPTOAES_H_
 
 #include <string>
+#include "common.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif //__cplusplus
+
+namespace uranium
+{
 
 #define MAGIC_ID    (0xABBA)
-typedef struct
-{
+typedef struct {
     unsigned int magicID;
     unsigned int checksum[4];
     unsigned int date_length;
@@ -46,10 +46,10 @@ private:
     unsigned char iv[16];
     unsigned int mOrigChecsum[4];
     unsigned int mCalculateChecksum[4];
+    ModuleType      mModule;
 };
 
-#ifdef __cplusplus
-}
-#endif //__cplusplus
+int __EncryptTestMain(int argc, char **argv);
+}; /* namespace sirius */
 
 #endif //__CRYPTOAES_H_

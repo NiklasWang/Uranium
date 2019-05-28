@@ -7,9 +7,10 @@
 #include <CryptoAes.h>
 
 using namespace std;
-
-const struct option long_opts[] =
+namespace uranium
 {
+
+const struct option long_opts[] = {
     {"encfile", 1, 0, 'e'},
     {"decfile", 1, 0, 'd'},
     {"help", 0, 0, 'h'},
@@ -25,7 +26,7 @@ int Usarge(char *argv0)
     return 0;
 }
 
-int main(int argc, char **argv)
+int __EncryptTestMain(int argc, char **argv)
 {
     int ret = 0;
     unsigned int origChecsum[4];
@@ -37,17 +38,14 @@ int main(int argc, char **argv)
     string origFile;
     string destFile;
 
-    static const unsigned char key16[16] =
-    {
+    static const unsigned char key16[16] = {
         0x12, 0x34, 0x56, 0x78, 0x9a, 0xbc, 0xde, 0xf0,
         0x34, 0x56, 0x78, 0x9a, 0xbc, 0xde, 0xf0, 0x12
     };
 
     int c = 0;
-    while ((c = getopt_long(argc, argv, "edh", long_opts, NULL)) != -1)
-    {
-        switch (c)
-        {
+    while ((c = getopt_long(argc, argv, "edh", long_opts, NULL)) != -1) {
+        switch (c) {
             case 'e':
                 flageEncrypt = 1;
                 break;
@@ -61,44 +59,41 @@ int main(int argc, char **argv)
         }
     }
 
-    if (optind >= argc || (flageEncrypt == flageDecrypt))
-    {
+    if (optind >= argc || (flageEncrypt == flageDecrypt)) {
         Usarge(argv[0]);
         return -1;
     }
 
-    if (argv[optind] == NULL || NULL == argv[optind + 1])
-    {
+    if (argv[optind] == NULL || NULL == argv[optind + 1]) {
         Usarge(argv[0]);
         return -1;
     }
+    /* storage parameter */
     origFile = argv[optind];
     destFile = argv[optind + 1];
-    if (flageEncrypt)
-    {
+
+    if (flageEncrypt) {
         aes.encryptStream(origFile, destFile, key16);
     }
     // aes.decryptStream("EncryFile", "DecryFile", key16);
-    if (flageDecrypt)
-    {
+    if (flageDecrypt) {
         ret = aes.decryptStream(origFile, destFile, key16, origChecsum, destChecsum);
-        if (ret != 0)
-        {
+        if (ret != 0) {
             return ret;
         }
         printf("File orig      checsum=");
-        for (i = 0; i < 4; i++)
-        {
+        for (i = 0; i < 4; i++) {
             printf("%08x", origChecsum[i]);
         }
         printf("\n");
 
         printf("File calculate checsum=");
-        for (i = 0; i < 4; i++)
-        {
+        for (i = 0; i < 4; i++) {
             printf("%08x", destChecsum[i]);
         }
         printf("\n");
     }
     return 0;
 }
+
+};
