@@ -1,17 +1,16 @@
 CXX      = $(GLOBAL_CXX)
 CXXFLAGS = $(GLOBAL_CXXFLAGS)
 LDFLAGS = $(GLOBAL_LDFLAGS)
-INCLUDES = $(patsubst $(ROOT_DIR)/%, %, $(shell pwd)) $(GLOBAL_INCLUDES) socket
 
 TARGET      = client_tester
 sources     = client_tester.cpp
 objects     = $(sources:.cpp=.o)
 dependence := $(sources:.cpp=.d)
 
-CXXFLAGS += $(patsubst %, -I$(ROOT_DIR)/%, $(INCLUDES))
-LDFLAGS  += -L $(ROOT_DIR)/log -Wl,-Bstatic -llog
-LDFLAGS  += -L $(ROOT_DIR)/utils -lutils -Wl,-Bdynamic
-LDFLAGS  += -L $(ROOT_DIR)/socket -lsocket
+SHARED_LIBS = $(GLOBAL_SHARED_LIBS) libsocket
+STATIC_LIBS = $(GLOBAL_STATIC_LIBS)
+
+include $(MAKE_RULE)/find.library.make.rule 
 
 -include $(dependence)
 

@@ -1,18 +1,16 @@
 CXX      = $(GLOBAL_CXX)
 CXXFLAGS = $(GLOBAL_CXXFLAGS)
 LDFLAGS  = $(GLOBAL_LDFLAGS)
-INCLUDES = $(patsubst $(ROOT_DIR)/%, %, $(shell pwd)) $(GLOBAL_INCLUDES)
 
 TARGET      = libsocket$(strip $(DYLIB_EXT))
 sources     = $(wildcard *.cpp)
 objects     = $(sources:.cpp=.o)
 dependence := $(sources:.cpp=.d)
 
-CXXFLAGS += $(patsubst %, -I$(ROOT_DIR)/%, $(INCLUDES))
-LDFLAGS  += -fPIC -shared -pthread
-LDFLAGS  += -L $(ROOT_DIR)/log -Wl,-Bstatic -llog
-LDFLAGS  += -L $(ROOT_DIR)/utils -lutils
-LDFLAGS  += -L $(ROOT_DIR)/utils/sp -lsp -Wl,-Bdynamic
+SHARED_LIBS = $(GLOBAL_SHARED_LIBS) libthreads
+STATIC_LIBS = $(GLOBAL_STATIC_LIBS)
+
+include $(MAKE_RULE)/find.library.make.rule 
 
 -include $(dependence)
 

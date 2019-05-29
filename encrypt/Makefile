@@ -2,18 +2,16 @@ CXX      = $(GLOBAL_CXX)
 AR       = $(GLOBAL_AR)
 CXXFLAGS = $(GLOBAL_CXXFLAGS)
 ARFLAGS  = $(GLOBAL_ARFLAGS) rcs
-INCLUDES = $(patsubst $(ROOT_DIR)/%, %, $(shell pwd)) $(GLOBAL_INCLUDES)
 
 TARGET      = crypto_aes_tester
 sources     = $(wildcard *.cpp)
 objects     = $(sources:.cpp=.o)
 dependence := $(sources:.cpp=.d)
 
-CXXFLAGS += $(patsubst %, -I$(ROOT_DIR)/%, $(INCLUDES)) -I./
-CXXFLAGS += -I$(ROOT_DIR)/external/md5sum_sha1sum -I$(ROOT_DIR)/external/aes
-LDFLAGS  += -L $(ROOT_DIR)/external/md5sum_sha1sum/ -Wl,-Bstatic -lmd5sum_sha1sum
-LDFLAGS  += -L $(ROOT_DIR)/external/aes -laes 
-LDFLAGS  += -L$(ROOT_DIR)/log -llog -L$(ROOT_DIR)/utils -lutils -Wl,-Bdynamic
+SHARED_LIBS = $(GLOBAL_SHARED_LIBS)
+STATIC_LIBS = $(GLOBAL_STATIC_LIBS) libaes libmd5sum_sha1sum
+
+include $(MAKE_RULE)/find.library.make.rule
 
 -include $(dependence)
 

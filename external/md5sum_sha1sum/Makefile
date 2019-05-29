@@ -2,14 +2,16 @@ CC       = $(GLOBAL_CC)
 AR       = $(GLOBAL_AR)
 CFLAGS   = $(GLOBAL_CFLAGS)
 ARFLAGS  = $(GLOBAL_ARFLAGS) rcs
-INCLUDES = $(patsubst $(ROOT_DIR)/%, %, $(shell pwd)) $(GLOBAL_INCLUDES)
 
 TARGET      = libmd5sum_sha1sum$(strip $(STLIB_EXT))
 sources     = $(wildcard *.c)
 objects     = $(sources:.c=.o)
 dependence := $(sources:.c=.d)
 
-CXXFLAGS += $(patsubst %, -I$(ROOT_DIR)/%, $(INCLUDES))
+SHARED_LIBS = $(GLOBAL_SHARED_LIBS)
+STATIC_LIBS = $(GLOBAL_STATIC_LIBS)
+
+include $(MAKE_RULE)/find.library.make.rule 
 
 -include $(dependence)
 

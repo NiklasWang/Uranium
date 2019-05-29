@@ -2,14 +2,16 @@ CXX      = $(GLOBAL_CXX)
 AR       = $(GLOBAL_AR)
 CXXFLAGS = $(GLOBAL_CXXFLAGS)
 ARFLAGS  = $(GLOBAL_ARFLAGS) rcs
-INCLUDES = $(patsubst $(ROOT_DIR)/%, %, $(shell pwd)) $(GLOBAL_INCLUDES)
 
 TARGET      = libutils$(strip $(STLIB_EXT))
 sources     = $(wildcard *.cpp)
 objects     = $(sources:.cpp=.o)
 dependence := $(sources:.cpp=.d)
 
-CXXFLAGS += $(patsubst %, -I$(ROOT_DIR)/%, $(INCLUDES))
+SHARED_LIBS = $(GLOBAL_SHARED_LIBS)
+STATIC_LIBS = $(GLOBAL_STATIC_LIBS)
+
+include $(MAKE_RULE)/find.library.make.rule 
 
 -include $(dependence)
 

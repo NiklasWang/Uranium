@@ -1,15 +1,17 @@
 CC       = $(GLOBAL_CC)
 AR       = $(GLOBAL_AR)
-CFLAGS   = $(GLOBAL_CFLAGS)
+CFLAGS   = $(GLOBAL_CFLAGS) -Wno-cpp
 ARFLAGS  = $(GLOBAL_ARFLAGS) rcs
-INCLUDES = $(patsubst $(ROOT_DIR)/%, %, $(shell pwd)) $(GLOBAL_INCLUDES)
 
 TARGET      = libuuid$(strip $(STLIB_EXT))
 sources     = $(wildcard *.c)
 objects     = $(sources:.c=.o)
 dependence := $(sources:.c=.d)
 
-CFLAGS += $(patsubst %, -I$(ROOT_DIR)/%, $(INCLUDES)) -I./ -Wno-cpp
+SHARED_LIBS = $(GLOBAL_SHARED_LIBS)
+STATIC_LIBS = $(GLOBAL_STATIC_LIBS)
+
+include $(MAKE_RULE)/find.library.make.rule 
 
 -include $(dependence)
 
