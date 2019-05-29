@@ -13,21 +13,22 @@
 
 #include <iostream>
 #include <string>
+#include <stdio.h>
+#include <string.h>
+#include <math.h>
+#include <time.h>
+
 #include "common.h"
 #include "logs.h"
+#include "MemMgmt.h"
 #include "CryptoAes.h"
 #include "md5.h"
 #include "sha.h"
-extern "C" {
-#include <stdio.h>
-#include <string.h>
 #include "aes.h"
-#include <math.h>
-#include <time.h>
-}
 
-namespace uranium
-{
+
+namespace uranium {
+
 #define ROUND(r)        ((r > 0.0) ? floor(r + 0.5) : ceil(r - 0.5))
 using namespace std;
 
@@ -400,4 +401,5 @@ int CryptoAes::decryptStream(const std::string& origFile, const std::string& des
     memcpy(calculateChecksum, mCalculateChecksum, sizeof(mCalculateChecksum));
     return rc;
 }
-} /* namespace sirius */
+
+}
