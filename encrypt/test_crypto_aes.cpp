@@ -1,3 +1,15 @@
+/**
+ * @file test_crypto_aes.cpp
+ * @brief
+ * @author  Lenovo  <NULL@lenovo.com>
+ * @version 1.0.0
+ * @date 2019-05-29
+ */
+/* Copyright(C) 2009-2017, Itarge Inc.
+ * All right reserved
+ *
+ */
+
 #include <stdio.h>
 #include <getopt.h>
 #include <string.h>
@@ -17,6 +29,15 @@ const struct option long_opts[] = {
     {},
 };
 
+/* --------------------------------------------------------------------------*/
+/**
+ * @brief Usarge
+ *
+ * @param argv0
+ *
+ * @return
+ */
+/* --------------------------------------------------------------------------*/
 int Usarge(char *argv0)
 {
     cout << "Usage: " << argv0 << "origfile encryfile  [-e/-d]" << endl;
@@ -26,6 +47,16 @@ int Usarge(char *argv0)
     return 0;
 }
 
+/* --------------------------------------------------------------------------*/
+/**
+ * @brief __EncryptTestMain
+ *
+ * @param argc
+ * @param argv
+ *
+ * @return
+ */
+/* --------------------------------------------------------------------------*/
 int __EncryptTestMain(int argc, char **argv)
 {
     int ret = 0;
@@ -75,7 +106,6 @@ int __EncryptTestMain(int argc, char **argv)
     if (flageEncrypt) {
         aes.encryptStream(origFile, destFile, key16);
     }
-    // aes.decryptStream("EncryFile", "DecryFile", key16);
     if (flageDecrypt) {
         ret = aes.decryptStream(origFile, destFile, key16, origChecsum, destChecsum);
         if (ret != 0) {
