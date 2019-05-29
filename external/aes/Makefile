@@ -1,15 +1,15 @@
 CC       = $(GLOBAL_CC)
 AR       = $(GLOBAL_AR)
-CFLAGS   = $(GLOBAL_CFLAGS)
-ARFLAGS  = $(GLOBAL_ARFLAGS) rcs
+CFLAGS   =
+ARFLAGS  = rcs
 
 TARGET      = libaes$(strip $(STLIB_EXT))
 sources     = $(wildcard *.c)
 objects     = $(sources:.c=.o)
 dependence := $(sources:.c=.d)
 
-SHARED_LIBS = $(GLOBAL_SHARED_LIBS)
-STATIC_LIBS = $(GLOBAL_STATIC_LIBS)
+SHARED_LIBS =
+STATIC_LIBS =
 
 include $(MAKE_RULE)/find.library.make.rule
 
@@ -21,6 +21,6 @@ all: $(objects)
 	$(AR) $(ARFLAGS) $(TARGET) $^
 
 clean:
-	rm -rf $(TARGET) $(objects) $(dependence) *.d.*
+	rm -rf $(TARGET) $(objects) $(dependence) *.d*
 
 .PHONY: all clean
