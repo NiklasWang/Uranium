@@ -23,6 +23,6 @@ all: $(objects)
 	$(CXX) $^ $(LDFLAGS) -o $(TARGET)
 
 clean:
-	rm -rf $(TARGET) $(objects) $(dependence) *.d.* *.o
+	rm -rf $(TARGET) $(objects) $(dependence) *.d.*
 
 .PHONY: clean

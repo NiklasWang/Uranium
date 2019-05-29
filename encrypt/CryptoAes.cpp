@@ -1,3 +1,15 @@
+/**
+ * @file CryptoAes.cpp
+ * @brief  encrypt files
+ * @author  lenovo <who@lenovo.com>
+ * @version 1.0.0
+ * @date 2019-05-29
+ */
+
+/* Copyright(C) 2009-2019, Lenovo Inc.
+ * All right reserved
+ *
+ */
 
 #include <iostream>
 #include <string>
@@ -10,11 +22,13 @@ extern "C" {
 #include <stdio.h>
 #include <string.h>
 #include "aes.h"
+#include <math.h>
+#include <time.h>
 }
 
 namespace uranium
 {
-
+#define ROUND(r)        ((r > 0.0) ? floor(r + 0.5) : ceil(r - 0.5))
 using namespace std;
 
 #define CHECK_ERROR(cond, retval, lable, fmt, args...)  \
@@ -28,17 +42,106 @@ do {                                                            \
     }                                                           \
 } while(0)
 
+/* --------------------------------------------------------------------------*/
+/**
+ * @brief CryptoAes
+ *
+ * @param ):
+ */
+/* --------------------------------------------------------------------------*/
 CryptoAes::CryptoAes():
-    mModule(MODULE_ENCRYPT)
+    mModule(MODULE_ENCRYPT),
+    mEncTime(0)
 {
-
+    mEncTime = 0;
+    mKeys = (unsigned char *) malloc(sizeof(unsigned char) * 1000 * 16);
+    ASSERT_LOG(mModule, ISNULL(mKeys), "Malloc memory failed!\n");
+    cryptoMakeKeys();
 }
 
+/* --------------------------------------------------------------------------*/
+/**
+ * @brief ~CryptoAes
+ */
+/* --------------------------------------------------------------------------*/
 CryptoAes::~CryptoAes()
 {
-
+    SECURE_FREE(mKeys);
 }
 
+/* --------------------------------------------------------------------------*/
+/**
+ * @brief randomRange
+ *
+ * @param a
+ * @param b
+ *
+ * @return
+ */
+/* --------------------------------------------------------------------------*/
+double CryptoAes::randomRange(double a, double b)
+{
+    double x = (double) rand() / RAND_MAX;
+    double result = x * (b - a) + a;
+    return ROUND(result);
+}
+
+/* --------------------------------------------------------------------------*/
+/**
+ * @brief cryptoMakeKeys
+ */
+/* --------------------------------------------------------------------------*/
+void CryptoAes::cryptoMakeKeys(void)
+{
+    for (int i = 0; i < 1000 * 16; i++) {
+        mKeys[i] = (unsigned char) randomRange(0, 0xFF);
+    }
+}
+
+/* --------------------------------------------------------------------------*/
+/**
+ * @brief getCryptoKeys
+ *
+ * @return
+ */
+/* --------------------------------------------------------------------------*/
+const unsigned char* CryptoAes::getCryptoKeys(void)
+{
+    return mKeys;
+}
+
+/* --------------------------------------------------------------------------*/
+/**
+ * @brief encryptStream
+ *
+ * @param origFile
+ * @param destFile
+ *
+ * @return
+ */
+/* --------------------------------------------------------------------------*/
+int CryptoAes::encryptStream(const string& origFile, const string& destFile)
+{
+    unsigned char *keyTemp = NULL;
+
+    /* Calculate the key by times */
+    mEncTime = time(NULL);
+    keyTemp = &mKeys[(mEncTime % 1000) * 16];
+
+    return encryptStream(origFile, destFile, (const unsigned char *)keyTemp);
+}
+
+/* --------------------------------------------------------------------------*/
+/**
+ * @brief encryptStream
+ *
+ * @param origFile
+ * @param destFile
+ * @param key16
+ *
+ * @return
+ */
+/* --------------------------------------------------------------------------*/
 int CryptoAes::encryptStream(const string& origFile, const string& destFile, const unsigned char* key16)
 {
     FILE *pOrigStream = NULL;
@@ -52,6 +155,7 @@ int CryptoAes::encryptStream(const string& origFile, const string& destFile, con
     AES_KEY aesKs;
     int rc = 0;
     size_t return_size = 0;
+    FILE_HEADER_T *pEncFileHeader = NULL;
 
     pOrigStream = fopen(origFile.c_str(), "r");
     CHECK_ERROR(ISNULL(pOrigStream), -1, err, "open file %s failed\n");
@@ -93,16 +197,22 @@ int CryptoAes::encryptStream(const string& origFile, const string& destFile, con
     /* let's 16-byte alignment */
     destFileLength = origFileLength + sizeof(aes_data_head_t);
     destFileLength = (destFileLength & 0xF) ? ((destFileLength + 0x10) & (~0xF)) : destFileLength;
+    destFileLength += sizeof(FILE_HEADER_T);
+
 
     /* malloc buffer storage enc data */
     pDestBuffer = new char[destFileLength];
     CHECK_ERROR(ISNULL(pDestBuffer), -4, err, "out of memory\n");
 
+    /* storage start encfile times */
+    pEncFileHeader = (FILE_HEADER_T *) pDestBuffer;
+    pEncFileHeader->start_time = mEncTime;
+    cout << "enc time " << pEncFileHeader->start_time << endl;
     /* make keys */
     private_AES_set_encrypt_key(key16, 128, &aesKs);
     /* encry files */
     memset(iv, 0, sizeof(iv));
-    AES_cbc_encrypt((const unsigned char*) pOrigBuffer, (unsigned char *) pDestBuffer, (origFileLength + sizeof(aes_data_head_t)), &aesKs, iv, 1);
+    AES_cbc_encrypt((const unsigned char*) pOrigBuffer, (unsigned char *)(pDestBuffer + sizeof(FILE_HEADER_T)), (origFileLength + sizeof(aes_data_head_t)), &aesKs, iv, 1);
 
     /* open or create new file to storage encry data */
     pDestStream = fopen(destFile.c_str(), "w+");
@@ -125,10 +235,21 @@ err:
     SECURE_DELETE(pOrigBuffer);
 
     SECURE_DELETE(pDestBuffer);
-
+    mEncTime = 0;
     return rc;
 }
 
+/* --------------------------------------------------------------------------*/
+/**
+ * @brief decryptStream
+ *
+ * @param origFile
+ * @param destFile
+ * @param key16
+ *
+ * @return
+ */
+/* --------------------------------------------------------------------------*/
 int CryptoAes::decryptStream(const string& origFile, const string& destFile, const unsigned char* key16)
 {
     FILE *pOrigStream = NULL;
@@ -142,10 +263,12 @@ int CryptoAes::decryptStream(const string& origFile, const string& destFile, con
     AES_KEY aesKs;
     int rc = 0;
     size_t return_size = 0;
+    time_t endTime;
+    const unsigned char *pkerTemp = key16;
+    FILE_HEADER_T * pEncFileHeader = NULL;
 
     pOrigStream = fopen(origFile.c_str(), "r");
     CHECK_ERROR(ISNULL(pOrigStream), -1, err, "open file %s filed!\n", origFile.c_str());
-
 
     /* get file lenght */
     fseek(pOrigStream, 0, SEEK_END);
@@ -162,16 +285,31 @@ int CryptoAes::decryptStream(const string& origFile, const string& destFile, con
     return_size = fread(pOrigBuffer, 1, origFileLength, pOrigStream);
     CHECK_ERROR(!EQUALPTR(return_size, origFileLength), -3, err, "read file cout failed! origFileLenght=%ld readFileLenght=%ld\n",
                 origFileLength, return_size);
+    /* check for timeout */
+    pEncFileHeader = (FILE_HEADER_T *) pOrigBuffer;
+    endTime = time(NULL);
+    cout << "dec time " << pEncFileHeader->start_time << endl;
+    if (!ISZERO(pEncFileHeader->start_time)) {
+        CHECK_ERROR((pEncFileHeader->start_time > endTime) || (pEncFileHeader->start_time + MAX_DENC_TIMES) < endTime,
+                    -6, err, "out of times\n");
+        /* generate enc keys */
+        pkerTemp = &mKeys[(pEncFileHeader->start_time % 1000) * 16];
+    }
 
-    /* malloc buffer storage enc data */
+    if (ISNULL(pkerTemp)) {
+        pkerTemp = &mKeys[(pEncFileHeader->start_time % 1000) * 16];
+    }
+
+    /* malloc buffer to storage enc data */
     pDestBuffer = new char[origFileLength];
     CHECK_ERROR(ISNULL(pDestBuffer), -4, err, "out of memory!\n");
 
     /* make keys */
-    private_AES_set_decrypt_key(key16, 128, &aesKs);
+    private_AES_set_decrypt_key(pkerTemp, 128, &aesKs);
     /* encry files */
     memset(iv, 0, sizeof(iv));
-    AES_cbc_encrypt((const unsigned char *)pOrigBuffer, (unsigned char *) pDestBuffer, origFileLength, &aesKs, iv, 0);
+    AES_cbc_encrypt((const unsigned char *)(pOrigBuffer + sizeof(FILE_HEADER_T)), (unsigned char *) pDestBuffer,
+                    origFileLength - sizeof(FILE_HEADER_T), &aesKs, iv, 0);
 
     pAesExternHeader = reinterpret_cast<aes_data_head_t *>(pDestBuffer);
     /* examale decry file data is success */
@@ -205,10 +343,50 @@ err:
 
     SECURE_DELETE(pOrigBuffer);
     SECURE_DELETE(pDestBuffer);
+    mEncTime  = 0;
 
     return rc;
 }
 
+/* --------------------------------------------------------------------------*/
+/**
+ * @brief decryptStream
+ *
+ * @param origFile
+ * @param destFile
+ * @param &origChecksum
+ * @param &calculateChecksum
+ *
+ * @return
+ */
+/* --------------------------------------------------------------------------*/
+int CryptoAes::decryptStream(const std::string& origFile, const std::string& destFile,
+                             unsigned int (&origChecksum)[4], unsigned int (&calculateChecksum)[4])
+{
+    int rc = 0;
+    rc = decryptStream(origFile, destFile, NULL);
+    if (FAILED(rc)) {
+        return rc;
+    }
+
+    memcpy(origChecksum, mOrigChecsum, sizeof(mOrigChecsum));
+    memcpy(calculateChecksum, mCalculateChecksum, sizeof(mCalculateChecksum));
+    return rc;
+}
+
+/* --------------------------------------------------------------------------*/
+/**
+ * @brief decryptStream
+ *
+ * @param origFile
+ * @param destFile
+ * @param key16
+ * @param &origChecksum
+ * @param &calculateChecksum
+ *
+ * @return
+ */
+/* --------------------------------------------------------------------------*/
 int CryptoAes::decryptStream(const std::string& origFile, const std::string& destFile, const unsigned char* key16,
                              unsigned int (&origChecksum)[4], unsigned int (&calculateChecksum)[4])
 {
@@ -220,6 +398,6 @@ int CryptoAes::decryptStream(const std::string& origFile, const std::string& des
 
     memcpy(origChecksum, mOrigChecsum, sizeof(mOrigChecsum));
     memcpy(calculateChecksum, mCalculateChecksum, sizeof(mCalculateChecksum));
-    return 0;
+    return rc;
 }
 } /* namespace sirius */
