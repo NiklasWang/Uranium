@@ -1,0 +1,7 @@
+Thread pool
+
+- Powerful and easy to create new thread
+- Lambda support
+- Single thread module
+
+Check ThreadPool.h / ThreadPoolEx.h

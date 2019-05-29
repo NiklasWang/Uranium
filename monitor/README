@@ -1,0 +1,5 @@
+Monitor system
+
+- Monitor local file changes, one thread
+- Monitor remote file changes, one thread
+- Monitor remote command line execution request

@@ -1,0 +1,5 @@
+Transmission data through network
+
+- Transmit command lines
+- Transmit data (raw)
+  - Don't care the content of data, should processed by 'core' module

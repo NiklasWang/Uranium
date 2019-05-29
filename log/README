@@ -1,0 +1,11 @@
+Log print and save system
+
+- Save log to file system
+- Print log as different level
+  - error
+  - warning
+  - information
+  - fatal
+  - assert
+- Auto fill process id, thread id, date, time, \
+  module location, file name, function name, line number etc.

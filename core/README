@@ -1,0 +1,11 @@
+Core of Uranium
+
+- Core control of all other modules
+- Encryption control
+- Generate raw data to transmate
+- Data transmission control through network
+- Configuration control (gui options)
+- Monitor event processing
+  - client files updated
+  - server files updated
+  - remote command line request

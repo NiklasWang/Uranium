@@ -1,0 +1,10 @@
+A simple shell implementation
+
+- User can input command lines in client gui
+- Send command lines from client to server through network
+- Server received command line and execute
+- Save the output of command line, send back to client
+- Display the result on client gui
+
+- Runing on a separated thread
+- Data transmittion through 'transmission' module

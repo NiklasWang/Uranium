@@ -1,0 +1,10 @@
+GUI system
+
+- Select which directory to monitor, multi-directory support
+- A simple command shell to run commands on server
+- Configurations
+  - Debug mode
+  - Master / slave mode selection
+  - Username, password, etc
+- Save configurations
+- Encryption is a must option

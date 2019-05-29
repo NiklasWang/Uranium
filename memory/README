@@ -1,0 +1,8 @@
+Memory Management
+
+- Track all allocated memory
+- Memory leakage check
+- Memory override check
+- Memory pool support to accelerate allocation
+- Memory invalid usage check
+- Count memory usage and set limitation

@@ -1,0 +1,8 @@
+External module
+
+All external modules which is depended on.
+
+- sha1sum from coreutils
+- md5sum from coreutils
+- libuuid
+- AES encryption / decryption function form openssl
