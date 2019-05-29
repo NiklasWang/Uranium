@@ -172,7 +172,7 @@ int CryptoAes::encryptStream(const string& origFile, const string& destFile, con
     CHECK_ERROR(ISNULL(pOrigBuffer), -2, err, "Out of memory");
 
     /* memset */
-    memset(pOrigBuffer, 0, (size_t) sizeof(pOrigBuffer));
+    memset(pOrigBuffer, 0, sizeof(aes_data_head_t));
 
     pAesExternHeader = reinterpret_cast<aes_data_head_t *>(pOrigBuffer);
     pFileStart = pOrigBuffer +  sizeof(aes_data_head_t);
@@ -280,7 +280,7 @@ int CryptoAes::decryptStream(const string& origFile, const string& destFile, con
     pOrigBuffer = new char[origFileLength];
     CHECK_ERROR(ISNULL(pOrigBuffer), -2, err, "out of memory\n");
 
-    memset(pOrigBuffer, 0, (size_t) sizeof(pOrigBuffer));
+    memset(pOrigBuffer, 0, origFileLength);
 
     /* read file data */
     return_size = fread(pOrigBuffer, 1, origFileLength, pOrigStream);
