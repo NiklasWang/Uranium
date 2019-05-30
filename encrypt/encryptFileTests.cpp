@@ -16,7 +16,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <iostream>
-#include <CryptoAes.h>
+#include <EncryptFile.h>
 
 using namespace std;
 namespace uranium
@@ -29,15 +29,6 @@ const struct option long_opts[] = {
     {},
 };
 
-/* --------------------------------------------------------------------------*/
-/**
- * @brief Usarge
- *
- * @param argv0
- *
- * @return
- */
-/* --------------------------------------------------------------------------*/
 int Usarge(char *argv0)
 {
     cout << "Usage: " << argv0 << "origfile encryfile  [-e/-d]" << endl;
@@ -47,16 +38,6 @@ int Usarge(char *argv0)
     return 0;
 }
 
-/* --------------------------------------------------------------------------*/
-/**
- * @brief __EncryptTestMain
- *
- * @param argc
- * @param argv
- *
- * @return
- */
-/* --------------------------------------------------------------------------*/
 int __EncryptTestMain(int argc, char **argv)
 {
     int ret = 0;
@@ -65,7 +46,7 @@ int __EncryptTestMain(int argc, char **argv)
     unsigned int flageEncrypt = 0;
     unsigned int flageDecrypt = 0;
     int i = 0;
-    CryptoAes aes;
+    EncryptFile aes;
     string origFile;
     string destFile;
 

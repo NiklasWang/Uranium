@@ -9,7 +9,7 @@ objects     = $(sources:.cpp=.o)
 dependence := $(sources:.cpp=.d)
 
 SHARED_LIBS = $(GLOBAL_SHARED_LIBS)
-STATIC_LIBS = $(GLOBAL_STATIC_LIBS) libaes libmd5sum_sha1sum
+STATIC_LIBS = $(GLOBAL_STATIC_LIBS) libaes libmd5sum_sha1sum libuuid
 
 include $(MAKE_RULE)/find.library.make.rule
 
