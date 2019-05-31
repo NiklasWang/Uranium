@@ -1,14 +1,15 @@
 CXX      = $(GLOBAL_CXX)
+AR       = $(GLOBAL_AR)
 CXXFLAGS = $(GLOBAL_CXXFLAGS)
-LDFLAGS  = $(GLOBAL_LDFLAGS)
+ARFLAGS  = $(GLOBAL_ARFLAGS) rcs
 
-TARGET      = libtransmission$(strip $(DYLIB_EXT))
+TARGET      = transmission_test
 sources     = $(wildcard *.cpp)
 objects     = $(sources:.cpp=.o)
 dependence := $(sources:.cpp=.d)
 
-SHARED_LIBS = $(GLOBAL_SHARED_LIBS)
-STATIC_LIBS = $(GLOBAL_STATIC_LIBS)
+SHARED_LIBS = $(GLOBAL_SHARED_LIBS) libtransmission 
+STATIC_LIBS = $(GLOBAL_STATIC_LIBS) 
 
 include $(MAKE_RULE)/find.library.make.rule
 
@@ -16,14 +17,10 @@ include $(MAKE_RULE)/find.library.make.rule
 
 include $(MAKE_RULE)/dependency.make.rule
 
-include $(MAKE_RULE)/submodule.make.rule
-
-lib: $(objects)
+all: $(objects)
 	$(CXX) $^ $(LDFLAGS) -o $(TARGET)
 
-all: lib $(MAKE_SUB_MODULES)
-
-clean: $(CLEAN_SUB_MODULES)
+clean:
 	rm -rf $(TARGET) $(objects) $(dependence) *.d.*
 
-.PHONY: clean $(MAKE_SUB_MODULES) $(CLEAN_SUB_MODULES)
+.PHONY: clean
