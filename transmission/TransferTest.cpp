@@ -58,7 +58,10 @@ int __TransferMain(int argc, char **argv)
         pTransManage->pushData(*pTranBuffer);
     }
 
-    destoryTransferBuffer(pCmdBuf);
+    if (!ISNULL(pTranBuffer)) {
+        pTransManage->destoryTransferBuffer(pTranBuffer);
+    }
+
     free(pCmdBuf);
 
     return rc;
