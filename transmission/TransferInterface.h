@@ -21,9 +21,14 @@ typedef enum TRANSFER_MODE_ENUM {
     TRAN_MODE_SOCKET
 } TRANSFER_MODE_E;
 
+typedef enum TRANSFER_STATUS_ENUM {
+    TRAN_CLINET,
+    TRANS_SERVER
+} TRANSFER_STATUS_E;
+
 typedef struct  TRANSFER_BUFFER_TAG {
     TRANSFER_MODE_E mode;
-    void            *buffer;
+    void         *buffer;
     uint32_t        length;
 } TRANSFER_BUFFER_T;
 
@@ -38,7 +43,8 @@ public:
     TRANSFER_BUFFER_T* createTransferBuffer(TRANSFER_MODE_E mode,  void *pBuffer, uint32_t length);
     void destoryTransferBuffer(const TRANSFER_BUFFER_T* pTransBuf);
 private:
-    ModuleType      mModule;
+    ModuleType          mModule;
+    TRANSFER_STATUS_E   mTranDirct;
 };
 
 extern int __TransferMain(int argc, char **argv);

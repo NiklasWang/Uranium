@@ -21,7 +21,7 @@ class TransferFactory
 public:
     static TransferFactory* create();
     void destory();
-    TransferManager* createTransferObject(const TRANSFER_MODE_ENUM transModes);
+    TransferManager* createTransferObject(const TRANSFER_MODE_ENUM transModes, TRANSFER_STATUS_E tranDirct);
 private:
     TransferFactory() = default;
     ~TransferFactory();

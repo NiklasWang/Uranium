@@ -29,12 +29,12 @@ void TransferFactory::destory()
     delete this;
 }
 
-TransferManager* TransferFactory::createTransferObject(const TRANSFER_MODE_ENUM transModes)
+TransferManager* TransferFactory::createTransferObject(const TRANSFER_MODE_ENUM transModes, TRANSFER_STATUS_E tranDirct)
 {
     TransferManager *pManager = NULL;
     switch (transModes) {
         case TRAN_MODE_FEX:
-            pManager = new FexTransfer;
+            pManager = new FexTransfer(tranDirct);
             break;
         default:
             pManager = NULL;

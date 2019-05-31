@@ -9,6 +9,7 @@
  * All right reserved
  *
  */
+#include <iostream>
 
 #include "common.h"
 #include "TransferInterface.h"
@@ -28,7 +29,7 @@ int __TransferMain(int argc, char **argv)
     int32_t rc = 0;
 
     if (!ISNULL(pFactory)) {
-        pTransManage = pFactory->createTransferObject(TRAN_MODE_FEX);
+        pTransManage = pFactory->createTransferObject(TRAN_MODE_FEX, TRAN_CLINET);
         if (ISNULL(pTransManage)) {
             rc = -1;
             printf("create failed!\n");
@@ -52,10 +53,20 @@ int __TransferMain(int argc, char **argv)
     if (SUCCEED(rc)) {
         memset(pCmdBuf, 0, 1024);
         sprintf((char *)pCmdBuf, "fex -l > /tmp/lhb.bin");
-        pTransManage->pullData(*pTranBuffer);
-        memset(pCmdBuf, 0, 1024);
-        sprintf((char *)pCmdBuf, "fex -u /tmp/transfer_test");
-        pTransManage->pushData(*pTranBuffer);
+        rc = pTransManage->pullData(*pTranBuffer);
+        if (SUCCEED(rc)) {
+            std::cout << "get data length = " << pTranBuffer->length << "data=";
+            printf("%s\n", (char*) pTranBuffer->buffer);
+
+            std::cout << "file length = " << strlen((const char*)pCmdBuf) << std::endl;
+            memset(pCmdBuf, 0, 1024);
+            sprintf((char *)pCmdBuf, "fex -u /tmp/transfer_test");
+            pTranBuffer->length = strlen((const char *)pCmdBuf);
+            pTransManage->pushData(*pTranBuffer);
+        } else {
+            printf("Pull data failed!");
+        }
+
     }
 
     if (!ISNULL(pTranBuffer)) {
