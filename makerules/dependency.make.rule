@@ -1,3 +1,5 @@
+ifeq ($(findstring clean, $(MAKECMDGOALS)),)
+
 include $(MAKE_RULE)/color.print.make.rule
 
 %.d: %.c
@@ -13,3 +15,5 @@ include $(MAKE_RULE)/color.print.make.rule
 	$(CXX) -MM $(CXXFLAGS) $< > $@.$$$$; \
 	sed 's,\($*\)\.o[ :]*,\1.o $@ : ,g' < $@.$$$$ > $@; \
 	rm -f $@.$$$$
+
+endif
