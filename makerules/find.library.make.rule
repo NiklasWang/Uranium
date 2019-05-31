@@ -1,3 +1,5 @@
+ifeq ($(findstring clean, $(MAKECMDGOALS)),)
+
 STATIC_LIBS := $(filter-out $(basename $(TARGET)), $(STATIC_LIBS))
 SHARED_LIBS := $(filter-out $(basename $(TARGET)), $(SHARED_LIBS))
 
@@ -17,3 +19,5 @@ LDFLAGS  += -Wl,-Bdynamic $(patsubst lib%, -l%, $(SHARED_LIBS))
 CFLAGS   := $(shell echo $(CFLAGS) | tr -s ' ')
 CXXFLAGS := $(shell echo $(CXXFLAGS) | tr -s ' ')
 LDFLAGS  := $(shell echo $(LDFLAGS) | tr -s ' ')
+
+endif

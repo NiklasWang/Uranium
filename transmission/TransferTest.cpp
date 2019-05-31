@@ -22,29 +22,44 @@ namespace  uranium
 int __TransferMain(int argc, char **argv)
 {
     TransferFactory *pFactory = TransferFactory::create();
-    TRANSFER_BUFFER_T tranBuffer;
+    TRANSFER_BUFFER_T *pTranBuffer = NULL;
+    int8_t           *pCmdBuf = NULL;
     TransferManager   *pTransManage = NULL;
     int32_t rc = 0;
 
     if (!ISNULL(pFactory)) {
         pTransManage = pFactory->createTransferObject(TRAN_MODE_FEX);
         if (ISNULL(pTransManage)) {
+            rc = -1;
             printf("create failed!\n");
         }
     }
 
     if (SUCCEED(rc)) {
-        tranBuffer.mode = TRAN_MODE_FEX;
-        tranBuffer.buffer = malloc(1024);
-        tranBuffer.length = 1024;
-        sprintf((char *)tranBuffer.buffer, "fex -l > /tmp/lhb.bin");
-        pTransManage->pullData(tranBuffer);
-        memset(tranBuffer.buffer, 0, tranBuffer.length);
-        sprintf((char *)tranBuffer.buffer, "fex -u /tmp/transfer_test");
-        pTransManage->pushData(tranBuffer);
+        pCmdBuf = (int8_t *)malloc(1024);
+        if (ISNULL(pCmdBuf)) {
+            rc = -1;
+            printf("Out of  memory\n");
+        }
+    }
+    if (SUCCEED(rc)) {
+        pTranBuffer = pTransManage->createTransferBuffer(TRAN_MODE_FEX, pCmdBuf, 1024);
+        if (ISNULL(pTranBuffer)) {
+            rc = -1;
+        }
     }
 
-    free(tranBuffer.buffer);
+    if (SUCCEED(rc)) {
+        memset(pCmdBuf, 0, 1024);
+        sprintf((char *)pCmdBuf, "fex -l > /tmp/lhb.bin");
+        pTransManage->pullData(*pTranBuffer);
+        memset(pCmdBuf, 0, 1024);
+        sprintf((char *)pCmdBuf, "fex -u /tmp/transfer_test");
+        pTransManage->pushData(*pTranBuffer);
+    }
+
+    free(pCmdBuf);
+
     return rc;
 }
 

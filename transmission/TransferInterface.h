@@ -34,7 +34,9 @@ public:
     ~TransferManager();
     virtual uint32_t pushData(TRANSFER_BUFFER_T &cmd) = 0;
     virtual uint32_t pullData(TRANSFER_BUFFER_T &cmd) = 0;
-
+    TRANSFER_BUFFER_T* createTransferBuffer(void);
+    TRANSFER_BUFFER_T* createTransferBuffer(TRANSFER_MODE_E mode,  void *pBuffer, uint32_t length);
+    void destoryTransferBuffer(const TRANSFER_BUFFER_T* pTransBuf);
 private:
     ModuleType      mModule;
 };
