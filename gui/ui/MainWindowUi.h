@@ -37,28 +37,32 @@ signals:
 
 private:
     QAction     *mActionAbout;
-    QAction     *mAactionExit;
+    QAction     *mActionExit;
     QWidget     *mCentralWidget;
     QWidget     *mHorizontalLayoutWidget;
     QHBoxLayout *mSettingHorizontalLayout;
     QGroupBox   *mSettingGroupBox;
     QWidget     *mVerticalLayoutWidget;
     QVBoxLayout *mSettingverticalLayout;
-    QFormLayout *mCheckBoxFormLayout;
+    QGridLayout *mCheckBoxGridLayout;
     QCheckBox   *mMasterCheckBox;
-    QCheckBox   *mEncryptionCheckBox;
+    QPushButton *mStartPushButton;
+    QSpacerItem *mCheckBoxHorizontalSpacer;
     QCheckBox   *mDebugCheckBox;
     QCheckBox   *mRemoteControlCheckBox;
+    QCheckBox   *mEncryptionCheckBox;
+    QLabel      *mStatusLabel;
+    QLabel      *mStartedLabel;
     QLabel      *mSettingBlanking1;
     QGridLayout *mInputBoxGridLayout;
+    QLabel      *mLocalDirLabel;
     QLineEdit   *mLocalDirLineEdit;
-    QPushButton *mSelectPushButton;
     QLabel      *mPasswordLabel;
-    QLineEdit   *mPasswordLineEdit;
+    QPushButton *mSelectPushButton;
     QLabel      *mUserNameLabel;
     QLabel      *mRemoteDirLabel;
-    QLabel      *mLocalDirLabel;
     QLineEdit   *mRemoteDirLineEdit;
+    QLineEdit   *mPasswordLineEdit;
     QLineEdit   *mUserNameLineEdit;
     QLabel      *mSettingBlanking2;
     QTextEdit   *mDebugTextEdit;

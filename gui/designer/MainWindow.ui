@@ -13,7 +13,7 @@
   <property name="windowTitle">
    <string>MainWindow</string>
   </property>
-  <widget class="QWidget" name="centralWidget">
+  <widget class="QWidget" name="mCentralWidget">
    <widget class="QWidget" name="horizontalLayoutWidget">
     <property name="geometry">
      <rect>
@@ -33,15 +33,15 @@
         <property name="geometry">
          <rect>
           <x>10</x>
-          <y>30</y>
+          <y>20</y>
           <width>571</width>
-          <height>751</height>
+          <height>761</height>
          </rect>
         </property>
         <layout class="QVBoxLayout" name="mSettingverticalLayout">
          <item>
-          <layout class="QFormLayout" name="mCheckBoxFormLayout">
-           <item row="0" column="0">
+          <layout class="QGridLayout" name="mCheckBoxGridLayout">
+           <item row="1" column="0">
             <widget class="QCheckBox" name="mMasterCheckBox">
              <property name="font">
               <font>
@@ -55,22 +55,45 @@
              </property>
             </widget>
            </item>
-           <item row="1" column="0">
-            <widget class="QCheckBox" name="mEncryptionCheckBox">
+           <item row="0" column="4" rowspan="5">
+            <widget class="QPushButton" name="mStartPushButton">
+             <property name="sizePolicy">
+              <sizepolicy hsizetype="Preferred" vsizetype="Expanding">
+               <horstretch>0</horstretch>
+               <verstretch>0</verstretch>
+              </sizepolicy>
+             </property>
              <property name="font">
               <font>
-               <pointsize>14</pointsize>
+               <family>Consolas</family>
+               <pointsize>22</pointsize>
                <weight>75</weight>
                <bold>true</bold>
               </font>
              </property>
              <property name="text">
-              <string>Encryption</string>
+              <string>Start</string>
              </property>
             </widget>
            </item>
-           <item row="2" column="0">
+           <item row="1" column="1" rowspan="4">
+            <spacer name="mCheckBoxHorizontalSpacer">
+             <property name="orientation">
+              <enum>Qt::Horizontal</enum>
+             </property>
+             <property name="sizeHint" stdset="0">
+              <size>
+               <width>40</width>
+               <height>20</height>
+              </size>
+             </property>
+            </spacer>
+           </item>
+           <item row="3" column="0">
             <widget class="QCheckBox" name="mDebugCheckBox">
+             <property name="enabled">
+              <bool>false</bool>
+             </property>
              <property name="font">
               <font>
                <pointsize>14</pointsize>
@@ -81,9 +104,12 @@
              <property name="text">
               <string>Debug Mode</string>
              </property>
+             <property name="checked">
+              <bool>true</bool>
+             </property>
             </widget>
            </item>
-           <item row="3" column="0">
+           <item row="4" column="0">
             <widget class="QCheckBox" name="mRemoteControlCheckBox">
              <property name="font">
               <font>
@@ -94,6 +120,55 @@
              </property>
              <property name="text">
               <string>Enable Remote Control</string>
+             </property>
+            </widget>
+           </item>
+           <item row="2" column="0">
+            <widget class="QCheckBox" name="mEncryptionCheckBox">
+             <property name="enabled">
+              <bool>false</bool>
+             </property>
+             <property name="font">
+              <font>
+               <pointsize>14</pointsize>
+               <weight>75</weight>
+               <bold>true</bold>
+              </font>
+             </property>
+             <property name="text">
+              <string>Encryption</string>
+             </property>
+             <property name="checkable">
+              <bool>true</bool>
+             </property>
+             <property name="checked">
+              <bool>true</bool>
+             </property>
+            </widget>
+           </item>
+           <item row="1" column="2" rowspan="4">
+            <widget class="QLabel" name="mStatusLabel">
+             <property name="sizePolicy">
+              <sizepolicy hsizetype="Preferred" vsizetype="Expanding">
+               <horstretch>0</horstretch>
+               <verstretch>0</verstretch>
+              </sizepolicy>
+             </property>
+             <property name="text">
+              <string>          </string>
+             </property>
+            </widget>
+           </item>
+           <item row="1" column="3" rowspan="4">
+            <widget class="QLabel" name="mStartedLabel">
+             <property name="sizePolicy">
+              <sizepolicy hsizetype="Preferred" vsizetype="Expanding">
+               <horstretch>0</horstretch>
+               <verstretch>0</verstretch>
+              </sizepolicy>
+             </property>
+             <property name="text">
+              <string>          </string>
              </property>
             </widget>
            </item>
@@ -113,26 +188,24 @@
          </item>
          <item>
           <layout class="QGridLayout" name="mInputBoxGridLayout">
+           <item row="3" column="0">
+            <widget class="QLabel" name="mLocalDirLabel">
+             <property name="font">
+              <font>
+               <pointsize>12</pointsize>
+              </font>
+             </property>
+             <property name="text">
+              <string>Local Directory</string>
+             </property>
+            </widget>
+           </item>
            <item row="3" column="1">
             <widget class="QLineEdit" name="mLocalDirLineEdit">
              <property name="font">
               <font>
                <pointsize>12</pointsize>
               </font>
-             </property>
-            </widget>
-           </item>
-           <item row="3" column="2">
-            <widget class="QPushButton" name="mSelectPushButton">
-             <property name="font">
-              <font>
-               <pointsize>12</pointsize>
-               <weight>50</weight>
-               <bold>false</bold>
-              </font>
-             </property>
-             <property name="text">
-              <string>Select ...</string>
              </property>
             </widget>
            </item>
@@ -150,12 +223,17 @@
              </property>
             </widget>
            </item>
-           <item row="1" column="1">
-            <widget class="QLineEdit" name="mPasswordLineEdit">
+           <item row="3" column="2">
+            <widget class="QPushButton" name="mSelectPushButton">
              <property name="font">
               <font>
                <pointsize>12</pointsize>
+               <weight>50</weight>
+               <bold>false</bold>
               </font>
+             </property>
+             <property name="text">
+              <string>Select ...</string>
              </property>
             </widget>
            </item>
@@ -185,19 +263,7 @@
              </property>
             </widget>
            </item>
-           <item row="3" column="0">
-            <widget class="QLabel" name="mLocalDirLabel">
-             <property name="font">
-              <font>
-               <pointsize>12</pointsize>
-              </font>
-             </property>
-             <property name="text">
-              <string>Local Directory</string>
-             </property>
-            </widget>
-           </item>
-           <item row="2" column="1">
+           <item row="2" column="1" colspan="2">
             <widget class="QLineEdit" name="mRemoteDirLineEdit">
              <property name="font">
               <font>
@@ -206,7 +272,16 @@
              </property>
             </widget>
            </item>
-           <item row="0" column="1">
+           <item row="1" column="1" colspan="2">
+            <widget class="QLineEdit" name="mPasswordLineEdit">
+             <property name="font">
+              <font>
+               <pointsize>12</pointsize>
+              </font>
+             </property>
+            </widget>
+           </item>
+           <item row="0" column="1" colspan="2">
             <widget class="QLineEdit" name="mUserNameLineEdit">
              <property name="font">
               <font>
@@ -262,9 +337,9 @@ p, li { white-space: pre-wrap; }
         <property name="geometry">
          <rect>
           <x>10</x>
-          <y>30</y>
+          <y>20</y>
           <width>571</width>
-          <height>751</height>
+          <height>761</height>
          </rect>
         </property>
         <property name="font">
@@ -294,7 +369,7 @@ p, li { white-space: pre-wrap; }
      <x>0</x>
      <y>0</y>
      <width>1209</width>
-     <height>21</height>
+     <height>17</height>
     </rect>
    </property>
    <widget class="QMenu" name="mMenuFile">
@@ -327,6 +402,7 @@ p, li { white-space: pre-wrap; }
  <layoutdefault spacing="6" margin="11"/>
  <tabstops>
   <tabstop>mMasterCheckBox</tabstop>
+  <tabstop>mStartPushButton</tabstop>
   <tabstop>mEncryptionCheckBox</tabstop>
   <tabstop>mDebugCheckBox</tabstop>
   <tabstop>mRemoteControlCheckBox</tabstop>
@@ -334,17 +410,14 @@ p, li { white-space: pre-wrap; }
   <tabstop>mPasswordLineEdit</tabstop>
   <tabstop>mRemoteDirLineEdit</tabstop>
   <tabstop>mLocalDirLineEdit</tabstop>
+  <tabstop>mLocalDirLineEdit</tabstop>
+  <tabstop>mRemoteDirLineEdit</tabstop>
+  <tabstop>mPasswordLineEdit</tabstop>
+  <tabstop>mUserNameLineEdit</tabstop>
+  <tabstop>mSelectPushButton</tabstop>
   <tabstop>mSelectPushButton</tabstop>
   <tabstop>mDebugTextEdit</tabstop>
-  <tabstop>mEncryptionCheckBox</tabstop>
-  <tabstop>mDebugCheckBox</tabstop>
-  <tabstop>mRemoteControlCheckBox</tabstop>
-  <tabstop>mSelectPushButton</tabstop>
-  <tabstop>mPasswordLineEdit</tabstop>
-  <tabstop>mLocalDirLineEdit</tabstop>
-  <tabstop>mRemoteDirLineEdit</tabstop>
-  <tabstop>mUserNameLineEdit</tabstop>
-  <tabstop>mMasterCheckBox</tabstop>
+  <tabstop>mShellTextEditor</tabstop>
  </tabstops>
  <resources/>
  <connections/>

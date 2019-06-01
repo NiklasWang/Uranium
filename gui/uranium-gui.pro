@@ -54,8 +54,8 @@ RESOURCES += \
 LIBS +=
         #-L$$PROJECT_ROOT/release/libs -lcore \
 
-#FORMS += \
-#        designer\MainWindow.ui  \
+FORMS += \
+        designer\MainWindow.ui  \
 #        designer\AboutDialog.ui
 
 # Default rules for deployment.

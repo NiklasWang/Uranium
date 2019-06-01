@@ -25,219 +25,301 @@ namespace uranium {
 
 int32_t MainWindowUi::setupUi(QMainWindow *MainWindow)
 {
-    if (MainWindow->objectName().isEmpty()) {
-        MainWindow->setObjectName(QString::fromUtf8("MainWindow"));
+    int32_t rc = NO_ERROR;
+    QFont checkBoxFont;
+    QFont lineEditFont;
+    QFont settingBlankingFont;
+    QSizePolicy virtualExpandingPolicy(QSizePolicy::Preferred, QSizePolicy::Expanding);
+
+    if (SUCCEED(rc)) {
+        if (MainWindow->objectName().isEmpty()) {
+            MainWindow->setObjectName(QStringLiteral("MainWindow"));
+        }
+        MainWindow->resize(1209, 848);
     }
-    MainWindow->resize(1209, 848);
-    mActionAbout = new QAction(MainWindow);
-    mActionAbout->setObjectName(QString::fromUtf8("mActionAbout"));
-    connect(mActionAbout, SIGNAL(triggered(bool)), this, SIGNAL(about()));
-    mAactionExit = new QAction(MainWindow);
-    mAactionExit->setObjectName(QString::fromUtf8("mAactionExit"));
-    connect(mAactionExit, SIGNAL(triggered(bool)), this, SIGNAL(quit()));
-    mCentralWidget = new QWidget(MainWindow);
-    mCentralWidget->setObjectName(QString::fromUtf8("mCentralWidget"));
-    mHorizontalLayoutWidget = new QWidget(mCentralWidget);
-    mHorizontalLayoutWidget->setObjectName(QString::fromUtf8("mHorizontalLayoutWidget"));
-    mHorizontalLayoutWidget->setGeometry(QRect(10, 10, 1191, 791));
-    mSettingHorizontalLayout = new QHBoxLayout(mHorizontalLayoutWidget);
-    mSettingHorizontalLayout->setSpacing(6);
-    mSettingHorizontalLayout->setContentsMargins(11, 11, 11, 11);
-    mSettingHorizontalLayout->setObjectName(QString::fromUtf8("mSettingHorizontalLayout"));
-    mSettingHorizontalLayout->setContentsMargins(0, 0, 0, 0);
-    mSettingGroupBox = new QGroupBox(mHorizontalLayoutWidget);
-    mSettingGroupBox->setObjectName(QString::fromUtf8("mSettingGroupBox"));
-    mVerticalLayoutWidget = new QWidget(mSettingGroupBox);
-    mVerticalLayoutWidget->setObjectName(QString::fromUtf8("mVerticalLayoutWidget"));
-    mVerticalLayoutWidget->setGeometry(QRect(10, 30, 571, 751));
-    mSettingverticalLayout = new QVBoxLayout(mVerticalLayoutWidget);
-    mSettingverticalLayout->setSpacing(6);
-    mSettingverticalLayout->setContentsMargins(11, 11, 11, 11);
-    mSettingverticalLayout->setObjectName(QString::fromUtf8("mSettingverticalLayout"));
-    mSettingverticalLayout->setContentsMargins(0, 0, 0, 0);
-    mCheckBoxFormLayout = new QFormLayout();
-    mCheckBoxFormLayout->setSpacing(6);
-    mCheckBoxFormLayout->setObjectName(QString::fromUtf8("mCheckBoxFormLayout"));
-    mMasterCheckBox = new QCheckBox(mVerticalLayoutWidget);
-    mMasterCheckBox->setObjectName(QString::fromUtf8("mMasterCheckBox"));
-    QFont font;
-    font.setPointSize(14);
-    font.setBold(true);
-    font.setWeight(75);
-    mMasterCheckBox->setFont(font);
 
-    mCheckBoxFormLayout->setWidget(0, QFormLayout::LabelRole, mMasterCheckBox);
+    if (SUCCEED(rc)) {
+        mActionAbout = new QAction(MainWindow);
+        mActionAbout->setObjectName(QStringLiteral("mActionAbout"));
+        connect(mActionAbout, SIGNAL(triggered(bool)), this, SIGNAL(about()));
+        mActionExit = new QAction(MainWindow);
+        mActionExit->setObjectName(QStringLiteral("mActionExit"));
+        connect(mActionExit, SIGNAL(triggered(bool)), this, SIGNAL(quit()));
+    }
 
-    mEncryptionCheckBox = new QCheckBox(mVerticalLayoutWidget);
-    mEncryptionCheckBox->setObjectName(QString::fromUtf8("mEncryptionCheckBox"));
-    mEncryptionCheckBox->setFont(font);
+    if (SUCCEED(rc)) {
+        mCentralWidget = new QWidget(MainWindow);
+        mCentralWidget->setObjectName(QStringLiteral("mCentralWidget"));
+        mHorizontalLayoutWidget = new QWidget(mCentralWidget);
+        mHorizontalLayoutWidget->setObjectName(QStringLiteral("mHorizontalLayoutWidget"));
+        mHorizontalLayoutWidget->setGeometry(QRect(10, 10, 1191, 791));
+    }
 
-    mCheckBoxFormLayout->setWidget(1, QFormLayout::LabelRole, mEncryptionCheckBox);
+    if (SUCCEED(rc)) {
+        mSettingHorizontalLayout = new QHBoxLayout(mHorizontalLayoutWidget);
+        mSettingHorizontalLayout->setSpacing(6);
+        mSettingHorizontalLayout->setContentsMargins(11, 11, 11, 11);
+        mSettingHorizontalLayout->setObjectName(QStringLiteral("mSettingHorizontalLayout"));
+        mSettingHorizontalLayout->setContentsMargins(0, 0, 0, 0);
+    }
 
-    mDebugCheckBox = new QCheckBox(mVerticalLayoutWidget);
-    mDebugCheckBox->setObjectName(QString::fromUtf8("mDebugCheckBox"));
-    mDebugCheckBox->setFont(font);
+    if (SUCCEED(rc)) {
+        mSettingGroupBox = new QGroupBox(mHorizontalLayoutWidget);
+        mSettingGroupBox->setObjectName(QStringLiteral("mSettingGroupBox"));
+        mVerticalLayoutWidget = new QWidget(mSettingGroupBox);
+        mVerticalLayoutWidget->setObjectName(QStringLiteral("mVerticalLayoutWidget"));
+        mVerticalLayoutWidget->setGeometry(QRect(10, 10, 571, 770));
+        mSettingverticalLayout = new QVBoxLayout(mVerticalLayoutWidget);
+        mSettingverticalLayout->setSpacing(6);
+        mSettingverticalLayout->setContentsMargins(11, 11, 11, 11);
+        mSettingverticalLayout->setObjectName(QStringLiteral("mSettingverticalLayout"));
+        mSettingverticalLayout->setContentsMargins(0, 0, 0, 0);
+    }
 
-    mCheckBoxFormLayout->setWidget(2, QFormLayout::LabelRole, mDebugCheckBox);
+    if (SUCCEED(rc)) {
+        mCheckBoxGridLayout = new QGridLayout();
+        mCheckBoxGridLayout->setSpacing(6);
+        mCheckBoxGridLayout->setObjectName(QStringLiteral("mCheckBoxGridLayout"));
+    }
 
-    mRemoteControlCheckBox = new QCheckBox(mVerticalLayoutWidget);
-    mRemoteControlCheckBox->setObjectName(QString::fromUtf8("mRemoteControlCheckBox"));
-    mRemoteControlCheckBox->setFont(font);
+    if (SUCCEED(rc)) {
+        mMasterCheckBox = new QCheckBox(mVerticalLayoutWidget);
+        mMasterCheckBox->setObjectName(QStringLiteral("mMasterCheckBox"));
+        checkBoxFont.setPointSize(14);
+        checkBoxFont.setBold(true);
+        checkBoxFont.setWeight(75);
+        mMasterCheckBox->setFont(checkBoxFont);
+        mCheckBoxGridLayout->addWidget(mMasterCheckBox, 1, 0, 1, 1);
+    }
 
-    mCheckBoxFormLayout->setWidget(3, QFormLayout::LabelRole, mRemoteControlCheckBox);
+    if (SUCCEED(rc)) {
+        mStartPushButton = new QPushButton(mVerticalLayoutWidget);
+        mStartPushButton->setObjectName(QStringLiteral("mStartPushButton"));
+        virtualExpandingPolicy.setHorizontalStretch(0);
+        virtualExpandingPolicy.setVerticalStretch(0);
+        virtualExpandingPolicy.setHeightForWidth(mStartPushButton->sizePolicy().hasHeightForWidth());
+        mStartPushButton->setSizePolicy(virtualExpandingPolicy);
+        QFont font1;
+        font1.setFamily(QStringLiteral("Consolas"));
+        font1.setPointSize(22);
+        font1.setBold(true);
+        font1.setWeight(75);
+        mStartPushButton->setFont(font1);
+        mCheckBoxGridLayout->addWidget(mStartPushButton, 0, 4, 5, 1);
+    }
 
+    if (SUCCEED(rc)) {
+        mCheckBoxHorizontalSpacer = new QSpacerItem(40, 20, QSizePolicy::Expanding, QSizePolicy::Minimum);
+        mCheckBoxGridLayout->addItem(mCheckBoxHorizontalSpacer, 1, 1, 4, 1);
 
-    mSettingverticalLayout->addLayout(mCheckBoxFormLayout);
+        mDebugCheckBox = new QCheckBox(mVerticalLayoutWidget);
+        mDebugCheckBox->setObjectName(QStringLiteral("mDebugCheckBox"));
+        mDebugCheckBox->setEnabled(false);
+        mDebugCheckBox->setFont(checkBoxFont);
+        mDebugCheckBox->setChecked(true);
+        mCheckBoxGridLayout->addWidget(mDebugCheckBox, 3, 0, 1, 1);
+    }
 
-    mSettingBlanking1 = new QLabel(mVerticalLayoutWidget);
-    mSettingBlanking1->setObjectName(QString::fromUtf8("mSettingBlanking1"));
-    QFont font1;
-    font1.setPointSize(10);
-    mSettingBlanking1->setFont(font1);
+    if (SUCCEED(rc)) {
+        mRemoteControlCheckBox = new QCheckBox(mVerticalLayoutWidget);
+        mRemoteControlCheckBox->setObjectName(QStringLiteral("mRemoteControlCheckBox"));
+        mRemoteControlCheckBox->setFont(checkBoxFont);
+        mCheckBoxGridLayout->addWidget(mRemoteControlCheckBox, 4, 0, 1, 1);
+    }
 
-    mSettingverticalLayout->addWidget(mSettingBlanking1);
-
-    mInputBoxGridLayout = new QGridLayout();
-    mInputBoxGridLayout->setSpacing(6);
-    mInputBoxGridLayout->setObjectName(QString::fromUtf8("mInputBoxGridLayout"));
-    mLocalDirLineEdit = new QLineEdit(mVerticalLayoutWidget);
-    mLocalDirLineEdit->setObjectName(QString::fromUtf8("mLocalDirLineEdit"));
-    QFont font2;
-    font2.setPointSize(12);
-    mLocalDirLineEdit->setFont(font2);
-
-    mInputBoxGridLayout->addWidget(mLocalDirLineEdit, 3, 1, 1, 1);
-
-    mSelectPushButton = new QPushButton(mVerticalLayoutWidget);
-    mSelectPushButton->setObjectName(QString::fromUtf8("mSelectPushButton"));
-    QFont font3;
-    font3.setPointSize(12);
-    font3.setBold(false);
-    font3.setWeight(50);
-    mSelectPushButton->setFont(font3);
-
-    mInputBoxGridLayout->addWidget(mSelectPushButton, 3, 2, 1, 1);
-
-    mPasswordLabel = new QLabel(mVerticalLayoutWidget);
-    mPasswordLabel->setObjectName(QString::fromUtf8("mPasswordLabel"));
-    mPasswordLabel->setFont(font3);
-
-    mInputBoxGridLayout->addWidget(mPasswordLabel, 1, 0, 1, 1);
-
-    mPasswordLineEdit = new QLineEdit(mVerticalLayoutWidget);
-    mPasswordLineEdit->setObjectName(QString::fromUtf8("mPasswordLineEdit"));
-    mPasswordLineEdit->setFont(font2);
-
-    mInputBoxGridLayout->addWidget(mPasswordLineEdit, 1, 1, 1, 1);
-
-    mUserNameLabel = new QLabel(mVerticalLayoutWidget);
-    mUserNameLabel->setObjectName(QString::fromUtf8("mUserNameLabel"));
-    mUserNameLabel->setFont(font3);
-
-    mInputBoxGridLayout->addWidget(mUserNameLabel, 0, 0, 1, 1);
-
-    mRemoteDirLabel = new QLabel(mVerticalLayoutWidget);
-    mRemoteDirLabel->setObjectName(QString::fromUtf8("mRemoteDirLabel"));
-    mRemoteDirLabel->setFont(font2);
-
-    mInputBoxGridLayout->addWidget(mRemoteDirLabel, 2, 0, 1, 1);
-
-    mLocalDirLabel = new QLabel(mVerticalLayoutWidget);
-    mLocalDirLabel->setObjectName(QString::fromUtf8("mLocalDirLabel"));
-    mLocalDirLabel->setFont(font2);
-
-    mInputBoxGridLayout->addWidget(mLocalDirLabel, 3, 0, 1, 1);
-
-    mRemoteDirLineEdit = new QLineEdit(mVerticalLayoutWidget);
-    mRemoteDirLineEdit->setObjectName(QString::fromUtf8("mRemoteDirLineEdit"));
-    mRemoteDirLineEdit->setFont(font2);
-
-    mInputBoxGridLayout->addWidget(mRemoteDirLineEdit, 2, 1, 1, 1);
-
-    mUserNameLineEdit = new QLineEdit(mVerticalLayoutWidget);
-    mUserNameLineEdit->setObjectName(QString::fromUtf8("mUserNameLineEdit"));
-    mUserNameLineEdit->setFont(font2);
-
-    mInputBoxGridLayout->addWidget(mUserNameLineEdit, 0, 1, 1, 1);
+    if (SUCCEED(rc)) {
+        mEncryptionCheckBox = new QCheckBox(mVerticalLayoutWidget);
+        mEncryptionCheckBox->setObjectName(QStringLiteral("mEncryptionCheckBox"));
+        mEncryptionCheckBox->setEnabled(false);
+        mEncryptionCheckBox->setFont(checkBoxFont);
+        mEncryptionCheckBox->setCheckable(true);
+        mEncryptionCheckBox->setChecked(true);
+        mCheckBoxGridLayout->addWidget(mEncryptionCheckBox, 2, 0, 1, 1);
+    }
 
 
-    mSettingverticalLayout->addLayout(mInputBoxGridLayout);
+    if (SUCCEED(rc)) {
+        mStatusLabel = new QLabel(mVerticalLayoutWidget);
+        mStatusLabel->setObjectName(QStringLiteral("mStatusLabel"));
+        mStatusLabel->setSizePolicy(virtualExpandingPolicy);
+        mStatusLabel->resize(mStatusLabel->width(), mStatusLabel->width());
+        QImage Image;
+        Image.load(":/status/question");
+        QPixmap pixmap = QPixmap::fromImage(Image);
+        QPixmap fitPixmap = pixmap.scaled(mStatusLabel->width(),
+            mStatusLabel->height(), Qt::IgnoreAspectRatio, Qt::SmoothTransformation);
+        mStatusLabel->setPixmap(fitPixmap);
+        mCheckBoxGridLayout->addWidget(mStatusLabel, 1, 2, 4, 1);
+    }
 
-    mSettingBlanking2 = new QLabel(mVerticalLayoutWidget);
-    mSettingBlanking2->setObjectName(QString::fromUtf8("mSettingBlanking2"));
-    QFont font4;
-    font4.setPointSize(10);
-    font4.setBold(true);
-    font4.setWeight(75);
-    mSettingBlanking2->setFont(font4);
+    if (SUCCEED(rc)) {
+        mStartedLabel = new QLabel(mVerticalLayoutWidget);
+        mStartedLabel->setObjectName(QStringLiteral("mStartedLabel"));
+        mStartedLabel->setSizePolicy(virtualExpandingPolicy);
+        mStartedLabel->resize(mStartedLabel->width(), mStartedLabel->width());
+        QImage Image;
+        Image.load(":/status/question");
+        QPixmap pixmap = QPixmap::fromImage(Image);
+        QPixmap fitPixmap = pixmap.scaled(mStatusLabel->width(),
+            mStatusLabel->height(), Qt::IgnoreAspectRatio, Qt::SmoothTransformation);
+        mStartedLabel->setPixmap(fitPixmap);
+        mCheckBoxGridLayout->addWidget(mStartedLabel, 1, 3, 4, 1);
+        mSettingverticalLayout->addLayout(mCheckBoxGridLayout);
+    }
 
-    mSettingverticalLayout->addWidget(mSettingBlanking2);
+    if (SUCCEED(rc)) {
+        mSettingBlanking1 = new QLabel(mVerticalLayoutWidget);
+        mSettingBlanking1->setObjectName(QStringLiteral("mSettingBlanking1"));
+        settingBlankingFont.setPointSize(10);
+        settingBlankingFont.setBold(true);
+        settingBlankingFont.setWeight(75);
+        mSettingBlanking1->setFont(settingBlankingFont);
+        mSettingverticalLayout->addWidget(mSettingBlanking1);
+    }
 
-    mDebugTextEdit = new QTextEdit(mVerticalLayoutWidget);
-    mDebugTextEdit->setObjectName(QString::fromUtf8("mDebugTextEdit"));
-    QFont font5;
-    font5.setFamily(QString::fromUtf8("Consolas"));
-    font5.setPointSize(10);
-    mDebugTextEdit->setFont(font5);
+    if (SUCCEED(rc)) {
+        mInputBoxGridLayout = new QGridLayout();
+        mInputBoxGridLayout->setSpacing(6);
+        mInputBoxGridLayout->setObjectName(QStringLiteral("mInputBoxGridLayout"));
+    }
 
-    mSettingverticalLayout->addWidget(mDebugTextEdit);
+    if (SUCCEED(rc)) {
+        mLocalDirLabel = new QLabel(mVerticalLayoutWidget);
+        mLocalDirLabel->setObjectName(QStringLiteral("mLocalDirLabel"));
+        lineEditFont.setPointSize(12);
+        lineEditFont.setBold(false);
+        lineEditFont.setWeight(50);
+        mLocalDirLabel->setFont(lineEditFont);
+        mInputBoxGridLayout->addWidget(mLocalDirLabel, 3, 0, 1, 1);
 
+        mLocalDirLineEdit = new QLineEdit(mVerticalLayoutWidget);
+        mLocalDirLineEdit->setObjectName(QStringLiteral("mLocalDirLineEdit"));
+        mLocalDirLineEdit->setFont(lineEditFont);
+        mInputBoxGridLayout->addWidget(mLocalDirLineEdit, 3, 1, 1, 1);
 
-    mSettingHorizontalLayout->addWidget(mSettingGroupBox);
+        mSelectPushButton = new QPushButton(mVerticalLayoutWidget);
+        mSelectPushButton->setObjectName(QStringLiteral("mSelectPushButton"));
+        mSelectPushButton->setFont(lineEditFont);
+        mInputBoxGridLayout->addWidget(mSelectPushButton, 3, 2, 1, 1);
+    }
 
-    mShellGroupBox = new QGroupBox(mHorizontalLayoutWidget);
-    mShellGroupBox->setObjectName(QString::fromUtf8("mShellGroupBox"));
-    mShellTextEditor = new QTextEdit(mShellGroupBox);
-    mShellTextEditor->setObjectName(QString::fromUtf8("mShellTextEditor"));
-    mShellTextEditor->setGeometry(QRect(10, 30, 571, 751));
-    QFont font6;
-    font6.setFamily(QString::fromUtf8("Consolas"));
-    font6.setPointSize(10);
-    font6.setBold(true);
-    font6.setWeight(75);
-    mShellTextEditor->setFont(font6);
+    if (SUCCEED(rc)) {
+        mPasswordLabel = new QLabel(mVerticalLayoutWidget);
+        mPasswordLabel->setObjectName(QStringLiteral("mPasswordLabel"));
+        mPasswordLabel->setFont(lineEditFont);
+        mInputBoxGridLayout->addWidget(mPasswordLabel, 1, 0, 1, 1);
 
-    mSettingHorizontalLayout->addWidget(mShellGroupBox);
+        mPasswordLineEdit = new QLineEdit(mVerticalLayoutWidget);
+        mPasswordLineEdit->setObjectName(QStringLiteral("mPasswordLineEdit"));
+        mPasswordLineEdit->setFont(lineEditFont);
+        mInputBoxGridLayout->addWidget(mPasswordLineEdit, 1, 1, 1, 2);
+    }
 
-    MainWindow->setCentralWidget(mCentralWidget);
-    mMenuBar = new QMenuBar(MainWindow);
-    mMenuBar->setObjectName(QString::fromUtf8("mMenuBar"));
-    mMenuBar->setGeometry(QRect(0, 0, 1209, 21));
-    mMenuFile = new QMenu(mMenuBar);
-    mMenuFile->setObjectName(QString::fromUtf8("mMenuFile"));
-    mMenuHelp = new QMenu(mMenuBar);
-    mMenuHelp->setObjectName(QString::fromUtf8("mMenuHelp"));
-    MainWindow->setMenuBar(mMenuBar);
-    mStatusBar = new QStatusBar(MainWindow);
-    mStatusBar->setObjectName(QString::fromUtf8("mStatusBar"));
-    MainWindow->setStatusBar(mStatusBar);
-    QWidget::setTabOrder(mMasterCheckBox, mEncryptionCheckBox);
-    QWidget::setTabOrder(mEncryptionCheckBox, mDebugCheckBox);
-    QWidget::setTabOrder(mDebugCheckBox, mRemoteControlCheckBox);
-    QWidget::setTabOrder(mRemoteControlCheckBox, mUserNameLineEdit);
-    QWidget::setTabOrder(mUserNameLineEdit, mPasswordLineEdit);
-    QWidget::setTabOrder(mPasswordLineEdit, mRemoteDirLineEdit);
-    QWidget::setTabOrder(mRemoteDirLineEdit, mLocalDirLineEdit);
-    QWidget::setTabOrder(mLocalDirLineEdit, mSelectPushButton);
-    QWidget::setTabOrder(mSelectPushButton, mDebugTextEdit);
-    QWidget::setTabOrder(mDebugTextEdit, mEncryptionCheckBox);
-    QWidget::setTabOrder(mEncryptionCheckBox, mDebugCheckBox);
-    QWidget::setTabOrder(mDebugCheckBox, mRemoteControlCheckBox);
-    QWidget::setTabOrder(mRemoteControlCheckBox, mSelectPushButton);
-    QWidget::setTabOrder(mSelectPushButton, mPasswordLineEdit);
-    QWidget::setTabOrder(mPasswordLineEdit, mLocalDirLineEdit);
-    QWidget::setTabOrder(mLocalDirLineEdit, mRemoteDirLineEdit);
-    QWidget::setTabOrder(mRemoteDirLineEdit, mUserNameLineEdit);
-    QWidget::setTabOrder(mUserNameLineEdit, mMasterCheckBox);
+    if (SUCCEED(rc)) {
+        mUserNameLabel = new QLabel(mVerticalLayoutWidget);
+        mUserNameLabel->setObjectName(QStringLiteral("mUserNameLabel"));
+        mUserNameLabel->setFont(lineEditFont);
+        mInputBoxGridLayout->addWidget(mUserNameLabel, 0, 0, 1, 1);
 
-    mMenuBar->addAction(mMenuFile->menuAction());
-    mMenuBar->addAction(mMenuHelp->menuAction());
-    mMenuFile->addAction(mAactionExit);
-    mMenuHelp->addAction(mActionAbout);
+        mUserNameLineEdit = new QLineEdit(mVerticalLayoutWidget);
+        mUserNameLineEdit->setObjectName(QStringLiteral("mUserNameLineEdit"));
+        mUserNameLineEdit->setFont(lineEditFont);
+        mInputBoxGridLayout->addWidget(mUserNameLineEdit, 0, 1, 1, 2);
+    }
 
-    retranslateUi(MainWindow);
+    if (SUCCEED(rc)) {
+        mRemoteDirLabel = new QLabel(mVerticalLayoutWidget);
+        mRemoteDirLabel->setObjectName(QStringLiteral("mRemoteDirLabel"));
+        mRemoteDirLabel->setFont(lineEditFont);
+        mInputBoxGridLayout->addWidget(mRemoteDirLabel, 2, 0, 1, 1);
 
-    QMetaObject::connectSlotsByName(MainWindow);
+        mRemoteDirLineEdit = new QLineEdit(mVerticalLayoutWidget);
+        mRemoteDirLineEdit->setObjectName(QStringLiteral("mRemoteDirLineEdit"));
+        mRemoteDirLineEdit->setFont(lineEditFont);
+        mInputBoxGridLayout->addWidget(mRemoteDirLineEdit, 2, 1, 1, 2);
+    }
+
+    if (SUCCEED(rc)) {
+        mSettingverticalLayout->addLayout(mInputBoxGridLayout);
+
+        mSettingBlanking2 = new QLabel(mVerticalLayoutWidget);
+        mSettingBlanking2->setObjectName(QStringLiteral("mSettingBlanking2"));
+        mSettingBlanking2->setFont(settingBlankingFont);
+        mSettingverticalLayout->addWidget(mSettingBlanking2);
+    }
+
+    if (SUCCEED(rc)) {
+        mDebugTextEdit = new QTextEdit(mVerticalLayoutWidget);
+        mDebugTextEdit->setObjectName(QStringLiteral("mDebugTextEdit"));
+        QFont font6;
+        font6.setFamily(QStringLiteral("Consolas"));
+        font6.setPointSize(10);
+        mDebugTextEdit->setFont(font6);
+        mSettingverticalLayout->addWidget(mDebugTextEdit);
+
+        mSettingHorizontalLayout->addWidget(mSettingGroupBox);
+    }
+
+    if (SUCCEED(rc)) {
+        mShellGroupBox = new QGroupBox(mHorizontalLayoutWidget);
+        mShellGroupBox->setObjectName(QStringLiteral("mShellGroupBox"));
+        mShellTextEditor = new QTextEdit(mShellGroupBox);
+        mShellTextEditor->setObjectName(QStringLiteral("mShellTextEditor"));
+        mShellTextEditor->setGeometry(QRect(10, 20, 571, 761));
+        QFont font7;
+        font7.setFamily(QStringLiteral("Consolas"));
+        font7.setPointSize(10);
+        font7.setBold(true);
+        font7.setWeight(75);
+        mShellTextEditor->setFont(font7);
+        mSettingHorizontalLayout->addWidget(mShellGroupBox);
+    }
+
+    if (SUCCEED(rc)) {
+        MainWindow->setCentralWidget(mCentralWidget);
+        mMenuBar = new QMenuBar(MainWindow);
+        mMenuBar->setObjectName(QStringLiteral("mMenuBar"));
+        mMenuBar->setGeometry(QRect(0, 0, 1209, 17));
+        mMenuFile = new QMenu(mMenuBar);
+        mMenuFile->setObjectName(QStringLiteral("mMenuFile"));
+        mMenuHelp = new QMenu(mMenuBar);
+        mMenuHelp->setObjectName(QStringLiteral("mMenuHelp"));
+        MainWindow->setMenuBar(mMenuBar);
+        mStatusBar = new QStatusBar(MainWindow);
+        mStatusBar->setObjectName(QStringLiteral("mStatusBar"));
+        MainWindow->setStatusBar(mStatusBar);
+    }
+
+    if (SUCCEED(rc)) {
+        QWidget::setTabOrder(mMasterCheckBox, mStartPushButton);
+        QWidget::setTabOrder(mStartPushButton, mEncryptionCheckBox);
+        QWidget::setTabOrder(mEncryptionCheckBox, mDebugCheckBox);
+        QWidget::setTabOrder(mDebugCheckBox, mRemoteControlCheckBox);
+        QWidget::setTabOrder(mRemoteControlCheckBox, mUserNameLineEdit);
+        QWidget::setTabOrder(mUserNameLineEdit, mPasswordLineEdit);
+        QWidget::setTabOrder(mPasswordLineEdit, mRemoteDirLineEdit);
+        QWidget::setTabOrder(mRemoteDirLineEdit, mLocalDirLineEdit);
+        QWidget::setTabOrder(mLocalDirLineEdit, mLocalDirLineEdit);
+        QWidget::setTabOrder(mLocalDirLineEdit, mRemoteDirLineEdit);
+        QWidget::setTabOrder(mRemoteDirLineEdit, mPasswordLineEdit);
+        QWidget::setTabOrder(mPasswordLineEdit, mUserNameLineEdit);
+        QWidget::setTabOrder(mUserNameLineEdit, mSelectPushButton);
+        QWidget::setTabOrder(mSelectPushButton, mSelectPushButton);
+        QWidget::setTabOrder(mSelectPushButton, mDebugTextEdit);
+        QWidget::setTabOrder(mDebugTextEdit, mShellTextEditor);
+    }
+
+    if (SUCCEED(rc)) {
+        mMenuBar->addAction(mMenuFile->menuAction());
+        mMenuBar->addAction(mMenuHelp->menuAction());
+        mMenuFile->addAction(mActionExit);
+        mMenuHelp->addAction(mActionAbout);
+    }
+
+    if (SUCCEED(rc) || !SUCCEED(rc)) {
+        retranslateUi(MainWindow);
+        QMetaObject::connectSlotsByName(MainWindow);
+    }
 
     return NO_ERROR;
 }
@@ -246,18 +328,21 @@ void MainWindowUi::retranslateUi(QMainWindow *MainWindow)
 {
     MainWindow->setWindowTitle(QApplication::translate("MainWindow", PROJNAME " " VERSION, nullptr));
     mActionAbout->setText(QApplication::translate("MainWindow", "About", nullptr));
-    mAactionExit->setText(QApplication::translate("MainWindow", "Exit", nullptr));
+    mActionExit->setText(QApplication::translate("MainWindow", "Exit", nullptr));
     mSettingGroupBox->setTitle(QApplication::translate("MainWindow", "Settings", nullptr));
     mMasterCheckBox->setText(QApplication::translate("MainWindow", "Master to Override Remote", nullptr));
-    mEncryptionCheckBox->setText(QApplication::translate("MainWindow", "Encryption", nullptr));
+    mStartPushButton->setText(QApplication::translate("MainWindow", " Start ", nullptr));
     mDebugCheckBox->setText(QApplication::translate("MainWindow", "Debug Mode", nullptr));
     mRemoteControlCheckBox->setText(QApplication::translate("MainWindow", "Enable Remote Control", nullptr));
+    mEncryptionCheckBox->setText(QApplication::translate("MainWindow", "Encryption", nullptr));
+    mStatusLabel->setText(QString());
+    mStartedLabel->setText(QString());
     mSettingBlanking1->setText(QString());
-    mSelectPushButton->setText(QApplication::translate("MainWindow", "Select ...", nullptr));
+    mLocalDirLabel->setText(QApplication::translate("MainWindow", "Local Directory", nullptr));
     mPasswordLabel->setText(QApplication::translate("MainWindow", "Password", nullptr));
+    mSelectPushButton->setText(QApplication::translate("MainWindow", "Select ...", nullptr));
     mUserNameLabel->setText(QApplication::translate("MainWindow", "User Name", nullptr));
     mRemoteDirLabel->setText(QApplication::translate("MainWindow", "Remote Directory", nullptr));
-    mLocalDirLabel->setText(QApplication::translate("MainWindow", "Local Directory", nullptr));
     mSettingBlanking2->setText(QString());
     mDebugTextEdit->setHtml(QApplication::translate("MainWindow",
         "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.0//EN\" \"http://www.w3.org/TR/REC-html40/strict.dtd\">\n"

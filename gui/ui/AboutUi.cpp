@@ -1,11 +1,12 @@
 #include <QObject>
+#include <QTime>
 
 #include "version.h"
 #include "utils/common.h"
 #include "ui/AboutUi.h"
 
-#define ABOUT_DIALOG_WIDTH  420
-#define ABOUT_DIALOG_HEIGHT 320
+#define ABOUT_DIALOG_WIDTH  500
+#define ABOUT_DIALOG_HEIGHT 280
 #define ABOUT_DIALOG_LEFT_MARGIN 10
 #define ABOUT_DIALOG_TOP_MARGIN  10
 
@@ -63,14 +64,11 @@ int32_t AboutUi::setupUi()
     if (SUCCEED(rc)) {
         mPictureLabel = new QLabel(mGridLayoutWidget);
         mPictureLabel->setObjectName(QStringLiteral("mPictureLabel"));
-        mPictureLabel->setMinimumSize(QSize(125, 200));
-
-        QMatrix rotation;
-        rotation.rotate(90);
+        mPictureLabel->setMinimumSize(QSize(200, 200));
+        qsrand(QTime(0, 0, 0).secsTo(QTime::currentTime()));
         QImage Image;
-        Image.load(":/icon/IconColor_16x10");
+        Image.load(qrand() % 2 ? ":/icon/logo1" : ":/icon/logo2");
         QPixmap pixmap = QPixmap::fromImage(Image);
-        pixmap.transformed(rotation, Qt::SmoothTransformation);
         QPixmap fitPixmap = pixmap.scaled(mPictureLabel->width(),
             mPictureLabel->height(), Qt::IgnoreAspectRatio, Qt::SmoothTransformation);
         mPictureLabel->setPixmap(fitPixmap);
@@ -121,7 +119,7 @@ int32_t AboutUi::setupUi()
         mContactLabel->setSizePolicy(sizePolicy);
         QFont font;
         font.setFamily(QStringLiteral("Calibri"));
-        font.setPointSize(11);
+        font.setPointSize(12);
         mContactLabel->setFont(font);
         mContactLabel->setFrameShape(QFrame::Box);
         mContactLabel->setStyleSheet("border-width: 1px; "
@@ -154,7 +152,7 @@ int32_t AboutUi::setupUi()
         mSupportLabel->setSizePolicy(sizePolicy);
         QFont font;
         font.setFamily(QStringLiteral("Calibri"));
-        font.setPointSize(10);
+        font.setPointSize(12);
         mSupportLabel->setFont(font);
         mGridLayout->addWidget(mSupportLabel, 4, 3, 1, 1);
     }
@@ -220,18 +218,16 @@ int32_t AboutUi::retranslateUi()
     mVersionLabel->setText(QApplication::translate("mDialog",
         version.toLocal8Bit().data(), nullptr));
     mCopyrightLabel->setText(QApplication::translate("mDialog",
-        "Copyright (C) 2018\n"
-        "by Wang Liang\n"
-        "Lenovo Corporation", nullptr));
+        "A simple tool to sync directory\n"
+        "between Linux and Windows.\n"
+        "Copyleft (C) 2019\n", nullptr));
     mContactLabel->setText(QApplication::translate("mDialog",
-        "Contact:\n"
-        "+86 186 1153 3741\n"
-        "wangliang17@lenovo.com\n"
-        "niklas.wang@outlook.com", nullptr));
+        "Aurthor:\n"
+        AUTHOR1 "\n"
+        AUTHOR0 "\n", nullptr));
     mSupportLabel->setText(QApplication::translate("mDialog",
         "Thanks for choosing.\n"
-        "Please contact Wang Liang\n"
-        "for technical support.", nullptr));
+        "Please contact the author for technical support.", nullptr));
     mOkButton->setText(QApplication::translate("mDialog",
         "OK", nullptr));
 

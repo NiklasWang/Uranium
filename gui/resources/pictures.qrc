@@ -3,4 +3,9 @@
         <file alias="logo1">logo1.jpg</file>
         <file alias="logo2">logo2.jpg</file>
     </qresource>
+    <qresource prefix="/status">
+        <file alias="failed">Failed.png</file>
+        <file alias="question">Question.png</file>
+        <file alias="succeed">Succeed.png</file>
+    </qresource>
 </RCC>
