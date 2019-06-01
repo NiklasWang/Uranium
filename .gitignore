@@ -33,3 +33,7 @@
 
 # vs code
 .vscode/*
+
+# Qt
+*.pro.user
+build-uranium-gui*/*
