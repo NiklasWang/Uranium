@@ -37,3 +37,6 @@
 # Qt
 *.pro.user
 build-uranium-gui*/*
+
+# bin
+bin/*

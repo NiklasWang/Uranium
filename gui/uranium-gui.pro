@@ -24,16 +24,39 @@ DEFINES += QT_DEPRECATED_WARNINGS
 
 CONFIG += c++11
 
-SOURCES += \
-        main.cpp \
-        MainWindow.cpp
+PROJECT_ROOT = $$PWD/..
 
-HEADERS += \
-        MainWindow.h \
-        ui\MainWindowUi.h
+SOURCES +=                      \
+        main.cpp                \
+        MainWindow.cpp          \
+        Dialogs.cpp             \
+        AboutDialog.cpp         \
+        ui/MainWindowUi.cpp     \
+        ui/AboutUi.cpp
+
+HEADERS +=                      \
+        MainWindow.h            \
+        Dialogs.h               \
+        AboutDialog.h           \
+        ui/MainWindowUi.h       \
+        ui/AboutUi.h
+
+INCLUDEPATH +=                  \
+        $$PROJECT_ROOT          \
+        $$PROJECT_ROOT/utils    \
+        $$PROJECT_ROOT/log      \
+        $$PROJECT_ROOT/memory   \
+        $$PROJECT_ROOT/core
+
+RESOURCES += \
+        resources/pictures.qrc
+
+LIBS +=
+        #-L$$PROJECT_ROOT/release/libs -lcore \
 
 #FORMS += \
-#        designer\MainWindow.ui
+#        designer\MainWindow.ui  \
+#        designer\AboutDialog.ui
 
 # Default rules for deployment.
 qnx: target.path = /tmp/$${TARGET}/bin

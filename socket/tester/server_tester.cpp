@@ -45,7 +45,7 @@ int _main_server_tester()
 
     if (SUCCEED(rc)) {
         bool cancel = false;
-        data[0] = '\0';        
+        data[0] = '\0';
         rc = poll_read_wait(clientfd, data, sizeof(data), &read_len, &cancel);
         if (!SUCCEED(rc)) {
             LOGE(MODULE_TESTER, "Failed to poll data while sleeping, %d", rc);

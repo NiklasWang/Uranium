@@ -19,7 +19,7 @@ int64_t getThreadId()
         tmp[sizeof(tmp) - 1] = '\0';
         strncat(str, tmp, sizeof(tmp));
     }
-    
+
     sscanf(str, "%lx", &result);
 
     return result;

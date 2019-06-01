@@ -39,7 +39,7 @@ endif
 
 build: all
 
-exclude_dirs  = out
+exclude_dirs  = out gui
 compile_order = log utils memory threads external encrypt
 
 export
@@ -50,6 +50,7 @@ include $(MAKE_RULE)/submodule.make.rule
 include $(MAKE_RULE)/color.print.make.rule
 
 all: $(MAKE_SUB_MODULES)
+	$(GLOBAL_MAKE) $(GLOBAL_MAKEFLAGS) -C gui all
 	@echo -e $(SUCCEED_COLOR)"Project $(PROJNAME) $(VERSION) build on $(PLATFORM) succeed."$(RESTORE_COLOR)
 
 clean: $(CLEAN_SUB_MODULES)
