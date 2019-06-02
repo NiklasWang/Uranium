@@ -6,13 +6,13 @@
 namespace uranium {
 
 template <typename T>
-T Configs::get(ConfigItem item)
+int32_t Configs::get(ConfigItem item, T &value)
 {
     int32_t rc = NO_ERROR;
-    std::string result = "";
     std::string key = whoamI(item);
 
     if (SUCCEED(rc)) {
+        value = "";
         if (checkValid(item)) {
             rc = PARAM_INVALID;
             LOGE(mModule, "Invalid config type %d", item);
@@ -28,22 +28,14 @@ T Configs::get(ConfigItem item)
     }
 
     if (SUCCEED(rc)) {
-        result = mConfigs[key];
+        value = mConfigs[key];
     }
 
-    return result;
-}
-
-bool Configs::get(ConfigItem item)
-{
-    std::string value = get<std::string>(item);
-    std::transform(value.begin(), value.end(), value.begin(), ::toupper);
-
-    return value == "TRUE";
+    return rc;
 }
 
 template <typename T>
-int32_t Configs::set(ConfigItem item, T value)
+int32_t Configs::set(ConfigItem item, T &value)
 {
     int32_t rc = NO_ERROR;
     std::string key = whoamI(item);
@@ -62,13 +54,6 @@ int32_t Configs::set(ConfigItem item, T value)
     }
 
     return rc;
-}
-
-int32_t Configs::set(ConfigItem key, bool value)
-{
-    std::string str = value ? "true" : "false";
-
-    return set<std::string>(key, str);
 }
 
 }

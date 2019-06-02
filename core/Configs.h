@@ -29,12 +29,12 @@ class Configs {
 public:
 
     template <typename T>
-    T get(ConfigItem key);
-    bool get(ConfigItem key);
+    int32_t get(ConfigItem key, T &value);
+    int32_t get(ConfigItem key, bool &value);
 
     template <typename T>
-    int32_t set(ConfigItem key, T value);
-    int32_t set(ConfigItem key, bool value);
+    int32_t set(ConfigItem key, T &value);
+    int32_t set(ConfigItem key, bool &value);
 
     int32_t load();
     int32_t save();

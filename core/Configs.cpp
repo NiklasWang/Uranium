@@ -52,6 +52,31 @@ int32_t Configs::save()
     return rc;
 }
 
+int32_t Configs::get(ConfigItem item, bool &result)
+{
+    int32_t rc = NO_ERROR;
+    std::string value;
+
+    if (SUCCEED(rc)) {
+        rc = get<std::string>(item, value);
+        if (SUCCEED(rc)) {
+            std::transform(value.begin(), value.end(), value.begin(), ::toupper);
+            result = value == "TRUE";
+        } else {
+            LOGE(mModule, "Failed to get %s config.", whoamI(item));
+        }
+    }
+
+    return NO_ERROR;
+}
+
+int32_t Configs::set(ConfigItem key, bool &value)
+{
+    std::string str = value ? "true" : "false";
+
+    return set<std::string>(key, str);
+}
+
 bool Configs::checkValid(ConfigItem item)
 {
     bool rc = false;
@@ -114,7 +139,11 @@ Configs::Configs() :
     mFileName(CONFIG_FILE_NAME) {
 }
 
-Configs::~Configs() {
+Configs::~Configs()
+{
+    if (mConstructed) {
+        destruct();
+    }
 }
 
 }

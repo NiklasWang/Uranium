@@ -6,6 +6,7 @@ namespace uranium {
 
 static const char *const ModuleName[] = {
     [MODULE_OTHERS]             = "others",
+    [MODULE_CORE]               = "core",
     [MODULE_GUI]                = "gui",
     [MODULE_AES]                = "aes",
     [MODULE_AES_TESTER]         = "aes_tester",
@@ -40,6 +41,7 @@ static const char *const ModuleName[] = {
 
 static const char *const ModuleShortName[] = {
     [MODULE_OTHERS]             = "[OTHER]",
+    [MODULE_CORE]               = "[ CORE]",
     [MODULE_GUI]                = "[  GUI]",
     [MODULE_AES]                = "[  AES]",
     [MODULE_AES_TESTER]         = "[ AEST]",
