@@ -1,5 +1,25 @@
-all:
+CXX      = $(GLOBAL_CXX)
+CXXFLAGS = $(GLOBAL_CXXFLAGS)
+LDFLAGS  = $(GLOBAL_LDFLAGS)
+
+TARGET      = libcore$(strip $(DYLIB_EXT))
+sources     = $(wildcard *.cpp)
+objects     = $(sources:.cpp=.o)
+dependence := $(sources:.cpp=.d)
+
+SHARED_LIBS = $(GLOBAL_SHARED_LIBS)
+STATIC_LIBS = $(GLOBAL_STATIC_LIBS)
+
+include $(MAKE_RULE)/find.library.make.rule
+
+-include $(dependence)
+
+include $(MAKE_RULE)/dependency.make.rule
+
+all: $(objects)
+	$(CXX) $^ $(LDFLAGS) -o $(TARGET)
 
 clean:
+	rm -f $(TARGET) $(objects) $(dependence)
 
-.PHONY: all clean
+.PHONY: clean
