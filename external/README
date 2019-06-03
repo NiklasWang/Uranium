@@ -6,3 +6,4 @@ All external modules which is depended on.
 - md5sum from coreutils
 - libuuid
 - AES encryption / decryption function form openssl
+- fswatch-master / fswatch is a file change monitor that receives notifications when the contents of the specified files or directories are modified. fswatch implements several monitors:
