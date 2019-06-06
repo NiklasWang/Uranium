@@ -1,14 +1,15 @@
 CXX      = $(GLOBAL_CXX)
+AR       = $(GLOBAL_AR)
 CXXFLAGS = $(GLOBAL_CXXFLAGS)
-LDFLAGS  = $(GLOBAL_LDFLAGS)
+ARFLAGS  = $(GLOBAL_ARFLAGS) rcs
 
-TARGET      = libmonitor$(strip $(DYLIB_EXT))
+TARGET      = libmonitor$(strip $(STLIB_EXT))
 sources     = $(wildcard *.cpp)
 objects     = $(sources:.cpp=.o)
 dependence := $(sources:.cpp=.d)
 
 SHARED_LIBS = $(GLOBAL_SHARED_LIBS)
-STATIC_LIBS = $(GLOBAL_STATIC_LIBS)
+STATIC_LIBS = $(GLOBAL_STATIC_LIBS) libaes libmd5sum_sha1sum libuuid
 
 include $(MAKE_RULE)/find.library.make.rule
 
@@ -19,7 +20,9 @@ include $(MAKE_RULE)/dependency.make.rule
 include $(MAKE_RULE)/submodule.make.rule
 
 lib: $(objects)
-	$(CXX) $^ $(LDFLAGS) -o $(TARGET)
+	$(AR) $(ARFLAGS) $(TARGET) $^ 
+
+	#$(CXX) $^ $(LDFLAGS) -o $(TARGET)
 
 all: lib $(MAKE_SUB_MODULES)
 
