@@ -1,6 +1,6 @@
 CC       = $(GLOBAL_CC)
 AR       = $(GLOBAL_AR)
-CFLAGS   = -Wno-cpp
+CFLAGS   = $(GLOBAL_CFLAGS) -Wno-cpp
 ARFLAGS  = rcs
 
 TARGET      = libuuid$(strip $(STLIB_EXT))
