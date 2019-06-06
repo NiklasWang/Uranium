@@ -102,6 +102,7 @@ int32_t FileManager::fileInfosLoad(const std::string path)
     int32_t rc = 0;
     /* clear all trees */
     fileInfoErase();
+
 #if 0
     mFile.load(path.c_str());
 
@@ -117,6 +118,7 @@ int32_t FileManager::fileInfosLoad(const std::string path)
         }
     }
 #endif
+
     return rc;
 }
 
