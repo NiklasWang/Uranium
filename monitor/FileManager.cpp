@@ -15,6 +15,7 @@
 #include <stdio.h>
 #include <iostream>
 #include <sstream>
+#include <fstream>
 
 #include "common.h"
 #include "FileManager.h"
@@ -86,13 +87,12 @@ int32_t FileManager::fileInfosSave(const std::string path)
 {
     int32_t rc = 0;
 
+    std::ofstream ostream(path, std::ios::binary);
+
     std::map<std::string, std::string>::iterator iter;
     for (iter = mFileInfos.begin(); iter != mFileInfos.end(); iter++) {
-        mFile[FILE_MANAGER_SECTION][iter->first] = mFileInfos[iter->first];
-
+        ostream << iter->first << "=" << mFileInfos[iter->first] << std::endl;
     }
-
-    mFile.save(path.c_str());
 
     return rc;
 }
@@ -102,23 +102,26 @@ int32_t FileManager::fileInfosLoad(const std::string path)
     int32_t rc = 0;
     /* clear all trees */
     fileInfoErase();
-
-#if 0
-    mFile.load(path.c_str());
-
-    for (int32_t i = 0; i < CONFIG_MAX_INVALID; i++) {
-        std::string key = whoamI(static_cast<ConfigItem>(i));
-        std::string value = mFile[INI_FILE_SECTION][key.c_str()].as<std::string>();
-        if (value.length()) {
-            mConfigs[key] = value;
-            LOGD(mModule, "Configuration found, %s=%s", key.c_str(), value.c_str());
-        } else {
-            rc |= NOT_FOUND;
-            LOGE(mModule, "Not found %s in config file %s", key.c_str(), mFileName.c_str());
+    std::ifstream istrm(path, std::ios::binary);
+    while (!istrm.eof()) {
+        std::string tmpStr;
+        istrm >> tmpStr;
+        std::string key;
+        std::string value;
+        std::string::size_type point;
+        point = tmpStr.find('=');
+        if (point != std::string::npos) {
+            key = tmpStr.substr(0, point);
+            value = tmpStr.substr(point + 1);
+            mFileInfos[key] = value;
         }
     }
+#if 0
+    std::map<std::string, std::string>::iterator iter;
+    for (iter = mFileInfos.begin(); iter != mFileInfos.end(); iter++) {
+        std::cout << iter->first << "=" << mFileInfos[iter->first] << std::endl;
+    }
 #endif
-
     return rc;
 }
 
@@ -147,9 +150,6 @@ int32_t FileManager::fileScanToInis(const std::string path)
         while ((ptr = readdir(dir)) != NULL) { ///read the list of this dir
 #ifdef __linux
             if (ptr->d_name == strchr(ptr->d_name, '.')) {
-                // printf("countine\n");
-                //std::cout << ptr->d_name<<std::endl;
-                // ("LHB d_type:%d d_name: %s%s\n", ptr->d_type, thisPath.c_str(), ptr->d_name);
                 continue;
             }
 
@@ -161,11 +161,9 @@ int32_t FileManager::fileScanToInis(const std::string path)
             } else if (DT_REG  == ptr->d_type) {
                 /* this is files*/
                 /* calcule md5sum */
-                // std::cout<< thisPath<< ptr->d_name<<std::endl;
                 std::string filePath = thisPath + ptr->d_name;
 
                 FILE *pFile = fopen(filePath.c_str(), "r");
-                // FILE *pFile = fopen("/mnt/d/lenvov_wokspace/source/Uranium/Makefile","r");
                 if (!ISNULL(pFile)) {
                     uint32_t checksum[4];
                     memset(checksum, 0, sizeof(checksum));
@@ -177,6 +175,9 @@ int32_t FileManager::fileScanToInis(const std::string path)
                         sst << std::hex << checksum[jj];
                     }
                     mFileInfos[filePath] = sst.str();
+#if 0
+                    std::cout << filePath << "=" << mFileInfos[filePath] << std::endl;
+#endif
                     fclose(pFile);
                 }
             }

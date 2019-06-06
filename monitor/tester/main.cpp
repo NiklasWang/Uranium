@@ -17,5 +17,6 @@ int main(int argc, char **argv)
 
     fileMang.fileScanToInis("/mnt/d/lenvov_wokspace/source/Uranium");
     fileMang.fileInfosSave("/tmp/lhb.ini");
+    fileMang.fileInfosLoad("/tmp/lhb.ini");
     return 0;
 }
