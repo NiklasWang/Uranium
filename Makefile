@@ -59,13 +59,13 @@ clean: $(CLEAN_SUB_MODULES)
 
 install:
 	if [ ! -d $(BIN_DIR) ]; then mkdir -p $(BIN_DIR); fi;
-	fileNum=$$(find $(ROOT_DIR) -type f -name "*$(strip $(DYLIB_EXT))" | wc -l); \
-	if [ "$$fileNum" -ne 0 ]; then                                               \
-    cp `find $(ROOT_DIR) -type f -name "*$(strip $(DYLIB_EXT))"` $(BIN_DIR);   \
+	fileNum=$$(find $(ROOT_DIR) -path $(BIN_DIR) -prune -type f -o -name "*$(strip $(DYLIB_EXT))" | wc -l);  \
+  if [ "$$fileNum" -ne 0 ]; then                                                                           \
+    cp -f `find $(ROOT_DIR) -path $(BIN_DIR) -prune -type f -o -name "*$(strip $(DYLIB_EXT))"` $(BIN_DIR); \
   fi;
-	fileNum=$$(find $(ROOT_DIR) -type f -name "*$(strip $(STLIB_EXT))" | wc -l); \
-	if [ "$$fileNum" -ne "0" ]; then                                             \
-    cp `find $(ROOT_DIR) -type f -name "*$(strip $(STLIB_EXT))"` $(BIN_DIR);   \
+	fileNum=$$(find $(ROOT_DIR) -path $(BIN_DIR) -prune -type f -o -name "*$(strip $(STLIB_EXT))" | wc -l);  \
+  if [ "$$fileNum" -ne "0" ]; then                                                                         \
+    cp -f `find $(ROOT_DIR) -path $(BIN_DIR) -prune -type f -o -name "*$(strip $(STLIB_EXT))"` $(BIN_DIR); \
   fi;
 	@echo -e $(FINISH_COLOR)"All libraries $(DYLIB_EXT) $(STLIB_EXT) have been copied to $(BIN_DIR)."$(RESTORE_COLOR)
 

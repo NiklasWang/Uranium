@@ -54,6 +54,13 @@ int32_t MainWindow::construct()
     }
 
     if (SUCCEED(rc)) {
+        rc = mUi->setupCore();
+        if (!SUCCEED(rc)) {
+            showError("Failed to setup core" + rc);
+        }
+    }
+
+    if (SUCCEED(rc)) {
         mConstructed = true;
     }
 

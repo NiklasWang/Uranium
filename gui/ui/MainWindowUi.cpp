@@ -20,6 +20,8 @@
 #include "version.h"
 #include "common.h"
 #include "ui/MainWindowUi.h"
+#include "CoreHandler.h"
+#include "Dialogs.h"
 
 namespace uranium {
 
@@ -99,6 +101,7 @@ int32_t MainWindowUi::setupUi(QMainWindow *MainWindow)
         virtualExpandingPolicy.setVerticalStretch(0);
         virtualExpandingPolicy.setHeightForWidth(mStartPushButton->sizePolicy().hasHeightForWidth());
         mStartPushButton->setSizePolicy(virtualExpandingPolicy);
+        mStartPushButton->setEnabled(false);
         QFont font1;
         font1.setFamily(QStringLiteral("Consolas"));
         font1.setPointSize(22);
@@ -364,6 +367,90 @@ void MainWindowUi::retranslateUi(QMainWindow *MainWindow)
             "Unknown@Remote:/home/Unknown$</p></body></html>", nullptr));
     mMenuFile->setTitle(QApplication::translate("MainWindow", "File", nullptr));
     mMenuHelp->setTitle(QApplication::translate("MainWindow", "Help", nullptr));
+}
+
+int32_t MainWindowUi::setupCore()
+{
+    int32_t rc = NO_ERROR;
+
+    if (SUCCEED(rc)) {
+        mCore = new CoreHandler();
+        if (NOTNULL(mCore)) {
+            rc = mCore->construct();
+            if (FAILED(rc)) {
+                showError("Failed to construct core handler" + rc);
+            }
+        }
+    }
+
+    return rc;
+}
+
+int32_t MainWindowUi::updateUi()
+{
+    return NO_ERROR;
+}
+
+int32_t MainWindowUi::onStarted(int32_t rc)
+{
+    QImage Image;
+    Image.load(SUCCEED(rc) ? ":/status/succeed" : ":/status/failed");
+    QPixmap pixmap = QPixmap::fromImage(Image);
+    QPixmap fitPixmap = pixmap.scaled(mStartedLabel->width(),
+        mStartedLabel->height(), Qt::IgnoreAspectRatio, Qt::SmoothTransformation);
+    mStartedLabel->setPixmap(fitPixmap);
+    mStartPushButton->setText(QApplication::translate("MainWindow",
+        SUCCEED(rc) ? " Stop " : " Start ", nullptr));
+
+    return NO_ERROR;
+}
+
+int32_t MainWindowUi::onStopped(int32_t rc)
+{
+    QImage Image;
+    Image.load(SUCCEED(rc) ? ":/status/question" : ":/status/failed");
+    QPixmap pixmap = QPixmap::fromImage(Image);
+    QPixmap fitPixmap = pixmap.scaled(mStartedLabel->width(),
+        mStartedLabel->height(), Qt::IgnoreAspectRatio, Qt::SmoothTransformation);
+    mStartedLabel->setPixmap(fitPixmap);
+    mStartPushButton->setText(QApplication::translate("MainWindow",
+        SUCCEED(rc) ? " Start " : " Stop ", nullptr));
+
+    return NO_ERROR;
+}
+
+int32_t MainWindowUi::onInitialized(int32_t rc)
+{
+    mStartPushButton->setEnabled(SUCCEED(rc));
+
+    QImage Image;
+    Image.load(SUCCEED(rc) ? ":/status/succeed" : ":/status/failed");
+    QPixmap pixmap = QPixmap::fromImage(Image);
+    QPixmap fitPixmap = pixmap.scaled(mStatusLabel->width(),
+        mStatusLabel->height(), Qt::IgnoreAspectRatio, Qt::SmoothTransformation);
+    mStatusLabel->setPixmap(fitPixmap);
+
+    return NO_ERROR;
+}
+
+int32_t MainWindowUi::appendDebugger(std::string str)
+{
+    mDebugTextEdit->append(str.c_str());
+    QTextCursor cursor = mDebugTextEdit->textCursor();
+    cursor.movePosition(QTextCursor::End);
+    mDebugTextEdit->setTextCursor(cursor);
+
+    return NO_ERROR;
+}
+
+int32_t MainWindowUi::appendShell(std::string str)
+{
+    mShellTextEditor->append(str.c_str());
+    QTextCursor cursor = mShellTextEditor->textCursor();
+    cursor.movePosition(QTextCursor::End);
+    mShellTextEditor->setTextCursor(cursor);
+
+    return NO_ERROR;
 }
 
 }

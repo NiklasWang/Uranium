@@ -28,6 +28,7 @@ PROJECT_ROOT = $$PWD/..
 
 SOURCES +=                      \
         main.cpp                \
+        CoreHandler.cpp         \
         MainWindow.cpp          \
         Dialogs.cpp             \
         AboutDialog.cpp         \
@@ -36,6 +37,7 @@ SOURCES +=                      \
 
 HEADERS +=                      \
         MainWindow.h            \
+        CoreHandler.h           \
         Dialogs.h               \
         AboutDialog.h           \
         ui/MainWindowUi.h       \
@@ -51,12 +53,12 @@ INCLUDEPATH +=                  \
 RESOURCES += \
         resources/pictures.qrc
 
-LIBS +=
-        #-L$$PROJECT_ROOT/release/libs -lcore \
+LIBS += \
+        -L$$PROJECT_ROOT/out/bin -lcore
 
 FORMS += \
         designer\MainWindow.ui  \
-#        designer\AboutDialog.ui
+        designer\AboutDialog.ui
 
 # Default rules for deployment.
 qnx: target.path = /tmp/$${TARGET}/bin
