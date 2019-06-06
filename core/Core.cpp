@@ -1,59 +1,28 @@
+#include "common.h"
 #include "Core.h"
+#include "CoreImpl.h"
+#include "ThreadPoolEx.h"
 
 namespace uranium {
 
-int32_t Core::start()
-{
-    sleep(1);
-    LOGD(mModule, "Core start() called.");
-
-    return NO_ERROR;
-}
-
-int32_t Core::stop()
-{
-    sleep(1);
-    LOGD(mModule, "Core start() called.");
-
-    return NO_ERROR;
-}
-
-int32_t Core::initialize()
-{
-    sleep(1);
-    LOGD(mModule, "Core start() called.");
-
-    return NO_ERROR;
-}
-
-int32_t Core::getConfig(ConfigItem key, std::string &value)
-{
-    return mConfig->get(key, value);
-}
-
-int32_t Core::getConfig(ConfigItem key, bool value)
-{
-    return mConfig->get(key, value);
-}
-int32_t Core::setConfig(ConfigItem key, std::string &value)
-{
-    return mConfig->set(key, value);
-}
-
-int32_t Core::setConfig(ConfigItem key, bool value)
-{
-    return mConfig->set(key, value);
-}
-
-int32_t Core::appendDebugger(std::string &str)
-{
-    return NOTNULL(mGui) ? mGui->appendDebugger(str) : NOT_INITED;
-}
-
-int32_t Core::appendShell(std::string &str)
-{
-    return NOTNULL(mGui) ? mGui->appendShell(str) : NOT_INITED;
-}
+#define CONSTRUCT_IMPL_ONCE()                                    \
+    ({                                                           \
+        int32_t __rc = NO_ERROR;                                 \
+        if (ISNULL(mImpl)) {                                     \
+            mImpl = new CoreImpl(this);                          \
+            if (ISNULL(mImpl)) {                                 \
+                __rc = NO_MEMORY;                                \
+                LOGE(mModule, "Failed to create core impl.");    \
+            }                                                    \
+        }                                                        \
+        if (NOTNULL(mImpl)) {                                    \
+            __rc = mImpl->construct();                            \
+            if (FAILED(__rc)) {                                  \
+                LOGE(mModule, "Failed to construct core impl."); \
+            }                                                    \
+        }                                                        \
+        __rc;                                                    \
+    })
 
 int32_t Core::construct()
 {
@@ -64,17 +33,17 @@ int32_t Core::construct()
     }
 
     if (SUCCEED(rc)) {
-        mConfig = new Configs();
-        rc = mConfig->construct();
-        if (!SUCCEED(rc)) {
-            LOGE(mModule, "Failed to construct Configs");
+        rc = CONSTRUCT_IMPL_ONCE();
+        if (FAILED(rc)) {
+            LOGE(mModule, "Failed to construct core impl");
         }
     }
 
     if (SUCCEED(rc)) {
-        rc = mConfig->load();
-        if (!SUCCEED(rc)) {
-            LOGE(mModule, "Failed to load configuration file");
+        mThreads = ThreadPoolEx::getInstance();
+        if (ISNULL(mThreads)) {
+            LOGE(mModule, "Failed to get thread pool");
+            rc = UNKNOWN_ERROR;
         }
     }
 
@@ -96,34 +65,133 @@ int32_t Core::destruct()
     }
 
     if (SUCCEED(rc)) {
-        rc = mConfig->save();
-        if (!SUCCEED(rc)) {
-            LOGE(mModule, "Failed to save configuration file");
+        rc = mImpl->destruct();
+        if (FAILED(rc)) {
+            LOGE(mModule, "Failed to destruct core impl");
+        } else {
+            SECURE_DELETE(mImpl);
         }
     }
 
     if (SUCCEED(rc)) {
-        rc = mConfig->destruct();
-        if (!SUCCEED(rc)) {
-            LOGE(mModule, "Failed to destruct Configs");
-        }
+        mThreads->removeInstance();
     }
 
     return RETURNIGNORE(rc, NOT_INITED);
 }
 
+int32_t Core::start(std::function<int32_t (int32_t)> cb)
+{
+    return mThreads->run(
+        [this, cb]() -> int32_t {
+            int32_t _rc = NO_ERROR;
+            _rc = mImpl->start();
+            cb(_rc);
+            if (FAILED(_rc)) {
+                LOGE(mModule, "Failed to %s core impl, %d",
+                    __FUNCTION__, _rc);
+            }
+            return _rc;
+        }
+    );
+}
+
+int32_t Core::stop(std::function<int32_t (int32_t)> cb)
+{
+    return mThreads->run(
+        [this, cb]() -> int32_t {
+            int32_t _rc = NO_ERROR;
+            _rc = mImpl->stop();
+            cb(_rc);
+            if (FAILED(_rc)) {
+                LOGE(mModule, "Failed to %s core impl, %d",
+                    __FUNCTION__, _rc);
+            }
+            return _rc;
+        }
+    );
+}
+
+int32_t Core::initialize(std::function<int32_t (int32_t)> cb)
+{
+    return mThreads->run(
+        [this, cb]() -> int32_t {
+            int32_t _rc = NO_ERROR;
+            _rc = mImpl->initialize();
+            cb(_rc);
+            if (FAILED(_rc)) {
+                LOGE(mModule, "Failed to %s core impl, %d",
+                    __FUNCTION__, _rc);
+            }
+            return _rc;
+        }
+    );
+}
+
+int32_t Core::getConfig(ConfigItem key, std::string &value)
+{
+    return mImpl->get(key, value);
+}
+
+int32_t Core::getConfig(ConfigItem key, bool &value)
+{
+    return mImpl->get(key, value);
+}
+
+int32_t Core::setConfig(ConfigItem key, std::string &value)
+{
+    return mImpl->set(key, value);
+}
+
+int32_t Core::setConfig(ConfigItem key, bool value)
+{
+    return mImpl->set(key, value);
+}
+
+int32_t Core::appendDebugger(std::string str)
+{
+    return mThreads->run(
+        [this, str]() -> int32_t {
+            int32_t _rc = NO_ERROR;
+            _rc = mCb->appendDebugger(str);
+            if (FAILED(_rc)) {
+                LOGE(mModule, "Failed to %s to gui, %d",
+                    __FUNCTION__, _rc);
+            }
+            return _rc;
+        }
+    );
+}
+
+int32_t Core::appendShell(std::string str)
+{
+    return mThreads->run(
+        [this, str]() -> int32_t {
+            int32_t _rc = NO_ERROR;
+            _rc = mCb->appendShell(str);
+            if (FAILED(_rc)) {
+                LOGE(mModule, "Failed to %s to gui, %d",
+                    __FUNCTION__, _rc);
+            }
+            return _rc;
+        }
+    );
+}
+
 Core::Core(GuiCallback *gui) :
     mConstructed(false),
-    mGui(gui),
     mModule(MODULE_CORE),
-    mConfig(nullptr) {
+    mImpl(nullptr),
+    mCb(gui),
+    mThreads(nullptr)
+{
 }
 
 Core::~Core()
 {
-    if (mConstructed) {
-        destruct();
-    }
+    CoreImpl *impl = mImpl;
+    mImpl = nullptr;
+    SECURE_DELETE(impl);
 }
 
 }

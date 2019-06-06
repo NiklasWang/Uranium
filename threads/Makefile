@@ -18,7 +18,7 @@ include $(MAKE_RULE)/find.library.make.rule
 include $(MAKE_RULE)/dependency.make.rule
 
 all: $(objects)
-	$(AR) $(ARFLAGS) $(TARGET) $^ 
+	$(CXX) $^ $(LDFLAGS) -o $(TARGET)
 
 clean:
 	rm -f $(TARGET) $(objects) $(dependence)

@@ -8,6 +8,7 @@ namespace uranium {
 enum ModuleType {
     MODULE_OTHERS,
     MODULE_CORE,
+    MODULE_CORE_IMPL,
     MODULE_GUI,
     MODULE_AES,
     MODULE_AES_TESTER,
