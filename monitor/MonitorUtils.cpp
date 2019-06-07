@@ -31,7 +31,10 @@ void processEvnets(const std::vector<event>& events, void *context)
 
         time_t evtTime = evt.get_time();
         std::string path = evt.get_path();
-
+        rc = pMointor->filtrationEvents(path);
+        if (FAILED(rc)) {
+            continue;
+        }
         MONITOR_FILES_T tmpMoFile;
         tmpMoFile.time = evtTime;
         tmpMoFile.filePath = path;

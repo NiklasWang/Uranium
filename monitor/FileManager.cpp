@@ -25,6 +25,7 @@
 namespace uranium
 {
 
+
 #if 0
 int32_t FileManager::startMonitorLoop()
 {
@@ -43,6 +44,7 @@ int32_t FileManager::startMonitorLoop()
     return rc;
 }
 #endif
+
 int32_t FileManager::construct()
 {
     int32_t rc = NO_ERROR;
@@ -183,6 +185,9 @@ int32_t FileManager::fileScanToInis(const std::string path)
     DIR    *dir;
     std::string thisPath = path;
 
+    if (thisPath.empty()) {
+        rc = -1;
+    }
     /*  */
     if (SUCCEED(rc)) {
 #ifdef __linux
