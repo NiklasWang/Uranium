@@ -23,6 +23,8 @@
 #include <cerrno>
 #include <vector>
 #include <map>
+#include <stdint.h>
+#include <functional>
 #include "libfswatch/c++/path_utils.hpp"
 #include "libfswatch/c++/event.hpp"
 #include "libfswatch/c++/monitor.hpp"
@@ -31,6 +33,7 @@
 #include "libfswatch/c/libfswatch.h"
 #include "libfswatch/c/libfswatch_log.h"
 #include "libfswatch/c++/libfswatch_exception.hpp"
+#include "common.h"
 
 namespace uranium
 {
@@ -61,27 +64,38 @@ typedef struct MONITOR_FILES_TAG {
 
 class MonitorUtils
 {
+
 public:
-    MonitorUtils();
-    ~MonitorUtils();
-    int32_t getMonitorFile(std::vector<MONITOR_FILES_T> &monitorFile);
-    void setMonitorDirPath(const std::vector<std::string> path);
-    void closeMonitor();
-    void startMonitor(const std::vector<std::string> path);
-    void restartMonitor(void);
-    friend void processEvnets(const std::vector<event>& events, void *context);
+    int32_t start();
+    int32_t stop();
+    // int32_t restart();
+    // int32_t getMonitorFile(std::vector<MONITOR_FILES_T> &monitorFile);
+    //friend void processEvnets(const std::vector<event>& events, void *context);
+    static void porcessEnvet(const std::function<void (std::vector<event>&, void*) > cb);
+public:
+    int32_t construct(FSW_EVENT_CALLBACK *cb);
+    int32_t destruct();
+    MonitorUtils(const std::vector<std::string> path);
+    virtual ~MonitorUtils();
 
 private:
+    MonitorUtils() = delete;
+    MonitorUtils(const MonitorUtils &rhs) = delete;
+    MonitorUtils &operator=(const MonitorUtils &rhs) = delete;
+
+private:
+    //int32_t filtrationEvents(event event, uint32_t &evnFlage);
+
+private:
+    bool                            mConstructed;
     std::vector<std::string>        mPaths;
-    monitor                         *mActiveMonitor = NULL;
+    monitor                         *mActiveMonitor;
     ModuleType                      mModule;
     std::vector<MONITOR_FILES_T>    mMonitorFiles;
-    int32_t filtrationEvents(event event, uint32_t &evnFlage);
-    // void processEvnets(const std::vector<event>& events, void *context);
-
 };  /* class MonitorUtils */
 
 
-};  /* namespace uranium */
+
+}  /* namespace uranium */
 
 #endif  // __MONITORUTILS_H__ 

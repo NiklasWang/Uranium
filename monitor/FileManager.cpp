@@ -16,6 +16,7 @@
 #include <iostream>
 #include <sstream>
 #include <fstream>
+#include <thread>
 
 #include "common.h"
 #include "FileManager.h"
@@ -24,13 +25,37 @@
 namespace uranium
 {
 
-FileManager::FileManager()
+#if 0
+int32_t FileManager::startMonitorLoop()
 {
+    int32_t rc = 0;
+    std::string moPath = "/mnt/d/lenvov_wokspace/source/Uranium";
+    std::vector<std::string> paths;
+    paths.push_back(moPath);
+    mMonitor.startMonitor(paths);
+    while (mRuning) {
+        std::vector<MONITOR_FILES_T> monitorFiles;
+        sleep(2);
+        mMonitor.getMonitorFile(monitorFiles);
+        MONITOR_FILES_T tmpMoFile;
 
+    }
+    return rc;
 }
-FileManager::~FileManager()
+#endif
+int32_t FileManager::construct()
 {
+    int32_t rc = NO_ERROR;
+    LOGD(mModule,"construct");
+    return rc;
+}
 
+int32_t FileManager::destruct()
+{
+    int32_t rc = NO_ERROR;
+    fileInfoErase();
+    LOGD(mModule,"destruct");
+    return rc;
 }
 
 int32_t FileManager::fileTarFromPath(const std::string fromPath, const std::string compreFile)
@@ -86,12 +111,24 @@ int32_t FileManager::fileUntarToPath(const std::string compreFile, const std::st
 int32_t FileManager::fileInfosSave(const std::string path)
 {
     int32_t rc = 0;
+    std::string tmpStr = path;
 
-    std::ofstream ostream(path, std::ios::binary);
+    if (SUCCEED(rc)) {
+        if (tmpStr.empty()) {
+            if (!mInfoPath.empty()) {
+                tmpStr = mInfoPath;
+            } else {
+                rc = -1;
+            }
+        }
+    }
 
-    std::map<std::string, std::string>::iterator iter;
-    for (iter = mFileInfos.begin(); iter != mFileInfos.end(); iter++) {
-        ostream << iter->first << "=" << mFileInfos[iter->first] << std::endl;
+    if (SUCCEED(rc)) {
+        std::ofstream ostream(tmpStr, std::ios::binary);
+        std::map<std::string, std::string>::iterator iter;
+        for (iter = mFileInfos.begin(); iter != mFileInfos.end(); iter++) {
+            ostream << iter->first << "=" << mFileInfos[iter->first] << std::endl;
+        }
     }
 
     return rc;
@@ -100,29 +137,44 @@ int32_t FileManager::fileInfosSave(const std::string path)
 int32_t FileManager::fileInfosLoad(const std::string path)
 {
     int32_t rc = 0;
-    /* clear all trees */
-    fileInfoErase();
-    std::ifstream istrm(path, std::ios::binary);
-    while (!istrm.eof()) {
-        std::string tmpStr;
-        istrm >> tmpStr;
-        std::string key;
-        std::string value;
-        std::string::size_type point;
-        point = tmpStr.find('=');
-        if (point != std::string::npos) {
-            key = tmpStr.substr(0, point);
-            value = tmpStr.substr(point + 1);
-            mFileInfos[key] = value;
+
+    std::string tmpStr = path;
+
+    if (SUCCEED(rc)) {
+        if (tmpStr.empty()) {
+            if (!mInfoPath.empty()) {
+                tmpStr = mInfoPath;
+            } else {
+                rc = -1;
+            }
         }
     }
-#if 0
-    std::map<std::string, std::string>::iterator iter;
-    for (iter = mFileInfos.begin(); iter != mFileInfos.end(); iter++) {
-        std::cout << iter->first << "=" << mFileInfos[iter->first] << std::endl;
+
+    if (SUCCEED(rc)) {
+        /* clear all trees */
+        fileInfoErase();
+        std::ifstream istrm(tmpStr, std::ios::binary);
+        while (!istrm.eof()) {
+            std::string tmpStr;
+            istrm >> tmpStr;
+            std::string key;
+            std::string value;
+            std::string::size_type point;
+            point = tmpStr.find('=');
+            if (point != std::string::npos) {
+                key = tmpStr.substr(0, point);
+                value = tmpStr.substr(point + 1);
+                mFileInfos[key] = value;
+            }
+        }
     }
-#endif
+
     return rc;
+}
+
+int32_t FileManager::fileScanToInis()
+{
+    return fileScanToInis(mDirPath);
 }
 
 int32_t FileManager::fileScanToInis(const std::string path)
@@ -192,12 +244,6 @@ int32_t FileManager::fileScanToInis(const std::string path)
     return rc;
 }
 
-int32_t FileManager::filePathSet(const std::string path)
-{
-    mfilePath = path;
-    return 0;
-}
-
 int32_t FileManager::fileInfoErase(void)
 {
     std::map<std::string, std::string>::iterator it;
@@ -206,6 +252,18 @@ int32_t FileManager::fileInfoErase(void)
     }
 
     return 0;
+}
+
+FileManager::FileManager(const std::string storageFilePath):
+    mDirPath(storageFilePath)
+    // mModule(0)
+{
+
+}
+
+FileManager::~FileManager()
+{
+
 }
 
 }

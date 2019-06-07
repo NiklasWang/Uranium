@@ -16,6 +16,7 @@ namespace uranium
 {
 
 // static FSW_EVENT_CALLBACK processEvnets;
+#if 0
 void processEvnets(const std::vector<event>& events, void *context)
 {
     int32_t rc = 0;
@@ -41,15 +42,6 @@ void processEvnets(const std::vector<event>& events, void *context)
 
 }
 
-MonitorUtils::MonitorUtils()
-{
-
-}
-
-MonitorUtils::~MonitorUtils()
-{
-
-}
 
 int32_t MonitorUtils::getMonitorFile(std::vector<MONITOR_FILES_T> &monitorFile)
 {
@@ -100,57 +92,6 @@ void MonitorUtils::setMonitorDirPath(const std::vector<std::string> path)
 
 }
 
-void MonitorUtils::closeMonitor()
-{
-    if (!ISNULL(mActiveMonitor)) {
-        mActiveMonitor->stop();
-    }
-}
-
-void MonitorUtils::startMonitor(const std::vector<std::string> path)
-{
-    int32_t rc = 0;
-
-    /* storage path */
-    if (SUCCEED(rc)) {
-
-        for (uint32_t i = 0; i < path.size(); i++) {
-            std::string tmpStr(fsw_realpath(path[i].c_str(), nullptr));
-            mPaths.push_back(tmpStr);
-        }
-
-    }
-
-    if (SUCCEED(rc)) {
-        mActiveMonitor = monitor_factory::create_monitor(
-                             fsw_monitor_type::system_default_monitor_type,
-                             mPaths,
-                             processEvnets,
-                             this);
-
-        if (ISNULL(mActiveMonitor)) {
-            rc = -1;
-            LOGE(mModule, "create monitor_factory failed!\n");
-        }
-    }
-
-    if (SUCCEED(rc)) {
-        mActiveMonitor->set_recursive(true);
-    }
-
-    /* if succeed this funcion not return */
-    if (SUCCEED(rc)) {
-        mActiveMonitor->start();
-        rc = -1;
-    }
-
-    if (FAILED(rc)) {
-        delete mActiveMonitor;
-        mActiveMonitor = NULL;
-    }
-}
-
-
 int32_t MonitorUtils::filtrationEvents(event event, uint32_t &evnFlage)
 {
     int rc = 0;
@@ -171,5 +112,81 @@ int32_t MonitorUtils::filtrationEvents(event event, uint32_t &evnFlage)
 
     return rc;
 }
+#endif
 
-};  /* class MonitorUtils */
+int32_t MonitorUtils::stop()
+{
+
+    if (!ISNULL(mActiveMonitor)) {
+        mActiveMonitor->stop();
+    }
+
+    return NO_ERROR;
+}
+
+int32_t MonitorUtils::start()
+{
+    int32_t rc = NO_ERROR;
+
+    /* if succeed this funcion not return */
+    if (SUCCEED(rc)) {
+        mActiveMonitor->start();
+        rc = -SYS_ERROR;
+    }
+
+    return rc;
+}
+
+int32_t MonitorUtils::construct(FSW_EVENT_CALLBACK *cb)
+{
+    int32_t rc = NO_ERROR;
+    if (mConstructed) {
+        rc = ALREADY_INITED;
+    } else {
+        if (ISNULL(mActiveMonitor)) {
+            mActiveMonitor = monitor_factory::create_monitor(
+                                 fsw_monitor_type::system_default_monitor_type,
+                                 mPaths,
+                                 *cb,
+                                 nullptr);
+            if (ISNULL(mActiveMonitor)) {
+                rc = SYS_ERROR;
+                LOGE(mModule, "create monitor_factory failed!\n");
+            }
+        }
+    }
+
+    if (SUCCEED(rc)) {
+        mActiveMonitor->set_recursive(true);
+    }
+
+    return rc;
+}
+
+int32_t MonitorUtils::destruct()
+{
+    int32_t rc  = NO_ERROR;
+    if (!mConstructed) {
+        rc = NOT_INITED;
+    } else {
+        mConstructed = false;
+    }
+
+    return rc;
+}
+
+MonitorUtils::MonitorUtils(const std::vector<std::string> path):
+    mConstructed(false),
+    mPaths(path),
+    mActiveMonitor(nullptr)
+    // mModule(1)
+{
+
+}
+
+MonitorUtils::~MonitorUtils()
+{
+    SECURE_DELETE(mActiveMonitor);
+}
+
+}  /* class MonitorUtils */

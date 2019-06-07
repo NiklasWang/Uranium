@@ -13,9 +13,9 @@
 #include "md5.h"
 int main(int argc, char **argv)
 {
-    uranium::FileManager fileMang;
+    uranium::FileManager fileMang("/mnt/d/lenvov_wokspace/source/Uranium");
 
-    fileMang.fileScanToInis("/mnt/d/lenvov_wokspace/source/Uranium");
+    fileMang.fileScanToInis();
     fileMang.fileInfosSave("/tmp/lhb.ini");
     fileMang.fileInfosLoad("/tmp/lhb.ini");
     return 0;

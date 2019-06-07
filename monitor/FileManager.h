@@ -17,11 +17,13 @@
 
 #include "common.h"
 #include "inicpp.h"
+#include "MonitorUtils.h"
+#include "threads/ThreadPoolEx.h"
+
 namespace uranium
 {
 
 #define FILE_MANAGER_DEFAULT_NAME   "fileManager.ini"
-#define FILE_MANAGER_SECTION        "FileManager"
 
 typedef struct FILEINFOS_TAG {
     uint32_t    checksum[4];
@@ -30,21 +32,36 @@ typedef struct FILEINFOS_TAG {
 class FileManager
 {
 public:
-    FileManager();
-    ~FileManager();
     int32_t fileTarFromPath(const std::string fromPath, const std::string compreFile);
     int32_t fileUntarToPath(const std::string compreFile, const std::string toPath);
-    int32_t fileInfosSave(const std::string path);
-    int32_t fileInfosLoad(const std::string path);
-    int32_t fileScanToInis(const std::string path);
-    int32_t filePathSet(const std::string path);
+    int32_t fileInfosSave(const std::string path = NULL);
+    int32_t fileInfosLoad(const std::string path = NULL);
+    int32_t fileScanToInis();
+    //
+    //int32_t filePathSet(const std::string path);
+    //int32_t fileStart
+
+public:
+    int32_t construct();
+    int32_t destruct();
+    FileManager(const std::string storageFilePath = FILE_MANAGER_DEFAULT_NAME);
+    virtual ~FileManager();
+
 private:
+    int32_t fileScanToInis(const std::string path);
     int32_t fileInfoErase(void);
+
+private:
+    FileManager() = delete;
+    FileManager(const FileManager &rhs) = delete;
+    FileManager &operator=(const FileManager &rhs) = delete;
+
+private:
     ModuleType      mModule;
-    std::string     mfilePath;
-    ini::IniFile    mFile;
+    std::string     mDirPath;
+    std::string     mInfoPath;
     std::map<std::string, std::string> mFileInfos;
-    uint32_t        myChecksum[4];
+    // bool            mRuning;
 };
 
 };
