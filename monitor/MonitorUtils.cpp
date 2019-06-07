@@ -30,7 +30,10 @@ void processEvnets(const std::vector<event>& events, void *context)
 
         time_t evtTime = evt.get_time();
         std::string path = evt.get_path();
-
+        rc = pMointor->filtrationEvents(path);
+        if (FAILED(rc)) {
+            continue;
+        }
         MONITOR_FILES_T tmpMoFile;
         tmpMoFile.time = evtTime;
         tmpMoFile.filePath = path;
@@ -150,6 +153,29 @@ void MonitorUtils::startMonitor(const std::vector<std::string> path)
     }
 }
 
+int32_t MonitorUtils::filtrationEvents(const std::string filePath)
+{
+    int32_t rc = 0;
+    std::string::size_type point;
+    std::string  tmpStr;
+
+    if (SUCCEED(rc)) {
+        point = filePath.find_last_of('/');
+        if (point == std::string::npos) {
+            rc = -1;
+        }
+
+    }
+    if (SUCCEED(rc)) {
+        std::string  tmpStr = filePath.substr(point + 1);
+        std::cout << "LHB " << tmpStr << std::endl;
+        if (tmpStr.at(0) == '.') {
+            rc = -1;
+        }
+    }
+
+    return rc;
+}
 
 int32_t MonitorUtils::filtrationEvents(event event, uint32_t &evnFlage)
 {
@@ -172,4 +198,4 @@ int32_t MonitorUtils::filtrationEvents(event event, uint32_t &evnFlage)
     return rc;
 }
 
-};  /* class MonitorUtils */
+}  /* class MonitorUtils */

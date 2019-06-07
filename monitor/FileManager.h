@@ -17,6 +17,9 @@
 
 #include "common.h"
 #include "inicpp.h"
+#include "MonitorUtils.h"
+#include "threads/ThreadPoolEx.h"
+
 namespace uranium
 {
 
@@ -34,17 +37,25 @@ public:
     ~FileManager();
     int32_t fileTarFromPath(const std::string fromPath, const std::string compreFile);
     int32_t fileUntarToPath(const std::string compreFile, const std::string toPath);
-    int32_t fileInfosSave(const std::string path);
-    int32_t fileInfosLoad(const std::string path);
-    int32_t fileScanToInis(const std::string path);
+    int32_t fileInfosSave(const std::string path = NULL);
+    int32_t fileInfosLoad(const std::string path = NULL);
+    int32_t fileScanToInis(const std::string path = NULL);
     int32_t filePathSet(const std::string path);
+    //int32_t fileStart
+private:
+    int32_t startMonitorLoop();
+
 private:
     int32_t fileInfoErase(void);
     ModuleType      mModule;
     std::string     mfilePath;
+    std::string     mInfoPath;
     ini::IniFile    mFile;
     std::map<std::string, std::string> mFileInfos;
     uint32_t        myChecksum[4];
+    MonitorUtils    mMonitor;
+    ThreadPoolEx    *mThreads;
+    bool            mRuning;
 };
 
 };

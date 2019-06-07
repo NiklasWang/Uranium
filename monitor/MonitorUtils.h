@@ -76,6 +76,7 @@ private:
     monitor                         *mActiveMonitor = NULL;
     ModuleType                      mModule;
     std::vector<MONITOR_FILES_T>    mMonitorFiles;
+    int32_t filtrationEvents(const std::string filePath);
     int32_t filtrationEvents(event event, uint32_t &evnFlage);
     // void processEvnets(const std::vector<event>& events, void *context);
 
