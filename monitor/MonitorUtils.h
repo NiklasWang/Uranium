@@ -71,11 +71,12 @@ public:
     // int32_t restart();
     // int32_t getMonitorFile(std::vector<MONITOR_FILES_T> &monitorFile);
     //friend void processEvnets(const std::vector<event>& events, void *context);
-    static void porcessEnvet(const std::function<void (std::vector<event>&, void*) > cb);
+    static FSW_EVENT_CALLBACK porcessEnvet;
+
 public:
-    int32_t construct(FSW_EVENT_CALLBACK *cb);
+    int32_t construct();
     int32_t destruct();
-    MonitorUtils(const std::vector<std::string> path);
+    MonitorUtils(const std::vector<std::string> path, std::function<void (const std::vector<event>&)> func);
     virtual ~MonitorUtils();
 
 private:
@@ -92,6 +93,7 @@ private:
     monitor                         *mActiveMonitor;
     ModuleType                      mModule;
     std::vector<MONITOR_FILES_T>    mMonitorFiles;
+    std::function<void (const std::vector<event>&)> mFunc;
 };  /* class MonitorUtils */
 
 

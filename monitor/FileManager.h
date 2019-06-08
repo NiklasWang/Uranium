@@ -32,11 +32,13 @@ typedef struct FILEINFOS_TAG {
 class FileManager
 {
 public:
-    int32_t fileTarFromPath(const std::string fromPath, const std::string compreFile);
-    int32_t fileUntarToPath(const std::string compreFile, const std::string toPath);
+    int32_t fileTarFromPath(const std::string compreFile);
+    int32_t fileUntarToPath(const std::string compreFile);
     int32_t fileInfosSave(const std::string path = NULL);
     int32_t fileInfosLoad(const std::string path = NULL);
     int32_t fileScanToInis();
+    bool    dirCompareWithLocal(const std::string file);
+    bool    dirNotExit(void);
     //
     //int32_t filePathSet(const std::string path);
     //int32_t fileStart

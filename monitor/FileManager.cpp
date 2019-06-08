@@ -48,7 +48,7 @@ int32_t FileManager::startMonitorLoop()
 int32_t FileManager::construct()
 {
     int32_t rc = NO_ERROR;
-    LOGD(mModule,"construct");
+    LOGD(mModule, "construct");
     return rc;
 }
 
@@ -56,25 +56,26 @@ int32_t FileManager::destruct()
 {
     int32_t rc = NO_ERROR;
     fileInfoErase();
-    LOGD(mModule,"destruct");
+    LOGD(mModule, "destruct");
     return rc;
 }
 
-int32_t FileManager::fileTarFromPath(const std::string fromPath, const std::string compreFile)
+int32_t FileManager::fileTarFromPath(const std::string compreFile)
 {
     int32_t rc = 0;
+    std::string tmpStr = mDirPath;
 
     if (SUCCEED(rc)) {
         /* exam file and path is exited */
-        rc = access(fromPath.c_str(), F_OK);
+        rc = access(tmpStr.c_str(), F_OK);
         if (FAILED(rc)) {
-            LOGE(mModule, "File/Path %s not exit\n", fromPath.c_str());
+            LOGE(mModule, "File/Path %s not exit\n", tmpStr.c_str());
         }
     }
 
     if (SUCCEED(rc)) {
         std::string cmd = ("tar -jcf ");
-        cmd += fromPath + " " + compreFile;
+        cmd += tmpStr + " " + compreFile;
         LOGE(mModule, "run cmd =%s\n", cmd.c_str());
 
         rc = system(cmd.c_str());
@@ -86,10 +87,10 @@ int32_t FileManager::fileTarFromPath(const std::string fromPath, const std::stri
     return rc;
 }
 
-int32_t FileManager::fileUntarToPath(const std::string compreFile, const std::string toPath)
+int32_t FileManager::fileUntarToPath(const std::string compreFile)
 {
     int32_t rc = 0;
-
+    std::string tmpStr = mDirPath;
     if (SUCCEED(rc)) {
         /* exam file and path is exited */
         rc = access(compreFile.c_str(), F_OK);
@@ -100,7 +101,7 @@ int32_t FileManager::fileUntarToPath(const std::string compreFile, const std::st
 
     if (SUCCEED(rc)) {
         std::string cmd = "tar -axf ";
-        cmd += compreFile + " -C " + toPath;
+        cmd += compreFile + " -C " + tmpStr;
         rc = system(cmd.c_str());
         if (FAILED(rc)) {
             LOGE(mModule, "Runing system(%s) failed!\n", cmd.c_str());
@@ -177,6 +178,69 @@ int32_t FileManager::fileInfosLoad(const std::string path)
 int32_t FileManager::fileScanToInis()
 {
     return fileScanToInis(mDirPath);
+}
+
+bool FileManager::dirCompareWithLocal(const std::string file)
+{
+    std::string tmpStr = file;
+    std::map<std::string, std::string> tmpFileInfo;
+    std::ifstream istrm(tmpStr, std::ios::binary);
+
+    while (!istrm.eof()) {
+        std::string ss;
+        istrm >> ss;
+        std::string key;
+        std::string value;
+        std::string::size_type point;
+        point = ss.find('=');
+        if (point != std::string::npos) {
+            key = ss.substr(0, point);
+            value = ss.substr(point + 1);
+            tmpFileInfo[key] = value;
+        }
+    }
+
+    /* loop compare load file infos  whit local dir scan files infos */
+    std::map<std::string, std::string>::iterator it;
+    for (it = tmpFileInfo.begin(); it != tmpFileInfo.end();) {
+        // it = mFileInfos.erase(it);
+        auto result = mFileInfos.find(it->first);
+        if (result != mFileInfos.end()) {
+            if (result->second == it->second) {
+                return true;
+            }
+        } else {
+            break;
+        }
+    }
+
+    return false;
+
+}
+
+bool FileManager::dirNotExit(void)
+{
+    struct stat sb;
+    return stat(mDirPath.c_str(), &sb);
+
+#if 0
+    if (SUCCEED(rc)) {
+        stat(dirPath.c_str(), &sb)
+        if (FAILED(rc)) {
+            LOGE(mModule, "failed run stat\n");
+        }
+    }
+
+    if (SUCCEED(rc)) {
+        if (S_ISDIR(sb.st_mode)) {
+            rc = NO_ERROR;
+        } else {
+            rc = 1;
+        }
+    }
+
+    return SUCCEED(rc) ? true : false;
+#endif
 }
 
 int32_t FileManager::fileScanToInis(const std::string path)
