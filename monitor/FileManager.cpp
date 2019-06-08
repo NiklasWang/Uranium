@@ -48,7 +48,7 @@ int32_t FileManager::startMonitorLoop()
 int32_t FileManager::construct()
 {
     int32_t rc = NO_ERROR;
-    LOGD(mModule,"construct");
+    LOGD(mModule, "construct");
     return rc;
 }
 
@@ -56,7 +56,7 @@ int32_t FileManager::destruct()
 {
     int32_t rc = NO_ERROR;
     fileInfoErase();
-    LOGD(mModule,"destruct");
+    LOGD(mModule, "destruct");
     return rc;
 }
 

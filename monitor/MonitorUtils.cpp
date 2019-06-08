@@ -16,6 +16,12 @@ namespace uranium
 {
 
 // static FSW_EVENT_CALLBACK processEvnets;
+//void MonitorUtils::porcessEnvet(const std::function<void (std::vector<event>&, void*) > cb)
+void MonitorUtils::porcessEnvet(const std::vector<event>& events, void *context)
+{
+    MonitorUtils *tmpPrt = (MonitorUtils*) context;
+    [&]()->void { tmpPrt->mFunc(events);};
+}
 #if 0
 void processEvnets(const std::vector<event>& events, void *context)
 {
@@ -140,7 +146,7 @@ int32_t MonitorUtils::start()
     return rc;
 }
 
-int32_t MonitorUtils::construct(FSW_EVENT_CALLBACK *cb)
+int32_t MonitorUtils::construct()
 {
     int32_t rc = NO_ERROR;
     if (mConstructed) {
@@ -150,8 +156,8 @@ int32_t MonitorUtils::construct(FSW_EVENT_CALLBACK *cb)
             mActiveMonitor = monitor_factory::create_monitor(
                                  fsw_monitor_type::system_default_monitor_type,
                                  mPaths,
-                                 *cb,
-                                 nullptr);
+                                 porcessEnvet,
+                                 this);
             if (ISNULL(mActiveMonitor)) {
                 rc = SYS_ERROR;
                 LOGE(mModule, "create monitor_factory failed!\n");
@@ -178,10 +184,11 @@ int32_t MonitorUtils::destruct()
     return rc;
 }
 
-MonitorUtils::MonitorUtils(const std::vector<std::string> path):
+MonitorUtils::MonitorUtils(const std::vector<std::string> path, std::function<void (const std::vector<event>&)> func):
     mConstructed(false),
     mPaths(path),
-    mActiveMonitor(nullptr)
+    mActiveMonitor(nullptr),
+    mFunc(func)
     // mModule(1)
 {
 
