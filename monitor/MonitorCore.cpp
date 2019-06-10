@@ -76,8 +76,6 @@ int32_t MonitorCore::monitorLoopProcess(void)
     return rc;
 }
 
-
-
 int32_t MonitorCore::construct()
 {
     int32_t rc = NO_ERROR;
