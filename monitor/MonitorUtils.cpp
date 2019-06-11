@@ -1,14 +1,3 @@
-/**
- * @file MonitorUitl.cpp
- * @brief
- * @author  lenovo <xxx@lenovo.com>
- * @version 1.0.0
- * @date 2019-06-03
- */
-/* Copyright(C) 2009-2019, Lenovo Inc.
- * All right reserved
- *
- */
 #include "common.h"
 #include "MonitorUtils.h"
 

@@ -1,14 +1,3 @@
-/**
- * @file MonitorUtils.h
- * @brief
- * @author  lenovo <xxx@lenovo.com>
- * @version 1.0.0
- * @date 2019-06-03
- */
-/* Copyright(C) 2009-2019, Lenovo Inc.
- * All right reserved
- *
- */
 #ifndef __MONITORUTILS_H__
 #define __MONITORUTILS_H__
 #include "libfswatch/gettext.h"
@@ -94,8 +83,6 @@ private:
     std::vector<MONITOR_FILES_T>    mMonitorFiles;
     std::function<void (const std::vector<event>&)> mFunc;
 };  /* class MonitorUtils */
-
-
 
 }  /* namespace uranium */
 

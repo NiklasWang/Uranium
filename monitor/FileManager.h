@@ -1,14 +1,3 @@
-/**
- * @file FileManager.h
- * @brief
- * @author  lenovo <xxx@lenovo.com>
- * @version 1.0.0
- * @date 2019-06-04
- */
-/* Copyright(C) 2009-2019, Lenovo Inc.
- * All right reserved
- *
- */
 #ifndef __FILE_MANAGER_H__
 #define __FILE_MANAGER_H__
 

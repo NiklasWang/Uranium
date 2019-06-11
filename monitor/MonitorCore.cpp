@@ -1,16 +1,4 @@
-/**
- * @file MonitorCore.cpp
- * @brief
- * @author  lenovo <xxx@lenovo.com>
- * @version 1.0.0
- * @date 2019-06-07
- */
-/* Copyright(C) 2009-2019, Lenovo Inc.
- * All right reserved
- *
- */
 #include "MonitorCore.h"
-
 
 namespace uranium
 {
@@ -270,7 +258,7 @@ MonitorCore::~MonitorCore()
         mThreads->removeInstance();
         mThreads = NULL;
     }
-     pthread_mutex_destroy(&infoMutex);
+    pthread_mutex_destroy(&infoMutex);
 }
-   
+
 }
