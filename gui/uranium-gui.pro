@@ -53,8 +53,8 @@ INCLUDEPATH +=                  \
 RESOURCES += \
         resources/pictures.qrc
 
-LIBS += \
-        -L$$PROJECT_ROOT/out/bin -lcore
+LIBS += -L$$PROJECT_ROOT/release
+LIBS += -lcygwin1 -lcore
 
 FORMS += \
         designer\MainWindow.ui  \

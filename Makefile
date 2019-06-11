@@ -19,7 +19,7 @@ ROOT_DIR  = $(shell pwd)
 MAKE_RULE = $(ROOT_DIR)/makerules
 OUT_DIR   = $(ROOT_DIR)/out
 OBJ_DIR   = $(OUT_DIR)/obj
-BIN_DIR   = $(OUT_DIR)/bin
+BIN_DIR   = $(ROOT_DIR)/release
 
 DYLIB_EXT = .so
 STLIB_EXT = .a
@@ -39,7 +39,7 @@ endif
 
 build: all
 
-exclude_dirs  = out gui
+exclude_dirs  = out gui release
 compile_order = log utils memory threads external encrypt
 
 export
@@ -60,12 +60,8 @@ clean: $(CLEAN_SUB_MODULES)
 install:
 	if [ ! -d $(BIN_DIR) ]; then mkdir -p $(BIN_DIR); fi;
 	fileNum=$$(find $(ROOT_DIR) -path $(BIN_DIR) -prune -type f -o -name "*$(strip $(DYLIB_EXT))" | wc -l);  \
-  if [ "$$fileNum" -ne 0 ]; then                                                                           \
-    cp -f `find $(ROOT_DIR) -path $(BIN_DIR) -prune -type f -o -name "*$(strip $(DYLIB_EXT))"` $(BIN_DIR); \
-  fi;
-	fileNum=$$(find $(ROOT_DIR) -path $(BIN_DIR) -prune -type f -o -name "*$(strip $(STLIB_EXT))" | wc -l);  \
   if [ "$$fileNum" -ne "0" ]; then                                                                         \
-    cp -f `find $(ROOT_DIR) -path $(BIN_DIR) -prune -type f -o -name "*$(strip $(STLIB_EXT))"` $(BIN_DIR); \
+    cp -f `find $(ROOT_DIR) -path $(BIN_DIR) -prune -type f -o -name "*$(strip $(DYLIB_EXT))"` $(BIN_DIR); \
   fi;
 	@echo -e $(FINISH_COLOR)"All libraries $(DYLIB_EXT) $(STLIB_EXT) have been copied to $(BIN_DIR)."$(RESTORE_COLOR)
 

@@ -38,5 +38,5 @@
 *.pro.user
 build-uranium-gui*/*
 
-# bin
-bin/*
+# Release
+!release/*
