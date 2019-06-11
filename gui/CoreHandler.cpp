@@ -1,14 +1,34 @@
+#include <QLibrary>
+
 #include "CoreHandler.h"
 #include "ui/MainWindowUi.h"
+
+#define CYGWIN_DLL_NAME  "cygwin1.dll"
+#define CYGWIN_INIT_FUNC "cygwin_dll_init"
 
 namespace uranium {
 
 int32_t CoreHandler::construct()
 {
     int32_t rc = NO_ERROR;
+    typedef int32_t (*InitFunc)();
 
     if (mConstructed) {
         rc = ALREADY_INITED;
+    }
+
+    if (SUCCEED(rc)) {
+        QLibrary lib(CYGWIN_DLL_NAME);
+        if (lib.load()) {
+            InitFunc func = (InitFunc)lib.resolve(CYGWIN_INIT_FUNC);
+            if (NOTNULL(func)) {
+                func();
+            } else {
+                LOGE(mModule, "Failed to init cygwin dll.");
+            }
+        } else {
+            LOGE(mModule, "Failed to load cygwin dll.");
+        }
     }
 
     if (SUCCEED(rc)) {
