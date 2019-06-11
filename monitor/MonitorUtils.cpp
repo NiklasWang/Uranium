@@ -20,7 +20,7 @@ namespace uranium
 void MonitorUtils::porcessEnvet(const std::vector<event>& events, void *context)
 {
     MonitorUtils *tmpPrt = (MonitorUtils*) context;
-    [&]()->void { tmpPrt->mFunc(events);};
+    tmpPrt->mFunc(events);
 }
 #if 0
 void processEvnets(const std::vector<event>& events, void *context)
@@ -100,6 +100,46 @@ void MonitorUtils::setMonitorDirPath(const std::vector<std::string> path)
     }
 
 }
+#endif
+int32_t MonitorUtils::filtrationEvents(const std::string filePath)
+{
+    int32_t rc = NO_ERROR;
+    std::string::size_type point;
+    std::string  tmpStr;
+
+#if 0
+    if (SUCCEED(rc)) {
+        point = filePath.find_last_of('/');
+        if (point == std::string::npos) {
+            rc = -1;
+        }
+
+    }
+    if (SUCCEED(rc)) {
+        std::string  tmpStr = filePath.substr(point + 1);
+        std::cout << "LHB " << tmpStr << std::endl;
+        if (tmpStr.at(0) == '.') {
+            rc = -1;
+        }
+    }
+#else
+    if (SUCCEED(rc)) {
+        point = filePath.find('.');
+        if (point != std::string::npos) {
+            std::string tmpStr = filePath.substr(0, point);
+            if (tmpStr.empty()) {
+                rc = -1;
+            } else if (tmpStr.at(point - 1) == '/') {
+                rc = -1;
+            }
+        }
+    }
+    if (SUCCEED(rc)) {
+
+    }
+#endif
+    return rc;
+}
 
 int32_t MonitorUtils::filtrationEvents(event event, uint32_t &evnFlage)
 {
@@ -121,15 +161,11 @@ int32_t MonitorUtils::filtrationEvents(event event, uint32_t &evnFlage)
 
     return rc;
 }
-#endif
 
 int32_t MonitorUtils::stop()
 {
-
-    if (!ISNULL(mActiveMonitor)) {
-        mActiveMonitor->stop();
-    }
-
+    mActiveMonitor->stop();
+    sleep(0.5);
     return NO_ERROR;
 }
 
@@ -140,7 +176,6 @@ int32_t MonitorUtils::start()
     /* if succeed this funcion not return */
     if (SUCCEED(rc)) {
         mActiveMonitor->start();
-        rc = -SYS_ERROR;
     }
 
     return rc;

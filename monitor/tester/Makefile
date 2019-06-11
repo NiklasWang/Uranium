@@ -8,10 +8,10 @@ sources     = $(wildcard *.cpp)
 objects     = $(sources:.cpp=.o)
 dependence := $(sources:.cpp=.d)
 
-SHARED_LIBS = $(GLOBAL_SHARED_LIBS) libpthread 
-STATIC_LIBS = $(GLOBAL_STATIC_LIBS) libmonitor libmd5sum_sha1sum libuuid libfswatch 
+SHARED_LIBS = $(GLOBAL_SHARED_LIBS) 
+STATIC_LIBS = $(GLOBAL_STATIC_LIBS)  libmonitor libmd5sum_sha1sum libuuid libfswatch
 
-LDFLAGS += -L../lib -lfswatch
+LDFLAGS += -L../lib -L../../threads/  -lfswatch 
 
 include $(MAKE_RULE)/find.library.make.rule
 
@@ -20,9 +20,10 @@ include $(MAKE_RULE)/find.library.make.rule
 include $(MAKE_RULE)/dependency.make.rule
 
 all: $(objects)
-	$(CXX) $^ $(LDFLAGS) -o $(TARGET)
+	$(CXX) $^ $(LDFLAGS) -lpthread -lthreads -o $(TARGET)
 
 clean:
 	rm -rf $(TARGET) $(objects) $(dependence) *.d.*
 
 .PHONY: clean
+	

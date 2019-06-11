@@ -12,6 +12,7 @@
 #ifndef __MONITORCORE_H__
 #define __MONITORCORE_H__
 #include <functional>
+#include <pthread.h>
 
 #include "common.h"
 #include "threads/ThreadPoolEx.h"
@@ -33,7 +34,12 @@ public:
     int32_t monitorDirInfosLoad(const std::string path);
 
 public:
+    int32_t monitorDirStart(void);
+    int32_t monitorDirStop(void);
+
+public:
     int32_t monitorLoopProcess(void);
+    int32_t monitorLoopStop(void);
 
 public:
     int32_t construct();
@@ -44,10 +50,12 @@ public:
 private:
     MonitorCore(const MonitorCore &rhs) = delete;
     MonitorCore &operator=(const MonitorCore &rhs) = delete;
-    void processHandle(const std::vector<event>& envets);
+    void processHandle(const std::vector<event>& events);
 
 private:
     bool            mConstructed;
+    bool            mLoopRuning;
+    bool            mMoniStarFlag;
     ModuleType      mModule;
     MonitorUtils    *mMonitor;
     FileManager     *mFileMage;
@@ -55,6 +63,8 @@ private:
     std::string     mMonitorPath;
     ThreadPoolEx    *mThreads;
     ThreadPoolEx    *mLoopThreads;
+    std::map<std::string, MONITOR_FILES_T> mFileModify;
+    pthread_mutex_t  infoMutex;
 
 };  // class MonitorCore
 
