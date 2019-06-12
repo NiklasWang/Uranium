@@ -1,15 +1,3 @@
-/**
- * @file TransferInterface.hpp
- * @brief  file transfer interface function
- * @author  lenovo <xxx@lenovo.com>
- * @version 1.0.0
- * @date 2019-05-30
- */
-/* Copyright(C) 2009-2019, Lenovo Inc.
- * All right reserved
- *
- */
-
 #ifndef __TRANSFERINTERFACE_H__
 #define __TRANSFERINTERFACE_H__
 

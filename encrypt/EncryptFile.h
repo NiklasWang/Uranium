@@ -1,16 +1,3 @@
-/**
- * @file EncryptFile.h
- * @brief aes data extension header file
- * @author lenovo <lenovo.com>
- * @version 1.0.0
- * @date 2019-05-24
- */
-
-/* Copyright(C) 2009-2019, Lenovo Inc.
- * All right reserved
- *
- */
-
 #ifndef __ENCRYPTFILE_H_
 #define __ENCRYPTFILE_H_
 

@@ -1,15 +1,3 @@
-/**
- * @file test_crypto_aes.cpp
- * @brief
- * @author  Lenovo  <NULL@lenovo.com>
- * @version 1.0.0
- * @date 2019-05-29
- */
-/* Copyright(C) 2009-2017, Itarge Inc.
- * All right reserved
- *
- */
-
 #include <stdio.h>
 #include <getopt.h>
 #include <string.h>

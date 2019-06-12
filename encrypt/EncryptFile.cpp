@@ -1,16 +1,3 @@
-/**
- * @file EncryptFile.cpp
- * @brief  encrypt files
- * @author  lenovo <who@lenovo.com>
- * @version 1.0.0
- * @date 2019-05-29
- */
-
-/* Copyright(C) 2009-2019, Lenovo Inc.
- * All right reserved
- *
- */
-
 #include <iostream>
 #include <string>
 #include <stdio.h>

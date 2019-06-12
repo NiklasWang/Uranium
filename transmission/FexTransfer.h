@@ -1,14 +1,3 @@
-/**
- * @file FexTransfer.h
- * @brief  transfer data thorugh fex commond
- * @author  lenovo <xxx@lenovo.com>
- * @version 1.0.0
- * @date 2019-05-30
- */
-/* Copyright(C) 2009-2019, Lenovo Inc.
- * All right reserved
- *
- */
 #ifndef __FEXTRANSFER_H__
 #define __FEXTRANSFER_H__
 

@@ -1,16 +1,3 @@
-/**
- * @file Dictionary.cpp
- * @brief  key dictionary source
- * @author  itarge <itarge@itarge.com>
- * @version 1.0.0
- * @date 2019-05-29
- */
-/* Copyright(C) 2009-2019, Lenovo Inc.
- * All right reserved
- *
- */
-
-
 #include <iostream>
 #include <string>
 #include <stdio.h>
