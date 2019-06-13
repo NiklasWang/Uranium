@@ -1,5 +1,7 @@
 SHELL=/bin/bash
 
+BUILD_32_BIT = n
+
 GLOBAL_CROSS     =
 GLOBAL_CC        = $(GLOBAL_CROSS)gcc
 GLOBAL_CXX       = $(GLOBAL_CROSS)g++
@@ -39,7 +41,7 @@ endif
 
 build: all
 
-exclude_dirs  = out gui release
+exclude_dirs  = cygwin gui out release
 compile_order = log utils memory threads external encrypt
 
 export

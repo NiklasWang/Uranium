@@ -45,8 +45,8 @@ DWORD cygwin::padding::_mainTID = 0;
 
 // A few cygwin constants.
 static const int SIGHUP = 1;
-static const int SIGINT = 2;
-static const int SIGTERM = 15;  // Cygwin won't deliver this one to us;
+//static const int SIGINT = 2;
+//static const int SIGTERM = 15;  // Cygwin won't deliver this one to us;
                                 // expect unadorned "kill" to just kill
                                 // your process.
 static const int SIGSTOP = 17;  // Cygwin insists on delivering SIGSTOP to
@@ -133,7 +133,7 @@ cygwin::connector::connector (const char *dll)
 
   // This should call init.cc:dll_entry() with DLL_PROCESS_ATTACH,
   // which calls dll_crt0_0().
-  if ((_library = LoadLibrary (dll)) == NULL)
+  if ((_library = LoadLibraryA (dll)) == NULL)
     throw windows_error ("LoadLibrary", dll);
 
   *out << "Initializing cygwin..." << endl;
@@ -407,7 +407,7 @@ windows_error::format (DWORD error, const char *message, const char *detail)
     ret << "(" << detail << ")";
   ret << ":  ";
 
-  bytes = FormatMessage (FORMAT_MESSAGE_FROM_SYSTEM, 0, error,
+  bytes = FormatMessageA (FORMAT_MESSAGE_FROM_SYSTEM, 0, error,
                          MAKELANGID (LANG_NEUTRAL, SUBLANG_DEFAULT),
                          buf, sizeof (buf), 0);
 
@@ -472,7 +472,7 @@ main (int argc, char *argv[])
   // uncomment this line, but be sure to have *everything* you want
   // from the stack below it backed up before you call the
   // constructor for cygwin::connector.
-  //cygwin::padding padding;
+  cygwin::padding padding;
 
   std::ostringstream output;
   bool verbose = false, testinterrupts = false;
@@ -502,6 +502,8 @@ main (int argc, char *argv[])
         }
     }
 
+  verbose = true;
+  out = &cout;
 
   try
   {
@@ -539,7 +541,7 @@ main (int argc, char *argv[])
 
     // ...and back:
     char buf[MAX_PATH], scratch[256];
-    GetSystemDirectory (buf, sizeof(buf));
+    GetSystemDirectoryA (buf, sizeof(buf));
     int (*cygstat) (const char *, void *);
     cygwin.get_symbol ("stat", cygstat);
 
