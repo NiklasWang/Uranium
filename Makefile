@@ -1,7 +1,5 @@
 SHELL=/bin/bash
 
-BUILD_32_BIT = n
-
 GLOBAL_CROSS     =
 GLOBAL_CC        = $(GLOBAL_CROSS)gcc
 GLOBAL_CXX       = $(GLOBAL_CROSS)g++

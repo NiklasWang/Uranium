@@ -1,0 +1,13 @@
+ARCH  := $(shell uname -m)
+
+BIT32 := i686
+BIT64 := x86_64
+
+BUILD_64BIT := n
+BUILD_32BIT := n
+
+ifeq ($(ARCH), $(BIT64))
+  BUILD_64BIT := y
+else
+  BUILD_32BIT := y
+endif
