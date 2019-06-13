@@ -10,9 +10,6 @@
 namespace uranium
 {
 
-#define CLINETFILE          ("CLI_FILE")
-#define SERVERFILE          ("SER_FILE")
-
 FexTransfer::FexTransfer(TRANSFER_STATUS_E tranDirct):
     mModule(MODULE_ENCRYPT),
     mTranDirct(tranDirct)
@@ -28,7 +25,7 @@ FexTransfer::~FexTransfer()
 uint32_t FexTransfer::pushData(TRANSFER_BUFFER_T &cmd)
 {
     int32_t rc = 0;
-    std::string filePath = "/tmp/";
+    std::string filePath = DIRPATH;
     std::string cmdStr = "fex -u ";
 
     if (SUCCEED(rc)) {
@@ -37,12 +34,19 @@ uint32_t FexTransfer::pushData(TRANSFER_BUFFER_T &cmd)
             LOGE(mModule, "Mode mismatching!");
         }
     }
+    if (SUCCEED(rc)) {
+        cmdStr = "mkdir -p ";
+        cmdStr += DIRPATH;
+        system(cmdStr.c_str());
+    }
 
     if (SUCCEED(rc)) {
+        cmdStr = "cp -ar ";
+        cmdStr += (char *)cmd.buffer;
+        cmdStr += " ";
         switch (mTranDirct) {
             case TRAN_CLINET:
                 filePath += CLINETFILE;
-
                 break;
             case TRANS_SERVER:
                 filePath += SERVERFILE;
@@ -52,19 +56,19 @@ uint32_t FexTransfer::pushData(TRANSFER_BUFFER_T &cmd)
                 LOGE(mModule, "Not support!");
                 break;
         }
-        std::cout << "filePath = " << filePath << std::endl;
+
     }
 
     if (SUCCEED(rc)) {
-        if (!ISNULL(cmd.buffer)) {
-            rc = writeFile(filePath, (const uint8_t *)cmd.buffer, cmd.length);
-            if (FAILED(rc)) {
-                LOGE(mModule, "Runing cmd=%s failed!", cmd.buffer);
-            }
-        }
+        cmdStr += filePath;
+        std::cout << "LHB DEBUG" << cmdStr << std::endl;
+        /* copy orig file to fex used files */
+        rc = system((const char *) cmdStr.c_str());
     }
 
     if (SUCCEED(rc)) {
+
+        cmdStr = ("fex -u ");
         cmdStr += filePath;
         rc = system((const char *) cmdStr.c_str());
     }
@@ -78,7 +82,9 @@ uint32_t FexTransfer::pullData(TRANSFER_BUFFER_T &cmd)
     uint8_t fileBuf[128];
     uint32_t fileBufSize = 128;
     std::string fexStr;
-    std::string cmdStr = "fex -l 1 > /tmp/cli.bin";
+    std::string cmdStr = "fex -l 1 > ";
+    cmdStr += DIRPATH;
+    cmdStr += "cli.bin";
     std::string timeTemp;
 
     if (SUCCEED(rc)) {
@@ -89,7 +95,8 @@ uint32_t FexTransfer::pullData(TRANSFER_BUFFER_T &cmd)
     }
 
     if (SUCCEED(rc)) {
-        cmdStr = "/tmp/cli.bin";
+        cmdStr = DIRPATH;
+        cmdStr += "cli.bin";
         memset(fileBuf, 0, sizeof(fileBuf));
         rc = readFile(cmdStr, fileBuf, fileBufSize);
     }
@@ -133,18 +140,23 @@ uint32_t FexTransfer::pullData(TRANSFER_BUFFER_T &cmd)
 
     if (SUCCEED(rc)) {
 
-        cmdStr = "fex -d /tmp/";
+        cmdStr = "fex -d ";
+        cmdStr += DIRPATH;
         rc = system(cmdStr.c_str());
 
     }
 
     if (SUCCEED(rc)) {
-        cmdStr = "/tmp/";
+        cmdStr = DIRPATH;
         cmdStr += SERVERFILE;
+        memset(cmd.buffer, 0, cmd.length);
+        strcpy((char *)cmd.buffer, cmdStr.c_str());
+#if 0
         rc = readFile(cmdStr, (uint8_t*) cmd.buffer, cmd.length);
         if (FAILED(rc)) {
             LOGE(mModule, "read file %s feiled!", cmdStr.c_str());
         }
+#endif
     }
 
     return rc;

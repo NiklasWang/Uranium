@@ -10,9 +10,10 @@ public:
     static TransferFactory* create();
     void destory();
     TransferManager* createTransferObject(const TRANSFER_MODE_ENUM transModes, TRANSFER_STATUS_E tranDirct);
+    virtual ~TransferFactory();
+
 private:
     TransferFactory() = default;
-    ~TransferFactory();
     TransferFactory(const TransferFactory&) = delete;
     TransferFactory& operator=(const TransferFactory&) = delete;
 };
