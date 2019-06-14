@@ -50,15 +50,15 @@ INCLUDEPATH +=                  \
         $$PROJECT_ROOT/memory   \
         $$PROJECT_ROOT/core
 
-RESOURCES += \
-        resources/pictures.qrc
+RESOURCES += resources/pictures.qrc
 
-LIBS += -L$$PROJECT_ROOT/release
-LIBS += -lcygwin1 -lcore
+LIBS += -L$$PROJECT_ROOT/log -llog
+LIBS += -L$$PROJECT_ROOT/utils -lutils
+LIBS += -L$$PROJECT_ROOT/release -lcygwin1 -lcore
 
 FORMS += \
-        designer\MainWindow.ui  \
-        designer\AboutDialog.ui
+        designer/MainWindow.ui  \
+        designer/AboutDialog.ui
 
 # Default rules for deployment.
 qnx: target.path = /tmp/$${TARGET}/bin

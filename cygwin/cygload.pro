@@ -16,7 +16,7 @@ DEFINES += QT_DEPRECATED_WARNINGS
 
 HEADERS += cygload.h
 
-SOURCES += cygload.cc
+SOURCES += cygload.cc tester/main.cc
 
 contains(QT_ARCH, i386) {
     message("Build for 32-bit, okay...")

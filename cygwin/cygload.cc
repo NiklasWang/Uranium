@@ -466,7 +466,7 @@ catch_signal (int)
 }
 
 int
-main (int argc, char *argv[])
+cygload_main (int argc, char *argv[])
 {
   // If you do not want to use cygloadCRTStartup() as an entry point,
   // uncomment this line, but be sure to have *everything* you want
