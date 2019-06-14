@@ -57,6 +57,7 @@ namespace cygwin
 
     // Verifies that padding has been declared.
     static void check ();
+    static void check(std::ostream *output);
 
   private:
     std::vector< char > _backup;

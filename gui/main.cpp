@@ -1,11 +1,17 @@
+#include <QApplication>
+#include <iostream>
+
 #include "common.h"
 #include "MainWindow.h"
-#include <QApplication>
+#include "cygload.h"
 
 using namespace uranium;
 
 int main(int argc, char *argv[])
 {
+    cygwin::padding padding;
+    cygwin::padding::check(&std::cout);
+
     int32_t rc = NO_ERROR;
 
     QCoreApplication::setAttribute(Qt::AA_EnableHighDpiScaling);

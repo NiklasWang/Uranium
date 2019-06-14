@@ -54,7 +54,12 @@ RESOURCES += resources/pictures.qrc
 
 LIBS += -L$$PROJECT_ROOT/log -llog
 LIBS += -L$$PROJECT_ROOT/utils -lutils
-LIBS += -L$$PROJECT_ROOT/release -lcygwin1 -lcore
+LIBS += -L$$PROJECT_ROOT/release -lcore
+
+SOURCES += $$PROJECT_ROOT/cygwin/cygload.cc
+HEADERS += $$PROJECT_ROOT/cygwin/cygload.h
+LIBS    += -L$$PROJECT_ROOT/cygwin -lcygwin1
+INCLUDEPATH += $$PROJECT_ROOT/cygwin
 
 FORMS += \
         designer/MainWindow.ui  \

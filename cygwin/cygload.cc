@@ -124,6 +124,24 @@ cygwin::padding::check ()
          << ".  Stack variables could be overwritten!" << endl;
 }
 
+void
+cygwin::padding::check(std::ostream *output)
+{
+  if (_main == NULL)
+    *output << "No padding declared!";
+  if (_mainTID != GetCurrentThreadId ())
+    *output << "You need to initialize cygwin::connector "
+            << "in the same thread in which you declared the "
+            << "padding.";
+
+  if (_main->_backup.size ())
+    *output << "Warning!  Stack base is "
+            << static_cast<void *>(_main->_stackbase)
+            << ".  padding ends at " << static_cast<void *>(_main->_end)
+            << ".  Delta is " << (_main->_stackbase - _main->_end)
+            << ".  Stack variables could be overwritten!" << endl;
+}
+
 cygwin::connector::connector (const char *dll)
 {
   // This will throw if padding is not in place.
