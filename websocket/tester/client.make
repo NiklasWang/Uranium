@@ -1,13 +1,13 @@
 CXX      = $(GLOBAL_CXX)
 CXXFLAGS = $(GLOBAL_CXXFLAGS)
-LDFLAGS  = $(GLOBAL_LDFLAGS)
+LDFLAGS = $(GLOBAL_LDFLAGS)
 
-TARGET      = libsocket$(strip $(DYLIB_EXT))
-sources     = $(wildcard *.cpp)
+TARGET      = client_tester
+sources     = client_tester.cpp
 objects     = $(sources:.cpp=.o)
 dependence := $(sources:.cpp=.d)
 
-SHARED_LIBS = $(GLOBAL_SHARED_LIBS) libthreads
+SHARED_LIBS = $(GLOBAL_SHARED_LIBS) libwebsocket
 STATIC_LIBS = $(GLOBAL_STATIC_LIBS)
 
 include $(MAKE_RULE)/find.library.make.rule 
@@ -16,14 +16,11 @@ include $(MAKE_RULE)/find.library.make.rule
 
 include $(MAKE_RULE)/dependency.make.rule
 
-include $(MAKE_RULE)/submodule.make.rule
-
-lib: $(objects)
+all: $(objects)
 	$(CXX) $^ $(LDFLAGS) -o $(TARGET)
 
-all: lib $(MAKE_SUB_MODULES)
-
-clean: $(CLEAN_SUB_MODULES)
+clean:
 	rm -f $(TARGET) $(objects) $(dependence)
 
-.PHONY: clean $(MAKE_SUB_MODULES) $(CLEAN_SUB_MODULES)
+.PHONY: clean
+

@@ -1,0 +1,7 @@
+Socket module between network
+
+- Socket client implementation
+- Socket server implemenation
+- Data send / receive
+- String send / receive
+- FD share between client and server between processes
