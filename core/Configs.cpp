@@ -5,18 +5,6 @@
 
 namespace uranium {
 
-const char *const Configs::gConfigName[] = {
-    [CONFIG_MASTER_MODE]  = "master_slave_mode",
-    [CONFIG_ENCRYPTION]   = "encryption",
-    [CONFIG_DEBUG_MODE]   = "debug_mode",
-    [CONFIG_REMOTE_SHELL] = "remote_shell",
-    [CONFIG_USERNAME]     = "username",
-    [CONFIG_PASSWORD]     = "password",
-    [CONFIG_LOCAL_PATH]   = "local_path",
-    [CONFIG_REMOTE_PATH]  = "remote_path",
-    [CONFIG_MAX_INVALID]  = "max_invalid",
-};
-
 int32_t Configs::load()
 {
     int32_t rc = NO_ERROR;
@@ -75,27 +63,6 @@ int32_t Configs::set(ConfigItem key, bool &value)
     std::string str = value ? "true" : "false";
 
     return set<std::string>(key, str);
-}
-
-bool Configs::checkValid(ConfigItem item)
-{
-    bool rc = false;
-
-    if (item >= 0 && item < CONFIG_MAX_INVALID) {
-        rc = true;
-    }
-
-    return rc;
-}
-
-ConfigItem Configs::getValidType(ConfigItem item)
-{
-    return checkValid(item) ? item : CONFIG_MAX_INVALID;
-}
-
-const char *Configs::whoamI(ConfigItem item)
-{
-    return gConfigName[getValidType(item)];
 }
 
 int32_t Configs::construct()

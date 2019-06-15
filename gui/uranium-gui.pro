@@ -4,7 +4,7 @@
 #
 #-------------------------------------------------
 
-QT       += core gui
+QT       += core gui websockets
 
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
@@ -26,40 +26,57 @@ CONFIG += c++11
 
 PROJECT_ROOT = $$PWD/..
 
-SOURCES +=                      \
-        main.cpp                \
-        CoreHandler.cpp         \
-        MainWindow.cpp          \
-        Dialogs.cpp             \
-        AboutDialog.cpp         \
-        ui/MainWindowUi.cpp     \
-        ui/AboutUi.cpp
+SOURCES +=                       \
+        main.cpp                 \
+        CoreHandler.cpp          \
+        MainWindow.cpp           \
+        WebSocketClient.cpp      \
+        WebSocketServer.cpp      \
+        Dialogs.cpp              \
+        AboutDialog.cpp          \
+        ui/MainWindowUi.cpp      \
+        ui/AboutUi.cpp           \
+        log/LogImpl.cpp          \
+        utils/modules.cpp        \
+        utils/CQueue.cpp         \
+        utils/Semaphore.cpp      \
+        utils/SyncType.cpp       \
+        utils/TimedSemaphore.cpp \
+        utils/Timer.cpp          \
+        utils/Times.cpp          \
+        ../core/Config.cpp
 
-HEADERS +=                      \
-        MainWindow.h            \
-        CoreHandler.h           \
-        Dialogs.h               \
-        AboutDialog.h           \
-        ui/MainWindowUi.h       \
-        ui/AboutUi.h
+HEADERS +=                       \
+        MainWindow.h             \
+        CoreHandler.h            \
+        WebSocketClient.h        \
+        WebSocketServer.h        \
+        Dialogs.h                \
+        AboutDialog.h            \
+        log/LogImpl.h            \
+        log/logs.h               \
+        ui/MainWindowUi.h        \
+        ui/AboutUi.h             \
+        utils/modules.h          \
+        utils/CQueue.h           \
+        utils/RWLock.h           \
+        utils/Semaphore.h        \
+        utils/SyncType.h         \
+        utils/TimedSemaphore.h   \
+        utils/Timer.h            \
+        utils/Times.h            \
+        utils/clist.h            \
+        utils/common.h           \
+        ../core/Config.h
 
-INCLUDEPATH +=                  \
-        $$PROJECT_ROOT          \
-        $$PROJECT_ROOT/utils    \
-        $$PROJECT_ROOT/log      \
-        $$PROJECT_ROOT/memory   \
+INCLUDEPATH +=                   \
+        $$PWD                    \
+        $$PWD/log                \
+        $$PWD/utils              \
+        $$PROJECT_ROOT           \
         $$PROJECT_ROOT/core
 
 RESOURCES += resources/pictures.qrc
-
-LIBS += -L$$PROJECT_ROOT/log -llog
-LIBS += -L$$PROJECT_ROOT/utils -lutils
-LIBS += -L$$PROJECT_ROOT/release -lcore
-
-SOURCES += $$PROJECT_ROOT/cygwin/cygload.cc
-HEADERS += $$PROJECT_ROOT/cygwin/cygload.h
-LIBS    += -L$$PROJECT_ROOT/cygwin -lcygwin1
-INCLUDEPATH += $$PROJECT_ROOT/cygwin
 
 FORMS += \
         designer/MainWindow.ui  \

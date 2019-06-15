@@ -35,5 +35,5 @@ int Semaphore::wait()
     return rc;
 }
 
-};
+}
 

@@ -1,0 +1,51 @@
+#ifndef _MODULES_H_
+#define _MODULES_H_
+
+#include "stdint.h"
+
+namespace uranium {
+
+enum ModuleType {
+    MODULE_OTHERS,
+    MODULE_CORE,
+    MODULE_CORE_IMPL,
+    MODULE_GUI,
+    MODULE_AES,
+    MODULE_AES_TESTER,
+    MODULE_ENCRYPT,
+    MODULE_ENCRYPT_TESTER,
+    MODULE_UUID,
+    MODULE_UUID_TESTER,
+    MODULE_SHA1,
+    MODULE_SHA1_TESTER,
+    MODULE_FILE,
+    MODULE_FILE_TESTER,
+    MODULE_DIR,
+    MODULE_DIR_TESTER,
+    MODULE_TRANSMITION,
+    MODULE_TRANSMITION_TESTER,
+    MODULE_THREAD_POOL,
+    MODULE_THREAD_TESTER,
+    MODULE_MEMORY_POOL,
+    MODULE_MEMORY_TESTER,
+    MODULE_SOCKET,
+    MODULE_SOCKET_SERVER,
+    MODULE_SOCKET_SERVER_SM,
+    MODULE_SOCKET_CLIENT,
+    MODULE_SOCKET_CLIENT_SM,
+    MODULE_OBJECT_BUFFER,
+    MODULE_CONFIGURATION,
+    MODULE_UTILS,
+    MODULE_TOOLS,
+    MODULE_TESTER,
+    MODULE_MAX_INVALID,
+};
+
+const char *getModuleName(ModuleType type);
+const char *getModuleShortName(ModuleType type);
+uint32_t getMaxLenofShortName();
+
+};
+
+#endif
+

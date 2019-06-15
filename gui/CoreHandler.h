@@ -2,10 +2,13 @@
 #define COREHANDLER_H
 
 #include <QObject>
+#include <QProcess>
 
 #include "common.h"
-#include "Core.h"
 #include "GuiCallback.h"
+#include "WebSocketServer.h"
+#include "Config.h"
+#include "Semaphore.h"
 
 namespace uranium {
 
@@ -39,18 +42,30 @@ signals:
 
 private slots:
     int32_t onDrawUi(std::function<int32_t ()> func);
+    void onProcessError(QProcess::ProcessError error);
 
 public:
     int32_t construct();
     int32_t destruct();
     CoreHandler(MainWindowUi *ui = nullptr);
-    ~CoreHandler();
+    virtual ~CoreHandler() override;
+
+private:
+    int32_t onSocketMessage(const QString &msg);
+    int32_t onSocketData(const QByteArray &data);
+    int32_t sendCoreMessage(QString &msg);
 
 private:
     bool          mConstructed;
     ModuleType    mModule;
-    Core         *mCore;
     MainWindowUi *mUi;
+    QProcess      mCoreProcess;
+    Semaphore     mStartSem;
+    Semaphore     mGetSem;
+    Semaphore     mExitSem;
+    std::string   mGetResult;
+    int32_t       mCoreProcessStatus;
+    WebSocketServer *mSocketServer;
 };
 
 }

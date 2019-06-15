@@ -7,23 +7,12 @@
 #include "common.h"
 #include "RWLock.h"
 #include "inicpp.h"
+#include "Config.h"
 
 namespace uranium {
 
 #define CONFIG_FILE_NAME "configuration.ini"
 #define INI_FILE_SECTION "Configuration"
-
-enum ConfigItem {
-    CONFIG_MASTER_MODE,
-    CONFIG_ENCRYPTION,
-    CONFIG_DEBUG_MODE,
-    CONFIG_REMOTE_SHELL,
-    CONFIG_USERNAME,
-    CONFIG_PASSWORD,
-    CONFIG_LOCAL_PATH,
-    CONFIG_REMOTE_PATH,
-    CONFIG_MAX_INVALID,
-};
 
 class Configs {
 public:
@@ -38,11 +27,6 @@ public:
 
     int32_t load();
     int32_t save();
-
-public:
-    const char *whoamI(ConfigItem item);
-    bool checkValid(ConfigItem item);
-    ConfigItem getValidType(ConfigItem item);
 
 public:
     int32_t construct();
