@@ -25,7 +25,7 @@ FexTransfer::~FexTransfer()
 uint32_t FexTransfer::pushData(TRANSFER_BUFFER_T &cmd)
 {
     int32_t rc = 0;
-    std::string filePath = DIRPATH;
+    std::string filePath = WORK_DIRPATH;
     std::string cmdStr = "fex -u ";
 
     if (SUCCEED(rc)) {
@@ -36,7 +36,7 @@ uint32_t FexTransfer::pushData(TRANSFER_BUFFER_T &cmd)
     }
     if (SUCCEED(rc)) {
         cmdStr = "mkdir -p ";
-        cmdStr += DIRPATH;
+        cmdStr += WORK_DIRPATH;
         system(cmdStr.c_str());
     }
 
@@ -83,7 +83,7 @@ uint32_t FexTransfer::pullData(TRANSFER_BUFFER_T &cmd)
     uint32_t fileBufSize = 128;
     std::string fexStr;
     std::string cmdStr = "fex -l 1 > ";
-    cmdStr += DIRPATH;
+    cmdStr += WORK_DIRPATH;
     cmdStr += "cli.bin";
     std::string timeTemp;
 
@@ -95,7 +95,7 @@ uint32_t FexTransfer::pullData(TRANSFER_BUFFER_T &cmd)
     }
 
     if (SUCCEED(rc)) {
-        cmdStr = DIRPATH;
+        cmdStr = WORK_DIRPATH;
         cmdStr += "cli.bin";
         memset(fileBuf, 0, sizeof(fileBuf));
         rc = readFile(cmdStr, fileBuf, fileBufSize);
@@ -141,13 +141,13 @@ uint32_t FexTransfer::pullData(TRANSFER_BUFFER_T &cmd)
     if (SUCCEED(rc)) {
 
         cmdStr = "fex -d ";
-        cmdStr += DIRPATH;
+        cmdStr += WORK_DIRPATH;
         rc = system(cmdStr.c_str());
 
     }
 
     if (SUCCEED(rc)) {
-        cmdStr = DIRPATH;
+        cmdStr = WORK_DIRPATH;
         cmdStr += SERVERFILE;
         memset(cmd.buffer, 0, cmd.length);
         strcpy((char *)cmd.buffer, cmdStr.c_str());

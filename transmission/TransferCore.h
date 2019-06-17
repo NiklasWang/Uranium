@@ -2,6 +2,7 @@
 #define __TRANSFER_CORE_H__
 
 #include "common.h"
+#include "FexTransfer.h"
 #include "threads/ThreadPoolEx.h"
 #include "TransferInterface.h"
 #include "TransferFactory.h"

@@ -6,14 +6,15 @@ namespace uranium
 int32_t TransferCore::send(const std::string path)
 {
     return mThreads->run(
-    [ = ]()-> int32_t {
-        int32_t __rc = NO_ERROR;
+    [this,path]()->int32_t {
+        // int32_t __rc = NO_ERROR;
         TRANSFER_BUFFER_T *pTranBuffer = mTransMang->createTransferBuffer();
         pTranBuffer->mode = TRAN_MODE_FEX;
         pTranBuffer->buffer = (void*) path.c_str();
-        __rc =  mTransMang->pushData(*pTranBuffer);
+        mTransMang->pushData(*pTranBuffer);
         mTransMang->destoryTransferBuffer(pTranBuffer);
-        return __rc;
+        return NO_ERROR;
+        // return __rc;
     });
 }
 

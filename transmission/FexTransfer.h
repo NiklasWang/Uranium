@@ -10,7 +10,7 @@ namespace uranium
 
 #define CLINETFILE          ("CLI_FILE")
 #define SERVERFILE          ("SER_FILE")
-#define DIRPATH             ("/tmp/Uranium/")
+#define WORK_DIRPATH        ("/tmp/Uranium/")
 
 class FexTransfer : public TransferManager
 {

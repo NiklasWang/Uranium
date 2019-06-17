@@ -10,6 +10,8 @@ dependence := $(sources:.cpp=.d)
 SHARED_LIBS = $(GLOBAL_SHARED_LIBS) libipcsocket
 STATIC_LIBS = $(GLOBAL_STATIC_LIBS)
 
+LDFLAGS+=-pthread
+
 include $(MAKE_RULE)/find.library.make.rule 
 
 -include $(dependence)
