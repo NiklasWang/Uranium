@@ -9,7 +9,7 @@ namespace uranium {
     ({                                                           \
         int32_t __rc = NO_ERROR;                                 \
         if (ISNULL(mImpl)) {                                     \
-            mImpl = new CoreImpl(this);                          \
+            mImpl = new CoreImpl(mCb);                           \
             if (ISNULL(mImpl)) {                                 \
                 __rc = NO_MEMORY;                                \
                 LOGE(mModule, "Failed to create core impl.");    \
@@ -148,7 +148,7 @@ int32_t Core::setConfig(ConfigItem key, bool value)
     return mImpl->set(key, value);
 }
 
-int32_t Core::appendDebugger(std::string str)
+int32_t Core::appendDebugger(const std::string &str)
 {
     return mThreads->run(
         [this, str]() -> int32_t {
@@ -163,7 +163,7 @@ int32_t Core::appendDebugger(std::string str)
     );
 }
 
-int32_t Core::appendShell(std::string str)
+int32_t Core::appendShell(const std::string &str)
 {
     return mThreads->run(
         [this, str]() -> int32_t {

@@ -20,34 +20,37 @@ namespace uranium {
 int8_t gDebugController[][LOG_TYPE_MAX_INVALID + 1] = {
     // NONE,  DBG,  INF, WARN,  ERR, FATA, INVA
     {     0,    1,    1,    1,    1,    1,    0}, // MODULE_OTHERS
-    {     0,    1,    1,    1,    1,    1,    0}, // MODULE_URANIUM
-    {     0,    1,    1,    1,    1,    1,    0}, // MODULE_URANIUM_IMPL
-    {     0,    1,    1,    1,    1,    1,    0}, // MODULE_URANIUM_CORE
+    {     0,    1,    1,    1,    1,    1,    0}, // MODULE_CORE
+    {     0,    1,    1,    1,    1,    1,    0}, // MODULE_CORE_IMPL
+    {     0,    1,    1,    1,    1,    1,    0}, // MODULE_GUI
+    {     0,    1,    1,    1,    1,    1,    0}, // MODULE_IPC
+    {     0,    1,    1,    1,    1,    1,    0}, // MODULE_AES
+    {     0,    1,    1,    1,    1,    1,    0}, // MODULE_AES_TESTER
+    {     0,    1,    1,    1,    1,    1,    0}, // MODULE_ENCRYPT
+    {     0,    1,    1,    1,    1,    1,    0}, // MODULE_ENCRYPT_TESTER
+    {     0,    1,    1,    1,    1,    1,    0}, // MODULE_UUID
+    {     0,    1,    1,    1,    1,    1,    0}, // MODULE_UUID_TESTER
+    {     0,    1,    1,    1,    1,    1,    0}, // MODULE_SHA1
+    {     0,    1,    1,    1,    1,    1,    0}, // MODULE_SHA1_TESTER
+    {     0,    1,    1,    1,    1,    1,    0}, // MODULE_FILE
+    {     0,    1,    1,    1,    1,    1,    0}, // MODULE_FILE_TESTER
+    {     0,    1,    1,    1,    1,    1,    0}, // MODULE_DIR
+    {     0,    1,    1,    1,    1,    1,    0}, // MODULE_DIR_TESTER
+    {     0,    1,    1,    1,    1,    1,    0}, // MODULE_TRANSMITION
+    {     0,    1,    1,    1,    1,    1,    0}, // MODULE_TRANSMITION_TESTER
+    {     0,    1,    1,    1,    1,    1,    0}, // MODULE_THREAD_POOL
+    {     0,    1,    1,    1,    1,    1,    0}, // MODULE_THREAD_TESTER
+    {     0,    1,    1,    1,    1,    1,    0}, // MODULE_MEMORY_POOL
+    {     0,    1,    1,    1,    1,    1,    0}, // MODULE_MEMORY_TESTER
     {     0,    1,    1,    1,    1,    1,    0}, // MODULE_SOCKET
     {     0,    1,    1,    1,    1,    1,    0}, // MODULE_SOCKET_SERVER
     {     0,    1,    1,    1,    1,    1,    0}, // MODULE_SOCKET_SERVER_SM
     {     0,    1,    1,    1,    1,    1,    0}, // MODULE_SOCKET_CLIENT
     {     0,    1,    1,    1,    1,    1,    0}, // MODULE_SOCKET_CLIENT_SM
-    {     0,    1,    1,    1,    1,    1,    0}, // MODULE_SERVER_CLIENT_CONTROL
-    {     0,    1,    1,    1,    1,    1,    0}, // MODULE_BUF_MANAGER
-    {     0,    1,    1,    1,    1,    1,    0}, // MODULE_ION_BUF_MANAGER
-    {     0,    1,    1,    1,    1,    1,    0}, // MODULE_SERVER_CB_THREAD
-    {     0,    1,    1,    1,    1,    1,    0}, // MODULE_RUN_ONCE_THREAD
-    {     0,    1,    1,    1,    1,    1,    0}, // MODULE_THREAD_POOL
-    {     0,    1,    1,    1,    1,    1,    0}, // MODULE_MEMORY_POOL
-    {     0,    1,    1,    1,    1,    1,    0}, // MODULE_REQUEST_HANDLER
-    {     0,    1,    1,    1,    1,    1,    0}, // MODULE_REQUEST_CLIENT_HANDLER
-    {     0,    1,    1,    1,    1,    1,    0}, // MODULE_URANIUM_CLIENT_CORE
-    {     0,    1,    1,    1,    1,    1,    0}, // MODULE_PREVIEW_REQUEST
-    {     0,    1,    1,    1,    1,    1,    0}, // MODULE_YUV_PICTURE_REQUEST
-    {     0,    1,    1,    1,    1,    1,    0}, // MODULE_BAYER_PICTURE_REQUEST
-    {     0,    1,    1,    1,    1,    1,    0}, // MODULE_EVT_REQUEST,
-    {     0,    1,    1,    1,    1,    1,    0}, // MODULE_DATA_REQUEST,
-    {     0,    1,    1,    1,    1,    1,    0}, // MODULE_OBJECT_BUFFER,
+    {     0,    1,    1,    1,    1,    1,    0}, // MODULE_OBJECT_BUFFER
+    {     0,    1,    1,    1,    1,    1,    0}, // MODULE_CONFIGURATION
     {     0,    1,    1,    1,    1,    1,    0}, // MODULE_UTILS
     {     0,    1,    1,    1,    1,    1,    0}, // MODULE_TOOLS
-    {     0,    1,    1,    1,    1,    1,    0}, // MODULE_SERVER_TESTER
-    {     0,    1,    1,    1,    1,    1,    0}, // MODULE_CLIENT_TESTER
     {     0,    1,    1,    1,    1,    1,    0}, // MODULE_TESTER
     {     0,    1,    1,    1,    1,    1,    0}, // MODULE_MAX_INVALID
 };

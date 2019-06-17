@@ -1,5 +1,6 @@
 #include <sys/socket.h>
-#include <sys/un.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
 #include <poll.h>
 #include <limits.h>
 
@@ -9,39 +10,20 @@
 
 namespace uranium {
 
-int32_t start_server(int32_t *socketfd, const char *socketName)
+int32_t start_server(int32_t *socketfd, int32_t port)
 {
-    struct sockaddr_un server_addr;
-    socklen_t addr_len;
+    struct sockaddr_in server_addr;
     int sockfd = -1;
     int option = 1;
-    mode_t permission = 0;
     int32_t rc = NO_ERROR;
 
     if (SUCCEED(rc)) {
-        sockfd = socket(AF_UNIX, SOCK_STREAM, 0);
+        sockfd = socket(AF_INET, SOCK_STREAM, 0);
         if (sockfd < 0) {
             LOGE(MODULE_SOCKET_SERVER,
                 "Failed to open listening socket for server, %s",
                 strerror(errno));
             rc = SYS_ERROR;
-        }
-    }
-
-    if (SUCCEED(rc)) {
-        memset((unsigned char *)&server_addr, 0, sizeof(server_addr));
-        server_addr.sun_family = AF_UNIX;
-        strcpy(server_addr.sun_path, SERVER_SOCKET_PATH);
-        strcat(server_addr.sun_path, socketName);
-        addr_len = strlen(server_addr.sun_path) + sizeof(server_addr.sun_family);
-        LOGD(MODULE_SOCKET_SERVER,
-            "Connection socket name %s", server_addr.sun_path);
-        if (!access(server_addr.sun_path, F_OK)) {
-            rc = unlink(server_addr.sun_path);
-            if (!SUCCEED(rc)) {
-                LOGE(MODULE_SOCKET_SERVER, "Unlink failed, %s", strerror(errno));
-                rc = SYS_ERROR;
-            }
         }
     }
 
@@ -58,30 +40,14 @@ int32_t start_server(int32_t *socketfd, const char *socketName)
     }
 
     if (SUCCEED(rc)) {
-        rc = bind(sockfd, (struct sockaddr *)&server_addr, addr_len);
+        memset((unsigned char *)&server_addr, 0, sizeof(server_addr));
+        server_addr.sin_family = AF_INET;
+        server_addr.sin_port = port;
+        server_addr.sin_addr.s_addr = htonl(INADDR_ANY);
+        rc = bind(sockfd, (struct sockaddr *)&server_addr, sizeof(server_addr));
         if (!SUCCEED(rc)) {
             LOGE(MODULE_SOCKET_SERVER,
                 "Failed to bind for server socket, %s", strerror(errno));
-            rc = SYS_ERROR;
-        }
-    }
-
-    if (SUCCEED(rc)) {
-        struct stat status;
-        rc = stat(server_addr.sun_path, &status);
-        if (!SUCCEED(rc)) {
-            LOGE(MODULE_SOCKET_SERVER, "Failed to stat, %s", strerror(errno));
-            rc = SYS_ERROR;
-        } else {
-            permission = status.st_mode;
-        }
-    }
-
-    if (SUCCEED(rc)) {
-        rc = chmod(server_addr.sun_path, permission | S_IROTH | S_IWOTH);
-        if (!SUCCEED(rc)) {
-            LOGE(MODULE_SOCKET_SERVER,"Failed to add permission, %s",
-                strerror(errno));
             rc = SYS_ERROR;
         }
     }
@@ -112,7 +78,7 @@ int32_t poll_accept(int32_t sockfd, int32_t *clientfd)
 {
     int32_t rc = NO_ERROR;
     int32_t connected_client_fd = -1;
-    struct sockaddr_un client_addr;
+    struct sockaddr_in client_addr;
     socklen_t client_addr_len;
     struct pollfd connected_pollfd;
 
@@ -193,18 +159,10 @@ int32_t disconnect_client(int32_t clientfd)
     return NO_ERROR;
 }
 
-int32_t stop_server(int32_t sockfd, const char *socketName)
+int32_t stop_server(int32_t sockfd)
 {
-    char path[PATH_MAX];
-
     shutdown(sockfd, SHUT_RDWR);
     close(sockfd);
-
-    strcpy(path, SERVER_SOCKET_PATH);
-    strcat(path, socketName);
-    if (!access(path, F_OK)) {
-        unlink(path);
-    }
 
     return NO_ERROR;
 }

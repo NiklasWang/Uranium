@@ -17,7 +17,7 @@ int _main_client_tester()
     int32_t write_len = 0;
 
     if (SUCCEED(rc)) {
-        rc = connect_to_server(&sockfd);
+        rc = connect_to_server(&sockfd, TESTER_SERVER_PORT);
         if (!SUCCEED(rc)) {
             LOGE(MODULE_TESTER, "Failed to connect server, %d", rc);
         }

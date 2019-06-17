@@ -40,7 +40,7 @@ endif
 build: all
 
 exclude_dirs  = cygwin gui out release
-compile_order = log utils memory threads external encrypt
+compile_order = log utils memory threads external encrypt websocket
 
 export
 unexport exclude_dirs compile_order

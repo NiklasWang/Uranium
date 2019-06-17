@@ -1,6 +1,6 @@
 CXX      = $(GLOBAL_CXX)
 CXXFLAGS = $(GLOBAL_CXXFLAGS)
-LDFLAGS = $(GLOBAL_LDFLAGS)
+LDFLAGS = $(GLOBAL_LDFLAGS) -pthread
 
 TARGET      = server_tester
 sources     = server_tester.cpp
@@ -9,8 +9,6 @@ dependence := $(sources:.cpp=.d)
 
 SHARED_LIBS = $(GLOBAL_SHARED_LIBS) libwebsocket
 STATIC_LIBS = $(GLOBAL_STATIC_LIBS)
-
-LDFLAGS+=-pthread
 
 include $(MAKE_RULE)/find.library.make.rule 
 

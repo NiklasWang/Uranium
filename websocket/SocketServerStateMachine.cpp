@@ -120,7 +120,7 @@ int32_t SocketServerStateMachine::cancelWaitMsg()
 }
 
 SocketServerStateMachine::SocketServerStateMachine(
-    const char *socketName) :
+    int32_t port) :
     mConstructed(false),
     mOwnServer(false),
     mServerFd(-1),
@@ -128,8 +128,8 @@ SocketServerStateMachine::SocketServerStateMachine(
     mStatus(STATUS_UNINITED),
     mWaitingMsg(false),
     mCancelConnect(false),
+    mPort(port),
     mModule(MODULE_SOCKET_SERVER_SM),
-    mSocketName(socketName),
     mThread(getModuleName(mModule))
 {
 }
@@ -201,7 +201,7 @@ int32_t SocketServerStateMachine::destruct()
             mClientFd = -1;
         }
         if (mOwnServer && mServerFd > 0) {
-            stop_server(mServerFd, mSocketName);
+            stop_server(mServerFd);
             mServerFd = -1;
         }
     }
@@ -215,7 +215,7 @@ int32_t SocketServerStateMachine::processTask(cmd_info *info)
 
     switch (info->cmd) {
         case CMD_START_SERVER: {
-            rc = start_server(&mServerFd, mSocketName);
+            rc = start_server(&mServerFd, mPort);
             if (!SUCCEED(rc)) {
                 LOGE(mModule, "Failed to start server, %d", rc);
             } else {
@@ -580,7 +580,7 @@ SocketServerStateMachine &SocketServerStateMachine::operator=(
     mCancelConnect = false;
     mModule = rhs.mModule;
     mClientFd = -1;
-    mSocketName = rhs.mSocketName;
+    mPort = rhs.mPort;
 
     if (!SUCCEED(construct())) {
         LOGE(mModule, "Failed to construct while copy construction");

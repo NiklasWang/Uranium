@@ -8,8 +8,8 @@ namespace uranium {
 
 class GuiCallback {
 public:
-    virtual int32_t appendDebugger(std::string str) = 0;
-    virtual int32_t appendShell(std::string str) = 0;
+    virtual int32_t appendDebugger(const std::string &str) = 0;
+    virtual int32_t appendShell(const std::string &str) = 0;
     virtual ~GuiCallback() {};
 };
 

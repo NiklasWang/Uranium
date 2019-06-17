@@ -1,3 +1,8 @@
+#ifndef _IPC_INSTRUCTION_H_
+#define _IPC_INSTRUCTION_H_
+
+namespace uranium {
+
 #define GUI_SOCK_PORT   8081
 #define CORE_SOCK_PORT  8082
 
@@ -19,3 +24,7 @@
 
 #define BOOL_TRUE       "TRUE"
 #define BOOL_FALSE      "FALSE"
+
+}
+
+#endif
