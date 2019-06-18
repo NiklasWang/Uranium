@@ -40,10 +40,12 @@ endif
 build: all
 
 exclude_dirs  = cygwin gui out release
-compile_order = log utils memory threads external encrypt websocket
+
+compile_order  = log utils memory threads external encrypt ipcsocket websocket
+compile_order += monitor transmission makerules experiment cmdline core ipc main
 
 export
-unexport exclude_dirs compile_order
+unexport compile_order
 
 include $(MAKE_RULE)/submodule.make.rule
 

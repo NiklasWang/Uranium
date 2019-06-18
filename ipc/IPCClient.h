@@ -12,6 +12,7 @@ class IPCClient :
     public GuiCallback {
 public:
     int32_t connect();
+    bool    connected();
     int32_t sendMessage(const std::string &msg);
 
 public:

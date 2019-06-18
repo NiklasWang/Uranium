@@ -7,6 +7,7 @@
 #include "common.h"
 #include "GuiCallback.h"
 #include "WebSocketServer.h"
+#include "WebSocketClient.h"
 #include "Config.h"
 #include "Semaphore.h"
 
@@ -66,6 +67,7 @@ private:
     std::string   mGetResult;
     int32_t       mCoreProcessStatus;
     WebSocketServer *mSocketServer;
+    WebSocketClient *mSocketClient;
 };
 
 }

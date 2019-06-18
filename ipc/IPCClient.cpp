@@ -16,6 +16,11 @@ int32_t IPCClient::connect()
     return rc;
 }
 
+bool IPCClient::connected()
+{
+    return mSC->connected();
+}
+
 int32_t IPCClient::sendMessage(const std::string &msg)
 {
     int32_t rc = NO_ERROR;
