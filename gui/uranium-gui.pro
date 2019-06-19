@@ -77,6 +77,8 @@ INCLUDEPATH +=                   \
         $$PROJECT_ROOT/ipc       \
         $$PROJECT_ROOT/core
 
+RC_ICONS   = "logo.ico"
+
 RESOURCES += resources/pictures.qrc
 
 FORMS += \

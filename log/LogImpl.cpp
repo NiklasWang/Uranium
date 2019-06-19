@@ -13,8 +13,8 @@
 namespace uranium {
 
 #define MAX_PROCESS_NAME_LEN 16
-#define LOG_FILE_PATH        "/data/vendor/camera/uranium.log"
-#define LOG_FILE_PATH_LAST   "/data/vendor/camera/uranium.last.log"
+#define LOG_FILE_PATH        PROJNAME ".log"
+#define LOG_FILE_PATH_LAST   PROJNAME ".last.log"
 #define LOG_MAX_LEN_PER_LINE 10240 // Bytes
 
 int8_t gDebugController[][LOG_TYPE_MAX_INVALID + 1] = {
@@ -199,7 +199,7 @@ void __debug_log(const ModuleType module, const LogType type,
         getProcessName(), getModuleShortName(module),
         getLogType(type), func, line, buf);
 
-    save_log("%s %s%s: %s:+%d: %s", getProcessName(),
+    save_log("%s %s%s: %s:+%d: %s\n", getProcessName(),
         getModuleShortName(module),
         getLogType(type), func, line, buf);
 }
@@ -215,15 +215,15 @@ void __assert_log(const ModuleType module, const unsigned char cond,
         __log_vsnprintf(buf, DBG_LOG_MAX_LEN, fmt, args);
         va_end(args);
 
-        print_log(LOG_TYPE_ERROR, "[<! ASSERT !>]%s %s%s: %s:+%d: %s",
+        print_log(LOG_TYPE_ERROR, "[<! ASSERT !>]%s %s%s: %s:+%d: %s\n",
             getProcessName(), getModuleShortName(module),
             "<ASSERT>", func, line, buf);
 
-        save_log("[<! ASSERT !>]%s %s%s: %s:+%d: %s",
+        save_log("[<! ASSERT !>]%s %s%s: %s:+%d: %s\n",
             getProcessName(), getModuleShortName(module),
             "<ASSERT>", func, line, buf);
 
-        save_log("[<! ASSERT !>] Process will suicide now.",
+        save_log("[<! ASSERT !>] Process will suicide now.\n",
             getProcessName(), getModuleShortName(MODULE_OTHERS),
             getLogType(LOG_TYPE_FATAL), __FUNCTION__, __LINE__, buf);
 
