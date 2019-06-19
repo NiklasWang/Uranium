@@ -3,7 +3,9 @@ AR       = $(GLOBAL_AR)
 CXXFLAGS = $(GLOBAL_CXXFLAGS)
 LDFLAGS  = $(GLOBAL_LDFLAGS) -pthread
 
-TARGET      = uranium$(strip $(EXE_EXT))
+include $(MAKE_RULE)/project.info.make.rule
+
+TARGET      = $(PROJNAME)$(strip $(EXE_EXT))
 sources     = $(wildcard *.cpp)
 objects     = $(sources:.cpp=.o)
 dependence := $(sources:.cpp=.d)

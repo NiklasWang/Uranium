@@ -278,7 +278,7 @@ int32_t CoreHandler::onInitialized(int32_t rc)
     );
 }
 
-int32_t CoreHandler::appendDebugger(std::string str)
+int32_t CoreHandler::appendDebugger(const std::string &str)
 {
     return drawUi(
         [&]() -> int32_t {
@@ -288,7 +288,7 @@ int32_t CoreHandler::appendDebugger(std::string str)
     );
 }
 
-int32_t CoreHandler::appendShell(std::string str)
+int32_t CoreHandler::appendShell(const std::string &str)
 {
     return drawUi(
         [&]() -> int32_t {

@@ -12,7 +12,7 @@
 
 PROJNAME_KEYWORD = "PROJNAME"
 VERSION_KEYWORD  = "VERSION"
-DATA_SRC_FILE    = version.h
+DATA_SRC_FILE    = $(ROOT_DIR)/version.h
 
 define GetPropValue
   $(shell                                   \

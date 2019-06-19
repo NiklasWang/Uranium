@@ -74,6 +74,7 @@ INCLUDEPATH +=                   \
         $$PWD/log                \
         $$PWD/utils              \
         $$PROJECT_ROOT           \
+        $$PROJECT_ROOT/ipc       \
         $$PROJECT_ROOT/core
 
 RESOURCES += resources/pictures.qrc
