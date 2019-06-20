@@ -1,0 +1,14 @@
+
+MODULE_DIRS := $(shell find $(ROOT_DIR) -maxdepth 1 -type d)
+MODULE_DIRS := $(basename $(patsubst ./%, %, $(MODULE_DIRS)))
+MODULE_DIRS := $(patsubst %/, %, $(MODULE_DIRS))
+EXCLUDE_DIR := $(patsubst %, $(ROOT_DIR)/%, $(exclude_dirs))
+MODULE_DIRS := $(filter-out $(EXCLUDE_DIR), $(MODULE_DIRS))
+MODULE_DIRS := $(strip $(sort $(MODULE_DIRS)))
+MODULE_DIRS := $(filter-out $(ROOT_DIR), $(MODULE_DIRS))
+
+DYLIB_MODULE = $(shell find $(MODULE_DIRS) -name "Makefile" -o -name "*.make" | xargs grep "^TARGET" | grep DYLIB_EXT | awk -F '[=$$]' '{ print $$2 }')
+
+STLIB_MODULE = $(shell find $(MODULE_DIRS) -name "Makefile" -o -name "*.make" | xargs grep "^TARGET" | grep STLIB_EXT | awk -F '[=$$]' '{ print $$2 }')
+
+EXE_MODULE   = $(shell find $(MODULE_DIRS) -name "Makefile" -o -name "*.make" | xargs grep "^TARGET" | grep EXE_EXT | awk -F '[=$$]' '{ print $$2 }')

@@ -74,7 +74,10 @@ INCLUDEPATH +=                   \
         $$PWD/log                \
         $$PWD/utils              \
         $$PROJECT_ROOT           \
+        $$PROJECT_ROOT/ipc       \
         $$PROJECT_ROOT/core
+
+RC_ICONS   = "logo.ico"
 
 RESOURCES += resources/pictures.qrc
 

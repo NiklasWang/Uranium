@@ -1,5 +1,6 @@
 #include <sys/socket.h>
-#include <sys/un.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
 #include <poll.h>
 
 #include "common.h"
@@ -8,15 +9,14 @@
 
 namespace uranium {
 
-int32_t connect_to_server(int32_t *fd, const char *socketName)
+int32_t connect_to_server(int32_t *fd, int32_t port)
 {
-    struct sockaddr_un server_addr;
-    socklen_t addr_len;
+    struct sockaddr_in server_addr;
     int sockfd = -1;
     int32_t rc = NO_ERROR;
 
     if (SUCCEED(rc)) {
-        sockfd = socket(AF_UNIX, SOCK_STREAM, 0);
+        sockfd = socket(AF_INET, SOCK_STREAM, 0);
         if (sockfd < 0) {
             LOGE(MODULE_SOCKET_CLIENT,
                 "Failed to open listening socket for server, %s",
@@ -27,22 +27,16 @@ int32_t connect_to_server(int32_t *fd, const char *socketName)
 
     if (SUCCEED(rc)) {
         memset((unsigned char *)&server_addr, 0, sizeof(server_addr));
-        server_addr.sun_family = AF_UNIX;
-        strcpy(server_addr.sun_path, SERVER_SOCKET_PATH);
-        strcat(server_addr.sun_path, socketName);
-        addr_len = strlen(server_addr.sun_path) + sizeof(server_addr.sun_family);
-    }
-
-    if (SUCCEED(rc)) {
-        rc = connect(sockfd, (struct sockaddr *)&server_addr, addr_len);
+        server_addr.sin_family = AF_INET;
+        server_addr.sin_port = htons(port);
+        server_addr.sin_addr.s_addr = inet_addr("127.0.0.1");
+        rc = connect(sockfd, (struct sockaddr *)&server_addr, sizeof(server_addr));
         if (rc != 0) {
             rc = NOT_READY;
             LOGD(MODULE_SOCKET_CLIENT, "Client connect to server "
-                "socket %s failed, %s, may not started",
-                server_addr.sun_path, strerror(errno));
+                "failed, %s, may not started", strerror(errno));
         } else {
-            LOGD(MODULE_SOCKET_CLIENT, "Client connected to server "
-                "socket", server_addr.sun_path);
+            LOGD(MODULE_SOCKET_CLIENT, "Client connected to server socket:%d.", port);
         }
     }
 

@@ -1,6 +1,6 @@
 CXX      = $(GLOBAL_CXX)
 CXXFLAGS = $(GLOBAL_CXXFLAGS)
-LDFLAGS = $(GLOBAL_LDFLAGS)
+LDFLAGS = $(GLOBAL_LDFLAGS) -pthread
 
 TARGET      = client_tester
 sources     = client_tester.cpp
@@ -9,7 +9,6 @@ dependence := $(sources:.cpp=.d)
 
 SHARED_LIBS = $(GLOBAL_SHARED_LIBS) libipcsocket
 STATIC_LIBS = $(GLOBAL_STATIC_LIBS)
-
 
 include $(MAKE_RULE)/find.library.make.rule 
 

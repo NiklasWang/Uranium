@@ -45,12 +45,12 @@ int32_t CoreImpl::set(ConfigItem key, bool value)
     return mConfig->set(key, value);
 }
 
-int32_t CoreImpl::appendDebugger(std::string str)
+int32_t CoreImpl::appendDebugger(const std::string &str)
 {
     return NOTNULL(mGui) ? mGui->appendDebugger(str) : NOT_INITED;
 }
 
-int32_t CoreImpl::appendShell(std::string str)
+int32_t CoreImpl::appendShell(const std::string &str)
 {
     return NOTNULL(mGui) ? mGui->appendShell(str) : NOT_INITED;
 }

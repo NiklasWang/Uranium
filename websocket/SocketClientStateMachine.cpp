@@ -82,13 +82,13 @@ bool SocketClientStateMachine::connected()
 }
 
 SocketClientStateMachine::SocketClientStateMachine(
-    const char *socketName) :
+    int32_t port) :
     mConstructed(false),
     mServerFd(-1),
     mStatus(STATUS_UNINITED),
     mModule(MODULE_SOCKET_CLIENT_SM),
     mCancelWait(false),
-    mSocketName(socketName),
+    mServerPort(port),
     mThread(getModuleName(mModule))
 {
     pthread_mutex_init(&mMsgLock, NULL);
@@ -172,7 +172,7 @@ int32_t SocketClientStateMachine::processTask(cmd_info *info)
 
     switch (info->cmd) {
         case CMD_CONNECT_SERVER: {
-            rc = connect_to_server(&mServerFd, mSocketName);
+            rc = connect_to_server(&mServerFd, mServerPort);
             if (!SUCCEED(rc)) {
                 LOGD(mModule, "Failed to connect server, "
                     "may not started, %d", rc);

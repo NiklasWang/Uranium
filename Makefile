@@ -40,10 +40,12 @@ endif
 build: all
 
 exclude_dirs  = cygwin gui out release
-compile_order = log utils memory threads external encrypt transmission monitor core
+
+compile_order  = log utils memory threads external encrypt ipcsocket websocket
+compile_order += monitor transmission makerules experiment cmdline core ipc main
 
 export
-unexport exclude_dirs compile_order
+unexport compile_order
 
 include $(MAKE_RULE)/submodule.make.rule
 
@@ -57,12 +59,16 @@ clean: $(CLEAN_SUB_MODULES)
 	rm -f `find $(ROOT_DIR) -type f -name "*.d*"`
 	@echo -e $(FINISH_COLOR)"Project $(PROJNAME) $(VERSION) all cleaned."$(RESTORE_COLOR)
 
+
+include $(MAKE_RULE)/find.all.modules.make.rule
+
 install:
 	if [ ! -d $(BIN_DIR) ]; then mkdir -p $(BIN_DIR); fi;
-	fileNum=$$(find $(ROOT_DIR) -path $(BIN_DIR) -prune -type f -o -name "*$(strip $(DYLIB_EXT))" | wc -l);  \
-  if [ "$$fileNum" -ne "0" ]; then                                                                         \
-    cp -f `find $(ROOT_DIR) -path $(BIN_DIR) -prune -type f -o -name "*$(strip $(DYLIB_EXT))"` $(BIN_DIR); \
+	fileNum=$$(find $(MODULE_DIRS) -type f -name "*$(strip $(DYLIB_EXT))" | wc -l);  \
+  if [ "$$fileNum" -ne "0" ]; then                                                 \
+    cp -f `find $(MODULE_DIRS) -type f -name "*$(strip $(DYLIB_EXT))"` $(BIN_DIR); \
   fi;
-	@echo -e $(FINISH_COLOR)"All libraries $(DYLIB_EXT) $(STLIB_EXT) have been copied to $(BIN_DIR)."$(RESTORE_COLOR)
+	cp -f `find $(MODULE_DIRS) -type f -name "$(PROJNAME)$(EXE_EXT)"` $(BIN_DIR);
+	@echo -e $(FINISH_COLOR)"All libraries $(DYLIB_EXT) have been copied to $(BIN_DIR)."$(RESTORE_COLOR)
 
 .PHONY: build all clean install $(MAKE_SUB_MODULES) $(CLEAN_SUB_MODULES)

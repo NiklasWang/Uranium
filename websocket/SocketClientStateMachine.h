@@ -74,7 +74,7 @@ private:
     void updateToNewStatus(status state);
 
 public:
-    SocketClientStateMachine(const char *socketName = SERVER_SOCKET_NAME);
+    SocketClientStateMachine(int32_t port);
     virtual ~SocketClientStateMachine();
     int32_t construct();
     int32_t destruct();
@@ -88,7 +88,7 @@ private:
     status      mStatus;
     ModuleType  mModule;
     bool        mCancelWait;
-    const char *mSocketName;
+    int32_t     mServerPort;
     pthread_mutex_t  mMsgLock;
     ThreadT<cmd_info> mThread;
 

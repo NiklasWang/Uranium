@@ -60,6 +60,16 @@ int32_t CoreHandler::construct()
     }
 
     if (SUCCEED(rc)) {
+        QString url = "ws://127.0.0.1:";
+        url.append(CORE_SOCK_PORT);
+        mSocketClient = new WebSocketClient(url);
+        if (!SUCCEED(rc)) {
+            LOGE(mModule, "Failed to create WebSocketClient");
+            rc = NO_MEMORY;
+        }
+    }
+
+    if (SUCCEED(rc)) {
         mConstructed = true;
     }
 
@@ -69,11 +79,8 @@ int32_t CoreHandler::construct()
 int32_t CoreHandler::sendCoreMessage(QString &msg)
 {
     int32_t rc = NO_ERROR;
-    QString url = "ws://127.0.0.1:";
 
-    url.append(CORE_SOCK_PORT);
-    WebSocketClient client(url);
-    int32_t size = client.sendMessage(msg);
+    int32_t size = mSocketClient->sendMessage(msg);
     if (size != msg.size()) {
         LOGE(mModule, "Message %s sent %d bytes.", msg.toLatin1().data(), size);
         rc = UNKNOWN_ERROR;
@@ -114,6 +121,7 @@ int32_t CoreHandler::destruct()
             LOGE(mModule, "Failed to destructed socket server, %d", rc);
         }
         SECURE_DELETE(mSocketServer);
+        SECURE_DELETE(mSocketClient);
     }
 
     return RETURNIGNORE(rc, NOT_INITED);
@@ -270,7 +278,7 @@ int32_t CoreHandler::onInitialized(int32_t rc)
     );
 }
 
-int32_t CoreHandler::appendDebugger(std::string str)
+int32_t CoreHandler::appendDebugger(const std::string &str)
 {
     return drawUi(
         [&]() -> int32_t {
@@ -280,7 +288,7 @@ int32_t CoreHandler::appendDebugger(std::string str)
     );
 }
 
-int32_t CoreHandler::appendShell(std::string str)
+int32_t CoreHandler::appendShell(const std::string &str)
 {
     return drawUi(
         [&]() -> int32_t {
@@ -334,7 +342,8 @@ CoreHandler::CoreHandler(MainWindowUi *ui) :
     mModule(MODULE_GUI),
     mUi(ui),
     mCoreProcessStatus(NO_ERROR),
-    mSocketServer(nullptr)
+    mSocketServer(nullptr),
+    mSocketClient(nullptr)
 {
     qRegisterMetaType<std::function<int32_t ()> >("std::function<int32_t ()>");
 

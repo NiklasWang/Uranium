@@ -2,7 +2,7 @@
 #include "configuration.h"
 #include "socket_server.h"
 
-#define TEST_FILE_NAME "/tmp/uranium_shared_file"
+#define TEST_FILE_NAME "uranium_shared_file"
 #define SOCKET_NAME    "uranium_socket"
 
 namespace uranium {
@@ -29,7 +29,7 @@ int _main_server_tester()
     }
 
     if (SUCCEED(rc)) {
-        rc = start_server(&sockfd, SOCKET_NAME);
+        rc = start_server(&sockfd, TESTER_SERVER_PORT);
         if (!SUCCEED(rc)) {
             LOGE(MODULE_TESTER, "Failed to start server, %d", rc);
         }
@@ -76,7 +76,7 @@ int _main_server_tester()
             disconnect_client(clientfd);
         }
         if (sockfd > 0) {
-            stop_server(sockfd, SOCKET_NAME);
+            stop_server(sockfd);
         }
     }
 

@@ -28,11 +28,11 @@ public:
     int32_t setConfig(ConfigItem key, bool value) override;
 
 public:
-    int32_t appendDebugger(std::string str) override;
-    int32_t appendShell(std::string str) override;
+    int32_t appendDebugger(const std::string &str) override;
+    int32_t appendShell(const std::string &str) override;
 
 public:
-    Core(GuiCallback *gui = nullptr);
+    explicit Core(GuiCallback *gui = nullptr);
     virtual ~Core();
     int32_t construct();
     int32_t destruct();

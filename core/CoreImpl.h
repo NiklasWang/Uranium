@@ -20,8 +20,8 @@ public:
     int32_t set(ConfigItem key, bool value);
 
 public:
-    int32_t appendDebugger(std::string str) override;
-    int32_t appendShell(std::string str) override;
+    int32_t appendDebugger(const std::string &str) override;
+    int32_t appendShell(const std::string &str) override;
 
 public:
     int32_t construct();

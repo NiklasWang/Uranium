@@ -84,7 +84,7 @@ private:
     void updateToNewStatus(status state);
 
 public:
-    SocketServerStateMachine(const char *socketName = SERVER_SOCKET_NAME);
+    SocketServerStateMachine(int32_t port);
     virtual ~SocketServerStateMachine();
     SocketServerStateMachine(const SocketServerStateMachine &rhs);
     SocketServerStateMachine &operator=(const SocketServerStateMachine &rhs);
@@ -104,8 +104,8 @@ private:
     bool    mWaitingMsg;
     bool    mCancelConnect;
     bool    mCancelMsg;
-    ModuleType  mModule;
-    const char *mSocketName;
+    int32_t mPort;
+    ModuleType mModule;
     ThreadT<cmd_info> mThread;
 
 private:
