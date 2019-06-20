@@ -16,11 +16,13 @@ class MonitorCore
 {
 public:
     bool monitorDirNotExit(void);
-    bool monitorDirCompareWithLocal(const std::string file);
-    int32_t monitorTarExec(const std::string files);
+    bool monitorDirCompareWithLocal(const std::string file, \
+        std::map<std::string, uint32_t> &diffFile);
+    int32_t monitorTarExec(const std::string files, std::function<int32_t (void)> cb);
     int32_t monitorUntarExec(const std::string files);
-    int32_t monitorDirInfosSave(const std::string path);
+    int32_t monitorDirInfosSave(const std::string path, std::function<int32_t (void)> cb);
     int32_t monitorDirInfosLoad(const std::string path);
+    int32_t monitorDirInfosScan();
 
 public:
     int32_t monitorDirStart(void);
@@ -33,10 +35,11 @@ public:
 public:
     int32_t construct();
     int32_t destruct();
-    MonitorCore(std::string fileMagePath, std::string monitorPath);
+    MonitorCore(std::string monitorPath);
     virtual ~MonitorCore();
 
 private:
+    MonitorCore() = delete;
     MonitorCore(const MonitorCore &rhs) = delete;
     MonitorCore &operator=(const MonitorCore &rhs) = delete;
     void processHandle(const std::vector<event>& events);
@@ -48,7 +51,7 @@ private:
     ModuleType      mModule;
     MonitorUtils    *mMonitor;
     FileManager     *mFileMage;
-    std::string     mFileMagePath;
+    // std::string     mFileMagePath;
     std::string     mMonitorPath;
     ThreadPoolEx    *mThreads;
     ThreadPoolEx    *mLoopThreads;

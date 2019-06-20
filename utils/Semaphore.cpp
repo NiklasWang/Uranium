@@ -4,8 +4,14 @@ namespace uranium {
 
 Semaphore::Semaphore(int n)
 {
+    pthread_condattr_t cond_attr;
+    pthread_condattr_init(&cond_attr);
+    pthread_condattr_setclock(&cond_attr, CLOCK_MONOTONIC);
+
     pthread_mutex_init(&mutex, NULL);
-    pthread_cond_init(&cond, NULL);
+    pthread_cond_init(&cond, &cond_attr);
+
+    pthread_condattr_destroy(&cond_attr);
     cnt = n;
 }
 

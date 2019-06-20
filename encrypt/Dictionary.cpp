@@ -14,19 +14,10 @@
 #include "uuid.h"
 #include "Dictionary.h"
 
+#define DEBUG  0
+
 namespace uranium
 {
-
-#define CHECK_ERROR(cond, retval, lable, fmt, args...)  \
-do {                                                            \
-    if(cond) {                                                  \
-        LOGE(mModule, fmt, ##args);                             \
-        LOGE(mModule, "%s() return %d\n",                       \
-                __func__, retval);                              \
-        rc = retval;                                            \
-        goto lable;                                             \
-    }                                                           \
-} while(0)
 
 
 static const uint8_t publicKeys[16] = {
@@ -34,21 +25,152 @@ static const uint8_t publicKeys[16] = {
     0x34, 0x56, 0x78, 0xBa, 0xbc, 0xde, 0xf7, 0x12
 };
 
-Dictionary::Dictionary():
-    mModule(MODULE_ENCRYPT),
-    fKeyInit(0)
+void Dictionary::printfKeys(void)
 {
-    mKeys = (uint8_t *) malloc(sizeof(uint8_t) * MAX_KEYS * 16);
-    ASSERT_LOG(mModule, ISNULL(mKeys), "Malloc memory failed!\n");
+    for (int i = 0; i < MAX_KEYS; i++) {
+        printf("Key[%d] = ", i);
+        for (int j = 0; j < 16; j++) {
+            printf("0x%02x ", mKeys[i * 16 + j]);
+        }
+        printf("\n");
+    }
+}
+
+void Dictionary::generateKeys(void)
+{
+    if (!fKeyInit) {
+        for (int i = 0; i < MAX_KEYS; i++) {
+            uuid_generate((mKeys + i * 16));
+#if DEBUG
+            printf("Key[%d] = ", i);
+            for (int j = 0; j < 16; j++) {
+                printf("0x%02x ", mKeys[i * 16 + j]);
+            }
+            printf("\n");
+#endif
+        }
+        fKeyInit = true;
+    }
+}
+
+int32_t Dictionary::loadDiction(const std::string  &filePath)
+{
+    int32_t rc = NO_ERROR;
+
+    if (SUCCEED(rc)) {
+        std::FILE* f = std::fopen(filePath.c_str(), "r");
+        if (!f) {
+            rc = NO_MEMORY;
+            LOGE(mModule, "Open %s failed\n", filePath.c_str());
+        } else {
+            auto size = std::fread(mKeys, 1, (sizeof(uint8_t) * MAX_KEYS * 16), f);
+            std::cout << "LHB read size = " << size << "orig size =" << (sizeof(uint8_t) * MAX_KEYS * 16) << std::endl;
+            std::fclose(f);
+        }
+    }
+
+#if DEBUG
+    printfKeys();
+#endif
+    return rc;
+}
+
+int32_t Dictionary::sotraDiction(const std::string &filePath)
+{
+    int32_t rc = NO_ERROR;
+
+    if (SUCCEED(rc)) {
+        std::ofstream ouStream(filePath, std::ios::binary | std::ios::trunc);
+        std::cout << "LHB bin size=" << sizeof(uint8_t) * MAX_KEYS * 16 << std::endl;
+        ouStream.write((char *)mKeys, (sizeof(uint8_t) * MAX_KEYS * 16));
+        ouStream.close();
+    }
+
+#if DEBUG
+    printfKeys();
+#endif
+    return rc;
+}
+
+template<class T, int N>
+void Dictionary::getKeys(const struct timeval  &timeValue, T(&key)[N])
+{
+    uint32_t md5sum[4];
+    uint32_t keyA;
+    uint32_t keyB;
+    uint32_t keyC;
+    uint8_t buff[128];
+
+    /* convet value to char string */
+    memset(buff, 0, sizeof(buff));
+    printf("time %ld%ld\n", (long int) timeValue.tv_sec, (long int) timeValue.tv_usec);
+    sprintf(buff, "%ld%ld", timeValue.tv_sec, timeValue.tv_usec);
+    printf("LHB %s lenght=%d\n", buff, strlen(buff));
+    /* calcule timeValue md5sum */
+    md5_buffer(buff, strlen(buff), md5sum);
+    /* md5sum */
+    keyA = md5sum[0] ^ md5sum[2];
+    keyB = md5sum[1] ^ md5sum[3];
+    keyC = ((keyA & 0xFFFF) << 16) + ((keyB >> 16) & 0xFFFF);
+    /* total sum is MAX_KEYS*16 - last 16-bits let  max size is  (MAX_KEYS*16-17)*/
+    keyC %= (((MAX_KEYS - 1) << 4) - 1);
+    printf("N=%d\n", N);
+    memcpy(key, &mKeys[keyC], N);
+}
+
+int32_t Dictionary::construct()
+{
+    int32_t rc = NO_ERROR;
+
+    if (mConstructed) {
+        rc = ALREADY_INITED;
+    }
+
+    if (SUCCEED(rc)) {
+        mKeys = (uint8_t *) malloc(sizeof(uint8_t) * MAX_KEYS * 16);
+        if (ISNULL(mKeys)) {
+            LOGE(mModule, "Malloc memory failed!\n");
+        }
+    }
+
+    return rc;
+}
+
+int32_t Dictionary::destruct()
+{
+    int32_t rc = NO_ERROR;
+
+    if (!mConstructed) {
+        rc = NOT_INITED;
+    } else {
+        mConstructed = false;
+    }
+
+    if (SUCCEED(rc)) {
+        SECURE_FREE(mKeys);
+    }
+    return rc;
+}
+
+Dictionary::Dictionary():
+    mConstructed(false),
+    fKeyInit(false),
+    mModule(MODULE_ENCRYPT),
+    mKeys(NULL)
+{
+
+
 }
 
 Dictionary::~Dictionary()
 {
-    if (!ISNULL(mKeys)) {
-        free(mKeys);
+    if (mConstructed) {
+        destruct();
     }
+    fKeyInit = false;
+    mConstructed = false;
 }
-
+#if 0
 int32_t Dictionary::loadKeys(const std::string &path)
 {
     int32_t rc = 0;
@@ -81,7 +203,7 @@ int32_t Dictionary::storageKeys(const std::string &path)
     pFile = fopen(path.c_str(), "r");
     CHECK_ERROR(ISNULL(pFile), -2, err, "Open file failed\n");
 
-    if (1 != fKeyInit) {
+    if (true != fKeyInit) {
         makeKeys();
     }
 
@@ -94,19 +216,7 @@ err:
     return rc;
 }
 
-void Dictionary::makeKeys(void)
-{
 
-    for (int i = 0; i < MAX_KEYS; i++) {
-        uuid_generate((mKeys + i * 16));
-        printf("Key[i] = ");
-        for (int j = 0; j < 16; j++) {
-            printf("0x%02x ", mKeys[i * 16 + j]);
-        }
-        printf("\n");
-    }
-    fKeyInit = 1;
-}
 
 void Dictionary::setDictionary(const uint8_t *keys)
 {
@@ -125,33 +235,7 @@ const uint8_t* Dictionary::getDictionary(void)
 {
     return mKeys;
 }
-
-template<class T, int N>
-void Dictionary::getKeys(const struct timeval  &timeValue, T(&key)[N])
-{
-    uint32_t md5sum[4];
-    uint32_t keyA;
-    uint32_t keyB;
-    uint32_t keyC;
-    uint8_t buff[128];
-
-    /* convet value to char string */
-    memset(buff, 0, sizeof(buff));
-    printf("time %ld%ld\n", (long int) timeValue.tv_sec, (long int) timeValue.tv_usec);
-    sprintf(buff, "%ld%ld", timeValue.tv_sec, timeValue.tv_usec);
-    printf("LHB %s lenght=%d\n", buff, strlen(buff));
-    /* calcule timeValue md5sum */
-    md5_buffer(buff, strlen(buff), md5sum);
-    /* md5sum */
-    keyA = md5sum[0] ^ md5sum[2];
-    keyB = md5sum[1] ^ md5sum[3];
-    keyC = ((keyA & 0xFFFF) << 16) + ((keyB >> 16) & 0xFFFF);
-    /* total sum is MAX_KEYS*16 - last 16-bits let  max size is  (MAX_KEYS*16-17)*/
-    keyC %= (((MAX_KEYS - 1) << 4) - 1);
-    printf("N=%d\n", N);
-    memcpy(key, &mKeys[keyC], N);
+#endif
 }
-
-};
 
 

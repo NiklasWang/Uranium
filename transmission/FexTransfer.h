@@ -11,6 +11,12 @@ namespace uranium
 #define CLINETFILE          ("CLI_FILE")
 #define SERVERFILE          ("SER_FILE")
 #define WORK_DIRPATH        ("/tmp/Uranium/")
+#define CLINET_PATH         ("Clinet/")
+#define SERVER_PATH         ("Server/")
+#define DICTIONARY_NAME     ("direction.bin")
+#define FILE_INFOS_NAME     ("fileInfos.bin")
+#define TAR_MODIR_NAME      ("modir.tar.bz2")
+#define FILE_BUFFER_SIZE    (1024*1024)
 
 class FexTransfer : public TransferManager
 {

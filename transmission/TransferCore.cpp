@@ -6,7 +6,7 @@ namespace uranium
 int32_t TransferCore::send(const std::string path)
 {
     return mThreads->run(
-    [this,path]()->int32_t {
+    [this, path]()->int32_t {
         // int32_t __rc = NO_ERROR;
         TRANSFER_BUFFER_T *pTranBuffer = mTransMang->createTransferBuffer();
         pTranBuffer->mode = TRAN_MODE_FEX;
@@ -28,13 +28,12 @@ int32_t TransferCore::receive(std::function<int32_t (std::string &filePath)> cb)
         TRANSFER_BUFFER_T *pTranBuffer = mTransMang->createTransferBuffer(TRAN_MODE_FEX, buffer, 1024);
         do
         {
+            sleep(5);
             __rc = mTransMang->pullData(*pTranBuffer);
             if (SUCCEED(__rc)) {
                 mPath = buffer;
                 cb(mPath);
             }
-            sleep(1);
-
         } while (true);
         mTransMang->destoryTransferBuffer(pTranBuffer);
         return NO_ERROR;

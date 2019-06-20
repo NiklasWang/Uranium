@@ -26,7 +26,8 @@ public:
     int32_t fileInfosSave(const std::string path = NULL);
     int32_t fileInfosLoad(const std::string path = NULL);
     int32_t fileScanToInis();
-    bool    dirCompareWithLocal(const std::string file);
+    bool dirCompareWithLocal(const std::string file, \
+        std::map<std::string, uint32_t> &diffFile);
     bool    dirNotExit(void);
     //
     //int32_t filePathSet(const std::string path);
@@ -35,7 +36,7 @@ public:
 public:
     int32_t construct();
     int32_t destruct();
-    FileManager(const std::string storageFilePath = FILE_MANAGER_DEFAULT_NAME);
+    FileManager(const std::string &monitPath);
     virtual ~FileManager();
 
 private:
@@ -50,7 +51,6 @@ private:
 private:
     ModuleType      mModule;
     std::string     mDirPath;
-    std::string     mInfoPath;
     std::map<std::string, std::string> mFileInfos;
     // bool            mRuning;
 };

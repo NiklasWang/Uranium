@@ -13,8 +13,6 @@
 #include "sha.h"
 namespace uranium
 {
-
-
 #if 0
 int32_t FileManager::startMonitorLoop()
 {
@@ -63,8 +61,13 @@ int32_t FileManager::fileTarFromPath(const std::string compreFile)
     }
 
     if (SUCCEED(rc)) {
-        std::string cmd = ("tar -jcf ");
-        cmd += tmpStr + " " + compreFile;
+        std::string cmd = ("cd ");
+        cmd += tmpStr;
+        cmd += ";tar -jcf ";
+        cmd += compreFile;
+        cmd += " *";
+        // tar -jcf ");
+        // cmd += tmpStr + " " + compreFile;
         LOGE(mModule, "run cmd =%s\n", cmd.c_str());
 
         rc = system(cmd.c_str());
@@ -107,11 +110,7 @@ int32_t FileManager::fileInfosSave(const std::string path)
 
     if (SUCCEED(rc)) {
         if (tmpStr.empty()) {
-            if (!mInfoPath.empty()) {
-                tmpStr = mInfoPath;
-            } else {
-                rc = -1;
-            }
+            rc = -1;
         }
     }
 
@@ -134,11 +133,7 @@ int32_t FileManager::fileInfosLoad(const std::string path)
 
     if (SUCCEED(rc)) {
         if (tmpStr.empty()) {
-            if (!mInfoPath.empty()) {
-                tmpStr = mInfoPath;
-            } else {
-                rc = -1;
-            }
+            rc = -1;
         }
     }
 
@@ -169,11 +164,13 @@ int32_t FileManager::fileScanToInis()
     return fileScanToInis(mDirPath);
 }
 
-bool FileManager::dirCompareWithLocal(const std::string file)
+bool FileManager::dirCompareWithLocal(const std::string file, \
+    std::map<std::string, uint32_t> &diffFile)
 {
     std::string tmpStr = file;
     std::map<std::string, std::string> tmpFileInfo;
     std::ifstream istrm(tmpStr, std::ios::binary);
+    std::map<std::string, std::string>::iterator it;
 
     while (!istrm.eof()) {
         std::string ss;
@@ -190,16 +187,25 @@ bool FileManager::dirCompareWithLocal(const std::string file)
     }
 
     /* loop compare load file infos  whit local dir scan files infos */
-    std::map<std::string, std::string>::iterator it;
-    for (it = tmpFileInfo.begin(); it != tmpFileInfo.end();) {
+
+    for (it = tmpFileInfo.begin(); it != tmpFileInfo.end(); it++) {
         // it = mFileInfos.erase(it);
         auto result = mFileInfos.find(it->first);
         if (result != mFileInfos.end()) {
-            if (result->second == it->second) {
-                return true;
+            /* find the value */
+            if (result->second != it->second) {
+                diffFile[it->first] = MONITOR_Updated;
             }
         } else {
-            break;
+            diffFile[it->first] = MONITOR_Removed;
+        }
+    }
+
+    /* exam local have  removte not had */
+    for (it = mFileInfos.begin(); it != mFileInfos.end(); it++) {
+        auto result = tmpFileInfo.find(it->first);
+        if (result == tmpFileInfo.end()) {
+            diffFile[it->first] = MONITOR_Created;
         }
     }
 
@@ -211,25 +217,6 @@ bool FileManager::dirNotExit(void)
 {
     struct stat sb;
     return stat(mDirPath.c_str(), &sb);
-
-#if 0
-    if (SUCCEED(rc)) {
-        stat(dirPath.c_str(), &sb)
-        if (FAILED(rc)) {
-            LOGE(mModule, "failed run stat\n");
-        }
-    }
-
-    if (SUCCEED(rc)) {
-        if (S_ISDIR(sb.st_mode)) {
-            rc = NO_ERROR;
-        } else {
-            rc = 1;
-        }
-    }
-
-    return SUCCEED(rc) ? true : false;
-#endif
 }
 
 int32_t FileManager::fileScanToInis(const std::string path)
@@ -284,7 +271,10 @@ int32_t FileManager::fileScanToInis(const std::string path)
                     for (int jj = 0; jj < 4; jj++) {
                         sst << std::hex << checksum[jj];
                     }
-                    mFileInfos[filePath] = sst.str();
+                    std::string::size_type pos = filePath.find(mDirPath);
+                    pos += mDirPath.length();
+                    std::string relaPath = filePath.substr(pos);
+                    mFileInfos[relaPath] = sst.str();
 #if 0
                     std::cout << filePath << "=" << mFileInfos[filePath] << std::endl;
 #endif
@@ -312,11 +302,15 @@ int32_t FileManager::fileInfoErase(void)
     return 0;
 }
 
-FileManager::FileManager(const std::string storageFilePath):
-    mDirPath(storageFilePath)
+FileManager::FileManager(const std::string &monitPath)
     // mModule(0)
 {
+    std::string thisPath = monitPath;
+    if ('/' != thisPath[thisPath.size() - 1]) {
+        thisPath += "/"; 
+    }
 
+    mDirPath = thisPath;
 }
 
 FileManager::~FileManager()

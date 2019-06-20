@@ -10,18 +10,19 @@ bool MonitorCore::monitorDirNotExit(void)
         return mFileMage->dirNotExit();});
 }
 
-bool MonitorCore::monitorDirCompareWithLocal(const std::string file)
+bool MonitorCore::monitorDirCompareWithLocal(const std::string file,\
+    std::map<std::string, uint32_t> &diffFile)
 {
-    return mThreads->run(
-    [this, file]() -> bool{
-        return mFileMage->dirCompareWithLocal(file);});
+    return mFileMage->dirCompareWithLocal(file, diffFile);
 }
 
-int32_t MonitorCore::monitorTarExec(const std::string files)
+int32_t MonitorCore::monitorTarExec(const std::string files, std::function<int32_t ()>cb)
 {
     return mThreads->run(
-    [this, files]() -> int32_t{
-        return mFileMage->fileTarFromPath(files);});
+    [this, files, cb]() -> int32_t{
+        mFileMage->fileTarFromPath(files);
+        return cb();
+    });
 }
 
 int32_t MonitorCore::monitorUntarExec(const std::string files)
@@ -32,11 +33,12 @@ int32_t MonitorCore::monitorUntarExec(const std::string files)
     });
 }
 
-int32_t MonitorCore::monitorDirInfosSave(const std::string path)
+int32_t MonitorCore::monitorDirInfosSave(const std::string path, std::function<int32_t (void)> cb)
 {
     return mThreads->run(
-    [this, path]() -> int32_t{
-        return mFileMage->fileInfosSave(path);
+    [this, path, cb]() -> int32_t{
+        mFileMage->fileInfosSave(path);
+        return cb();
     });
 }
 
@@ -46,6 +48,11 @@ int32_t MonitorCore::monitorDirInfosLoad(const std::string path)
     [this, path]() -> int32_t{
         return mFileMage->fileInfosLoad(path);
     });
+}
+
+int32_t MonitorCore::monitorDirInfosScan(void)
+{
+    return  mFileMage->fileScanToInis();
 }
 
 int32_t MonitorCore::monitorDirStart(void)
@@ -116,7 +123,7 @@ int32_t MonitorCore::construct()
     }
 
     if (SUCCEED(rc)) {
-        mFileMage = new FileManager(mFileMagePath);
+        mFileMage = new FileManager(mMonitorPath);
         if (ISNULL(mFileMage)) {
             rc = NO_MEMORY;
             LOGE(mModule, "Failed create core fileManager\n");
@@ -239,11 +246,11 @@ void MonitorCore::processHandle(const std::vector<event>& events)
     }
 }
 
-MonitorCore::MonitorCore(std::string fileMagePath, std::string monitorPath):
+MonitorCore::MonitorCore(std::string monitorPath):
     mConstructed(false),
     mLoopRuning(false),
     mMoniStarFlag(false),
-    mFileMagePath(fileMagePath),
+    // mFileMagePath(fileMagePath),
     mMonitorPath(monitorPath),
     mThreads(NULL)
 {

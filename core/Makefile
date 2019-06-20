@@ -2,13 +2,15 @@ CXX      = $(GLOBAL_CXX)
 CXXFLAGS = $(GLOBAL_CXXFLAGS)
 LDFLAGS  = $(GLOBAL_LDFLAGS)
 
-TARGET      = libcore$(strip $(DYLIB_EXT))
+TARGET      = libcore$(strip $(STLIB_EXT))
 sources     = $(wildcard *.cpp)
 objects     = $(sources:.cpp=.o)
 dependence := $(sources:.cpp=.d)
 
-SHARED_LIBS = $(GLOBAL_SHARED_LIBS) libthreads
-STATIC_LIBS = $(GLOBAL_STATIC_LIBS)
+SHARED_LIBS = $(GLOBAL_SHARED_LIBS) libtransmission libthreads
+STATIC_LIBS = $(GLOBAL_STATIC_LIBS) libencrypt libmonitor libmd5sum_sha1sum libuuid libfswatch libutils 
+
+LDFLAGS+=-L../monitor/lib  
 
 include $(MAKE_RULE)/find.library.make.rule
 
@@ -16,10 +18,15 @@ include $(MAKE_RULE)/find.library.make.rule
 
 include $(MAKE_RULE)/dependency.make.rule
 
-all: $(objects)
-	$(CXX) $^ $(LDFLAGS) -o $(TARGET)
+include $(MAKE_RULE)/submodule.make.rule
 
-clean:
+lib: $(objects)
+	$(AR) $(ARFLAGS) $(TARGET) $^ 
+	#$(CXX) $^ $(LDFLAGS) -o $(TARGET)
+
+all: lib $(MAKE_SUB_MODULES)
+
+clean: $(CLEAN_SUB_MODULES)
 	rm -f $(TARGET) $(objects) $(dependence)
 
-.PHONY: clean
+.PHONY: clean $(MAKE_SUB_MODULES) $(CLEAN_SUB_MODULES)

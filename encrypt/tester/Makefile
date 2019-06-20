@@ -3,17 +3,13 @@ AR       = $(GLOBAL_AR)
 CXXFLAGS = $(GLOBAL_CXXFLAGS)
 ARFLAGS  = $(GLOBAL_ARFLAGS) rcs
 
-TARGET      = monitor_tester
+TARGET      = crypto_aes_tester
 sources     = $(wildcard *.cpp)
 objects     = $(sources:.cpp=.o)
 dependence := $(sources:.cpp=.d)
 
-SHARED_LIBS = $(GLOBAL_SHARED_LIBS) 
-STATIC_LIBS = $(GLOBAL_STATIC_LIBS)  libmonitor libmd5sum_sha1sum libuuid libfswatch
-# libboost_filesystem
-
-LDFLAGS += -L../lib -L../../threads/  -lfswatch 
-#-lboost_filesystem_mt 
+SHARED_LIBS = $(GLOBAL_SHARED_LIBS) libpthread libthreads
+STATIC_LIBS = $(GLOBAL_STATIC_LIBS) libaes libmd5sum_sha1sum libuuid
 
 include $(MAKE_RULE)/find.library.make.rule
 
@@ -22,10 +18,9 @@ include $(MAKE_RULE)/find.library.make.rule
 include $(MAKE_RULE)/dependency.make.rule
 
 all: $(objects)
-	$(CXX) $^ $(LDFLAGS) -lpthread -lthreads -o $(TARGET)
+	$(CXX) $^ $(LDFLAGS) -o $(TARGET)
 
 clean:
 	rm -rf $(TARGET) $(objects) $(dependence) *.d.*
 
 .PHONY: clean
-	

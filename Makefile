@@ -8,7 +8,7 @@ GLOBAL_AR        = $(GLOBAL_CROSS)ar
 GLOBAL_CFLAGS    = -std=c99 -Wall -fPIC
 GLOBAL_CXXFLAGS  = -std=c++11 -Wall -fPIC
 
-GLOBAL_LDFLAGS   =
+GLOBAL_LDFLAGS   = -pthread
 GLOBAL_ARFLAGS   =
 GLOBAL_MAKE      = make
 GLOBAL_MAKEFLAGS =
@@ -40,7 +40,7 @@ endif
 build: all
 
 exclude_dirs  = cygwin gui out release
-compile_order = log utils memory threads external encrypt
+compile_order = log utils memory threads external encrypt transmission monitor core
 
 export
 unexport exclude_dirs compile_order

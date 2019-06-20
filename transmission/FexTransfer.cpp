@@ -28,6 +28,12 @@ uint32_t FexTransfer::pushData(TRANSFER_BUFFER_T &cmd)
     std::string filePath = WORK_DIRPATH;
     std::string cmdStr = "fex -u ";
 
+    if (mTranDirct == TRAN_CLINET) {
+        filePath += CLINET_PATH;
+    } else {
+        filePath += SERVER_PATH;
+    }
+
     if (SUCCEED(rc)) {
         if (cmd.mode != TRAN_MODE_FEX) {
             rc = -1;
@@ -36,7 +42,7 @@ uint32_t FexTransfer::pushData(TRANSFER_BUFFER_T &cmd)
     }
     if (SUCCEED(rc)) {
         cmdStr = "mkdir -p ";
-        cmdStr += WORK_DIRPATH;
+        cmdStr += filePath;
         system(cmdStr.c_str());
     }
 
@@ -61,7 +67,6 @@ uint32_t FexTransfer::pushData(TRANSFER_BUFFER_T &cmd)
 
     if (SUCCEED(rc)) {
         cmdStr += filePath;
-        std::cout << "LHB DEBUG" << cmdStr << std::endl;
         /* copy orig file to fex used files */
         rc = system((const char *) cmdStr.c_str());
     }
@@ -83,7 +88,16 @@ uint32_t FexTransfer::pullData(TRANSFER_BUFFER_T &cmd)
     uint32_t fileBufSize = 128;
     std::string fexStr;
     std::string cmdStr = "fex -l 1 > ";
-    cmdStr += WORK_DIRPATH;
+    std::string filePath = WORK_DIRPATH;
+    std::string recFileName;
+
+    if (mTranDirct == TRAN_CLINET) {
+        filePath += CLINET_PATH;
+    } else {
+        filePath += SERVER_PATH;
+    }
+
+    cmdStr += filePath;
     cmdStr += "cli.bin";
     std::string timeTemp;
 
@@ -95,7 +109,7 @@ uint32_t FexTransfer::pullData(TRANSFER_BUFFER_T &cmd)
     }
 
     if (SUCCEED(rc)) {
-        cmdStr = WORK_DIRPATH;
+        cmdStr = filePath;
         cmdStr += "cli.bin";
         memset(fileBuf, 0, sizeof(fileBuf));
         rc = readFile(cmdStr, fileBuf, fileBufSize);
@@ -104,18 +118,25 @@ uint32_t FexTransfer::pullData(TRANSFER_BUFFER_T &cmd)
 
     if (SUCCEED(rc)) {
         fexStr = (char *) fileBuf;
-        int32_t pos = fexStr.find(SERVERFILE);
+
+        if (mTranDirct == TRAN_CLINET) {
+            recFileName = SERVERFILE;
+        } else {
+            recFileName = CLINETFILE;
+        }
+
+        int32_t pos = fexStr.find(recFileName.c_str());
         // int32_t pos = fexStr.find("test");
         if (-1 != pos) {
-            std::cout << "Size = " << rc << std::endl;
+            //std::cout << "Size = " << rc << std::endl;
             std::string cliStr = fexStr.substr(pos);
-            std::cout << cliStr << std::endl;
+            std::cout << "LHB " << cliStr << std::endl;
             pos = cliStr.find("| ");
             if (-1 != pos) {
                 pos += 2;
                 timeTemp = cliStr.substr(pos);
                 // mFileLastTime = time;
-                std::cout << "time value = " << timeTemp << std::endl;
+                //std::cout << "time value = " << timeTemp << std::endl;
             } else {
                 rc = -1;
             }
@@ -132,6 +153,7 @@ uint32_t FexTransfer::pullData(TRANSFER_BUFFER_T &cmd)
         } else {
             time_t newTime = str_to_time_t(timeTemp);
             time_t lastTime = str_to_time_t(mFileLastTime);
+            mFileLastTime = timeTemp;
             if (newTime <= lastTime) {
                 rc = -1;
             }
@@ -141,14 +163,15 @@ uint32_t FexTransfer::pullData(TRANSFER_BUFFER_T &cmd)
     if (SUCCEED(rc)) {
 
         cmdStr = "fex -d ";
-        cmdStr += WORK_DIRPATH;
+        cmdStr += filePath;
+        std::cout << "LHB@@@@ " << cmdStr << std::endl;
         rc = system(cmdStr.c_str());
 
     }
 
     if (SUCCEED(rc)) {
-        cmdStr = WORK_DIRPATH;
-        cmdStr += SERVERFILE;
+        cmdStr = filePath;
+        cmdStr += recFileName;
         memset(cmd.buffer, 0, cmd.length);
         strcpy((char *)cmd.buffer, cmdStr.c_str());
 #if 0

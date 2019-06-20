@@ -3,12 +3,12 @@ AR       = $(GLOBAL_AR)
 CXXFLAGS = $(GLOBAL_CXXFLAGS)
 ARFLAGS  = $(GLOBAL_ARFLAGS) rcs
 
-TARGET      = crypto_aes_tester
+TARGET      = libencrypt$(strip $(STLIB_EXT))
 sources     = $(wildcard *.cpp)
 objects     = $(sources:.cpp=.o)
 dependence := $(sources:.cpp=.d)
 
-SHARED_LIBS = $(GLOBAL_SHARED_LIBS)
+SHARED_LIBS = $(GLOBAL_SHARED_LIBS) libpthread libthreads
 STATIC_LIBS = $(GLOBAL_STATIC_LIBS) libaes libmd5sum_sha1sum libuuid
 
 include $(MAKE_RULE)/find.library.make.rule
@@ -17,10 +17,16 @@ include $(MAKE_RULE)/find.library.make.rule
 
 include $(MAKE_RULE)/dependency.make.rule
 
-all: $(objects)
-	$(CXX) $^ $(LDFLAGS) -o $(TARGET)
+include $(MAKE_RULE)/submodule.make.rule
 
-clean:
+lib: $(objects)
+	$(AR) $(ARFLAGS) $(TARGET) $^ 
+
+	#$(CXX) $^ $(LDFLAGS) -o $(TARGET)
+
+all: lib $(MAKE_SUB_MODULES)
+
+clean: $(CLEAN_SUB_MODULES)
 	rm -rf $(TARGET) $(objects) $(dependence) *.d.*
 
-.PHONY: clean
+.PHONY: clean $(MAKE_SUB_MODULES) $(CLEAN_SUB_MODULES)
