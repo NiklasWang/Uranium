@@ -8,7 +8,7 @@ GLOBAL_AR        = $(GLOBAL_CROSS)ar
 GLOBAL_CFLAGS    = -std=c99 -Wall -fPIC
 GLOBAL_CXXFLAGS  = -std=c++11 -Wall -fPIC
 
-GLOBAL_LDFLAGS   = -pthread
+GLOBAL_LDFLAGS   =
 GLOBAL_ARFLAGS   =
 GLOBAL_MAKE      = make
 GLOBAL_MAKEFLAGS =
