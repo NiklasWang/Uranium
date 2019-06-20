@@ -6,11 +6,6 @@
 
 namespace uranium {
 
-#define MODULE_NAME     PROJNAME
-#define DBG_LOG_MAX_LEN 256
-
-#define DBG_ASSERT_RAISE_TRAP
-
 enum LogType {
     LOG_TYPE_NONE,
     LOG_TYPE_DEBUG,

@@ -76,7 +76,7 @@ int32_t Configs::construct()
     if (SUCCEED(rc)) {
         rc = load();
         if (!SUCCEED(rc)) {
-            LOGE(mModule, "Failed to load from file %s", mFile);
+            LOGE(mModule, "Failed to load from file %s", mFileName.c_str());
         }
     }
 

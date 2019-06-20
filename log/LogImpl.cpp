@@ -10,6 +10,14 @@
 
 #include "LogImpl.h"
 
+#define DBG_LOG_MAX_LEN 1024
+
+#ifdef _CYGWIN_COMPILE_
+#define ENTER "\r\n"
+#else
+#define ENTER "\n"
+#endif
+
 namespace uranium {
 
 #define MAX_PROCESS_NAME_LEN 16
@@ -199,7 +207,7 @@ void __debug_log(const ModuleType module, const LogType type,
         getProcessName(), getModuleShortName(module),
         getLogType(type), func, line, buf);
 
-    save_log("%s %s%s: %s:+%d: %s\n", getProcessName(),
+    save_log("%s %s%s: %s:+%d: %s" ENTER, getProcessName(),
         getModuleShortName(module),
         getLogType(type), func, line, buf);
 }
@@ -219,11 +227,11 @@ void __assert_log(const ModuleType module, const unsigned char cond,
             getProcessName(), getModuleShortName(module),
             "<ASSERT>", func, line, buf);
 
-        save_log("[<! ASSERT !>]%s %s%s: %s:+%d: %s\n",
+        save_log("[<! ASSERT !>]%s %s%s: %s:+%d: %s" ENTER,
             getProcessName(), getModuleShortName(module),
             "<ASSERT>", func, line, buf);
 
-        save_log("[<! ASSERT !>] Process will suicide now.\n",
+        save_log("[<! ASSERT !>] Process will suicide now." ENTER,
             getProcessName(), getModuleShortName(MODULE_OTHERS),
             getLogType(LOG_TYPE_FATAL), __FUNCTION__, __LINE__, buf);
 
@@ -233,22 +241,23 @@ void __assert_log(const ModuleType module, const unsigned char cond,
 
 extern int64_t getThreadId();
 
-static void save_log(const char *fmt, char *process,
-    const char *module, const char *type,
-    const char *func, const int line, const char *buf)
+#define FILE_EXISTS(PATH) (access((PATH), F_OK) == 0)
+
+static int32_t create_backup_log(int32_t *fd, const char *fmt, char *process)
 {
-    if (gLogfd == -1) {
-        if (access(LOG_FILE_PATH_LAST, F_OK) ||
-            unlink(LOG_FILE_PATH_LAST)) {
-            print_log(LOG_TYPE_ERROR, fmt,
-                process, getModuleShortName(MODULE_OTHERS),
-                getLogType(LOG_TYPE_ERROR), __FUNCTION__, __LINE__,
-                "Failed to remove last log file " LOG_FILE_PATH_LAST);
+    if (*fd == -1) {
+        if (FILE_EXISTS(LOG_FILE_PATH_LAST)) {
+            if (unlink(LOG_FILE_PATH_LAST)) {
+                print_log(LOG_TYPE_ERROR, fmt,
+                    process, getModuleShortName(MODULE_OTHERS),
+                    getLogType(LOG_TYPE_ERROR), __FUNCTION__, __LINE__,
+                    "Failed to remove last log file " LOG_FILE_PATH_LAST);
+            }
         }
     }
 
-    if (gLogfd == -1) {
-        if (!access(LOG_FILE_PATH, F_OK)) {
+    if (*fd == -1) {
+        if (FILE_EXISTS(LOG_FILE_PATH)) {
             if (rename(LOG_FILE_PATH, LOG_FILE_PATH_LAST)) {
                 print_log(LOG_TYPE_ERROR, fmt,
                     process, getModuleShortName(MODULE_OTHERS),
@@ -259,24 +268,40 @@ static void save_log(const char *fmt, char *process,
         }
     }
 
-    if (gLogfd == -1) {
-        if (access(LOG_FILE_PATH, F_OK) ||
-            unlink(LOG_FILE_PATH)) {
-            print_log(LOG_TYPE_ERROR, fmt,
-                process, getModuleShortName(MODULE_OTHERS),
-                getLogType(LOG_TYPE_ERROR), __FUNCTION__, __LINE__,
-                "Failed to remove curr log file " LOG_FILE_PATH);
+    if (*fd == -1) {
+        if (FILE_EXISTS(LOG_FILE_PATH)) {
+            if (unlink(LOG_FILE_PATH)) {
+                print_log(LOG_TYPE_ERROR, fmt,
+                    process, getModuleShortName(MODULE_OTHERS),
+                    getLogType(LOG_TYPE_ERROR), __FUNCTION__, __LINE__,
+                    "Failed to remove curr log file " LOG_FILE_PATH);
+            }
         }
     }
 
-    if (gLogfd == -1) {
-        gLogfd = open(LOG_FILE_PATH, O_RDWR | O_CREAT | O_TRUNC, 0777);
-        if (gLogfd < 0) {
+    if (*fd == -1) {
+        *fd = open(LOG_FILE_PATH, O_RDWR | O_CREAT | O_TRUNC, 0777);
+        if (*fd < 0) {
             print_log(LOG_TYPE_ERROR, fmt,
                 process, getModuleShortName(MODULE_OTHERS),
                 getLogType(LOG_TYPE_ERROR), __FUNCTION__, __LINE__,
                 "Failed to create file " LOG_FILE_PATH " for logs.");
         }
+    }
+
+    return *fd > 0 ? 0 : -1;
+}
+
+static void save_log(const char *fmt, char *process,
+    const char *module, const char *type,
+    const char *func, const int line, const char *buf)
+{
+    if (gLogfd <= 0) {
+        pthread_mutex_lock(&gWriteLock);
+        if (gLogfd <= 0) {
+            create_backup_log(&gLogfd, fmt, process);
+        }
+        pthread_mutex_unlock(&gWriteLock);
     }
 
     if (gLogfd > 0) {
@@ -295,7 +320,6 @@ static void save_log(const char *fmt, char *process,
             fmt, process, module,
             type, func, line, buf);
         cnt = strlen(gLogLine);
-        gLogLine[cnt++] = '\n';
         ssize_t len = write(gLogfd, gLogLine, cnt);
         if (cnt > len) {
             char tmp[255];
