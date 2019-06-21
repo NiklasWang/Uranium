@@ -7,10 +7,8 @@ sources     = $(wildcard *.cpp)
 objects     = $(sources:.cpp=.o)
 dependence := $(sources:.cpp=.d)
 
-SHARED_LIBS = $(GLOBAL_SHARED_LIBS) libtransmission libthreads libwebsocket
-STATIC_LIBS = $(GLOBAL_STATIC_LIBS) libencrypt libmonitor libmd5sum_sha1sum libuuid libfswatch libutils 
-
-LDFLAGS+=-L../monitor/lib  
+SHARED_LIBS = $(GLOBAL_SHARED_LIBS) libtransmission libthreads libwebsocket libfswatch
+STATIC_LIBS = $(GLOBAL_STATIC_LIBS) libencrypt libmonitor libmd5sum_sha1sum libuuid libutils
 
 include $(MAKE_RULE)/find.library.make.rule
 

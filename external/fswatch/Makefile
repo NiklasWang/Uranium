@@ -1,5 +1,11 @@
-TARGET  = libfswatch$(strip $(STLIB_EXT))
+TARGET  = libfswatch$(strip $(DYLIB_EXT))
 CURRDIR = $(shell pwd)
+
+ifeq ($(strip $(ISCYGWIN)), y)
+  FILENAME = cygfswatch-11.dll
+else
+  FILENAME = libfswatch-11.dll
+endif
 
 #exist = $(shell if [ -f $(CURRDIR)/$(TARGET) ]; then echo "exist"; else echo "notexist"; fi;)
 
@@ -14,7 +20,7 @@ define BUILE
 	./autogen.sh;        \
 	./configure CFLAGS=-fPIC CXXFLAGS=-fPIC; \
 	make -j8 V=1;        \
-	cp ./libfswatch/src/libfswatch/.libs/libfswatch.a $(CURRDIR)
+	cp ./libfswatch/src/libfswatch/.libs/$(FILENAME) $(CURRDIR)/$(TARGET)
 endef
 
 clean:
