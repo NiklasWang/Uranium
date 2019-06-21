@@ -1,6 +1,6 @@
 CC       = $(GLOBAL_CC)
 AR       = $(GLOBAL_AR)
-CFLAGS   =
+CFLAGS   = -fPIC
 ARFLAGS  = rcs
 
 TARGET      = libmd5sum_sha1sum$(strip $(STLIB_EXT))
