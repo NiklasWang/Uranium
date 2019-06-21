@@ -46,7 +46,7 @@ int32_t IPCClient::sendMessage(const std::string &msg)
     if (SUCCEED(rc)) {
         rc = mSC->sendMsg(msg.c_str(), msg.size());
         if (FAILED(rc)) {
-            LOGE(mModule, "Failed to send msg %s to server:%d", msg, mPort);
+            LOGE(mModule, "Failed to send msg %s to server:%d", msg.c_str(), mPort);
         }
     }
 

@@ -336,7 +336,7 @@ int32_t IPCServer::handleSetConfig(const char *msg)
         }
         if (FAILED(rc)) {
             LOGE(mModule, "Failed to set config %s:%s %d",
-                whoamI(item), value, rc);
+                whoamI(item), value.c_str(), rc);
         }
     }
 
