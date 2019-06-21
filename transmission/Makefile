@@ -1,13 +1,13 @@
 CXX      = $(GLOBAL_CXX)
 CXXFLAGS = $(GLOBAL_CXXFLAGS)
-LDFLAGS  = $(GLOBAL_LDFLAGS)
+LDFLAGS  = $(GLOBAL_LDFLAGS) -pthread
 
 TARGET      = libtransmission$(strip $(DYLIB_EXT))
 sources     = $(wildcard *.cpp)
 objects     = $(sources:.cpp=.o)
 dependence := $(sources:.cpp=.d)
 
-SHARED_LIBS = $(GLOBAL_SHARED_LIBS) libthreads -pthread
+SHARED_LIBS = $(GLOBAL_SHARED_LIBS) libthreads 
 STATIC_LIBS = $(GLOBAL_STATIC_LIBS)
 
 include $(MAKE_RULE)/find.library.make.rule

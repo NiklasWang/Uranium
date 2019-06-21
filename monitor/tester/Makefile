@@ -2,6 +2,7 @@ CXX      = $(GLOBAL_CXX)
 AR       = $(GLOBAL_AR)
 CXXFLAGS = $(GLOBAL_CXXFLAGS)
 ARFLAGS  = $(GLOBAL_ARFLAGS) rcs
+LDFLAGS  = $(GLOBAL_LDFLAGS) -pthread
 
 TARGET      = monitor_tester
 sources     = $(wildcard *.cpp)
@@ -10,10 +11,6 @@ dependence := $(sources:.cpp=.d)
 
 SHARED_LIBS = $(GLOBAL_SHARED_LIBS) 
 STATIC_LIBS = $(GLOBAL_STATIC_LIBS)  libmonitor libmd5sum_sha1sum libuuid libfswatch
-# libboost_filesystem
-
-LDFLAGS += -L../lib -L../../threads/  -lfswatch 
-#-lboost_filesystem_mt 
 
 include $(MAKE_RULE)/find.library.make.rule
 
@@ -22,7 +19,7 @@ include $(MAKE_RULE)/find.library.make.rule
 include $(MAKE_RULE)/dependency.make.rule
 
 all: $(objects)
-	$(CXX) $^ $(LDFLAGS) -lpthread -lthreads -o $(TARGET)
+	$(CXX) $^ $(LDFLAGS) -o $(TARGET)
 
 clean:
 	rm -rf $(TARGET) $(objects) $(dependence) *.d.*
