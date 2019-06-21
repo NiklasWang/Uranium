@@ -14,6 +14,7 @@ endif
 
 define BUILE
 	cd fswatch-master/; \
+	chmod +x autogen.sh; \
 	./autogen.sh; \
 	./configure CFLAGS=-fPIC CXXFLAGS=-fPIC; \
 	make -j8 V=1; \
