@@ -1,5 +1,4 @@
 all:
-all:
 
 clean:
 

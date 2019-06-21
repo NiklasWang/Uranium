@@ -22,8 +22,6 @@ include $(MAKE_RULE)/submodule.make.rule
 lib: $(objects)
 	$(AR) $(ARFLAGS) $(TARGET) $^ 
 
-	#$(CXX) $^ $(LDFLAGS) -o $(TARGET)
-
 all: lib $(MAKE_SUB_MODULES)
 
 clean: $(CLEAN_SUB_MODULES)

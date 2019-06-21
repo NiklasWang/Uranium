@@ -2,7 +2,7 @@ CXX      = $(GLOBAL_CXX)
 CXXFLAGS = $(GLOBAL_CXXFLAGS)
 LDFLAGS  = $(GLOBAL_LDFLAGS)
 
-TARGET      = libcore$(strip $(STLIB_EXT))
+TARGET      = libcore$(strip $(DYLIB_EXT))
 sources     = $(wildcard *.cpp)
 objects     = $(sources:.cpp=.o)
 dependence := $(sources:.cpp=.d)
@@ -21,8 +21,7 @@ include $(MAKE_RULE)/dependency.make.rule
 include $(MAKE_RULE)/submodule.make.rule
 
 lib: $(objects)
-	$(AR) $(ARFLAGS) $(TARGET) $^ 
-	#$(CXX) $^ $(LDFLAGS) -o $(TARGET)
+	$(CXX) $^ $(LDFLAGS) -o $(TARGET)
 
 all: lib $(MAKE_SUB_MODULES)
 
