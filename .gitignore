@@ -43,3 +43,6 @@ build-uranium-gui*/*
 
 # Release
 !release/*
+
+#external
+external/fswatch/fswatch-master/*
