@@ -2,7 +2,7 @@ CXX      = $(GLOBAL_CXX)
 AR       = $(GLOBAL_AR)
 CXXFLAGS = $(GLOBAL_CXXFLAGS)
 
-TARGET      = crypto_aes_tester
+TARGET      = crypto_aes_tester$(strip $(EXE_EXT))
 sources     = $(wildcard *.cpp)
 objects     = $(sources:.cpp=.o)
 dependence := $(sources:.cpp=.d)

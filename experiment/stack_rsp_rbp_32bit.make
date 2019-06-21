@@ -6,7 +6,7 @@ ifeq ($(BUILD_32BIT), y)
   CXXFLAGS = $(GLOBAL_CXXFLAGS) -m32
   LDFLAGS  = $(GLOBAL_LDFLAGS)
 
-  TARGET      = stack_esp_ebp_32bit
+  TARGET      = stack_esp_ebp_32bit$(strip $(EXE_EXT))
   sources     = stack_esp_ebp.cpp
   objects     = $(sources:.cpp=.o)
   dependence := $(sources:.cpp=.d)

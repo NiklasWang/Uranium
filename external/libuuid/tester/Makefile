@@ -1,9 +1,8 @@
 CXX      = $(GLOBAL_CXX)
 AR       = $(GLOBAL_AR)
 CXXFLAGS = $(GLOBAL_CXXFLAGS)
-ARFLAGS  = $(GLOBAL_ARFLAGS) rcs
 
-TARGET      = test_uuid
+TARGET      = test_uuid$(strip $(EXE_EXT))
 sources     = $(wildcard *.c)
 objects     = $(sources:.c=.o)
 dependence := $(sources:.c=.d)

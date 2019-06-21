@@ -3,7 +3,7 @@ AR       = $(GLOBAL_AR)
 CXXFLAGS = $(GLOBAL_CXXFLAGS)
 LDFLAGS  = $(GLOBAL_LDFLAGS) -pthread
 
-TARGET      = client_tester
+TARGET      = client_tester$(strip $(EXE_EXT))
 sources     = client_tester.cpp
 objects     = $(sources:.cpp=.o)
 dependence := $(sources:.cpp=.d)

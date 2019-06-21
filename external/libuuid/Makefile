@@ -1,7 +1,7 @@
 CC       = $(GLOBAL_CC)
 AR       = $(GLOBAL_AR)
 CFLAGS   = $(GLOBAL_CFLAGS) -Wno-cpp
-ARFLAGS  = rcs
+ARFLAGS  = $(GLOBAL_ARFLAGS)
 
 TARGET      = libuuid$(strip $(STLIB_EXT))
 sources     = $(wildcard *.c)

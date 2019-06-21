@@ -2,7 +2,7 @@ CXX      = $(GLOBAL_CXX)
 CXXFLAGS = $(GLOBAL_CXXFLAGS)
 LDFLAGS  = $(GLOBAL_LDFLAGS)
 
-TARGET      = lambda_test
+TARGET      = lambda_test$(strip $(EXE_EXT))
 sources     = LambdaTest.cpp
 objects     = $(sources:.cpp=.o)
 dependence := $(sources:.cpp=.d)

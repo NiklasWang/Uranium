@@ -1,7 +1,7 @@
 CXX      = $(GLOBAL_CXX)
 AR       = $(GLOBAL_AR)
-CXXFLAGS = $(GLOBAL_CXXFLAGS) -D_FULL_FUNC_NAME_
-ARFLAGS  = $(GLOBAL_ARFLAGS) rcs
+CXXFLAGS = $(GLOBAL_CXXFLAGS)
+ARFLAGS  = $(GLOBAL_ARFLAGS)
 
 TARGET      = liblog$(strip $(STLIB_EXT))
 sources     = $(wildcard *.cpp)

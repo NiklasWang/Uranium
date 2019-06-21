@@ -2,7 +2,7 @@ CC      = $(GLOBAL_CC)
 CFLAGS  = $(GLOBAL_CFLAGS)
 LDFLAGS = $(GLOBAL_LDFLAGS) -lm
 
-TARGET      = bmp2yuv
+TARGET      = bmp2yuv$(strip $(EXE_EXT))
 sources     = Bmp2Yuv.c Bmp2YuvTester.c
 objects     = $(sources:.c=.o)
 dependence := $(sources:.c=.d)

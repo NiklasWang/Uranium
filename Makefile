@@ -9,7 +9,7 @@ GLOBAL_CFLAGS    = -std=c99 -Wall -fPIC
 GLOBAL_CXXFLAGS  = -std=c++11 -Wall -fPIC
 
 GLOBAL_LDFLAGS   =
-GLOBAL_ARFLAGS   =
+GLOBAL_ARFLAGS   = rcs
 GLOBAL_MAKE      = make
 GLOBAL_MAKEFLAGS =
 GLOBAL_STATIC_LIBS = liblog libutils libsp

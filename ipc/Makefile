@@ -1,7 +1,6 @@
 CXX      = $(GLOBAL_CXX)
 AR       = $(GLOBAL_AR)
 CXXFLAGS = $(GLOBAL_CXXFLAGS)
-ARFLAGS  = $(GLOBAL_ARFLAGS) rcs
 
 TARGET      = libipc$(strip $(DYLIB_EXT))
 sources     = $(wildcard *.cpp)

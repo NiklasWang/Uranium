@@ -1,7 +1,7 @@
 CXX      = $(GLOBAL_CXX)
 AR       = $(GLOBAL_AR)
 CXXFLAGS = $(GLOBAL_CXXFLAGS)
-ARFLAGS  = $(GLOBAL_ARFLAGS) rcs
+ARFLAGS  = $(GLOBAL_ARFLAGS)
 
 TARGET      = libmonitor$(strip $(STLIB_EXT))
 sources     = $(wildcard *.cpp)

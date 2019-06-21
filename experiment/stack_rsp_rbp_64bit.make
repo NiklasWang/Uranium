@@ -6,7 +6,7 @@ ifeq ($(BUILD_64BIT), y)
   CXXFLAGS = $(GLOBAL_CXXFLAGS) -m64
   LDFLAGS  = $(GLOBAL_LDFLAGS)
 
-  TARGET      = stack_rsp_rbp_64bit
+  TARGET      = stack_rsp_rbp_64bit$(strip $(EXE_EXT))
   sources     = stack_rsp_rbp.cpp
   objects     = $(sources:.cpp=.o)
   dependence := $(sources:.cpp=.d)

@@ -1,17 +1,15 @@
 CXX      = $(GLOBAL_CXX)
 AR       = $(GLOBAL_AR)
 CXXFLAGS = $(GLOBAL_CXXFLAGS)
-ARFLAGS  = $(GLOBAL_ARFLAGS) rcs
+LDFLAGS  = $(GLOBAL_LDFLAGS) -pthread
 
-TARGET      = transmission_test
+TARGET      = transmission_test$(strip $(EXE_EXT))
 sources     = $(wildcard *.cpp)
 objects     = $(sources:.cpp=.o)
 dependence := $(sources:.cpp=.d)
 
 SHARED_LIBS = $(GLOBAL_SHARED_LIBS) libtransmission libthreads
 STATIC_LIBS = $(GLOBAL_STATIC_LIBS) 
-
-LDFLAGS += -pthread
 
 include $(MAKE_RULE)/find.library.make.rule
 

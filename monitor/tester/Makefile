@@ -1,10 +1,9 @@
 CXX      = $(GLOBAL_CXX)
 AR       = $(GLOBAL_AR)
 CXXFLAGS = $(GLOBAL_CXXFLAGS)
-ARFLAGS  = $(GLOBAL_ARFLAGS) rcs
 LDFLAGS  = $(GLOBAL_LDFLAGS) -pthread
 
-TARGET      = monitor_tester
+TARGET      = monitor_tester$(strip $(EXE_EXT))
 sources     = $(wildcard *.cpp)
 objects     = $(sources:.cpp=.o)
 dependence := $(sources:.cpp=.d)

@@ -2,7 +2,7 @@ CXX      = $(GLOBAL_CXX)
 CXXFLAGS = $(GLOBAL_CXXFLAGS)
 LDFLAGS = $(GLOBAL_LDFLAGS) -pthread
 
-TARGET      = server_tester
+TARGET      = server_tester$(strip $(EXE_EXT))
 sources     = server_tester.cpp
 objects     = $(sources:.cpp=.o)
 dependence := $(sources:.cpp=.d)

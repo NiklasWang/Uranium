@@ -1,7 +1,7 @@
 CC       = $(GLOBAL_CC)
 AR       = $(GLOBAL_AR)
-CFLAGS   = -fPIC
-ARFLAGS  = rcs
+CFLAGS   = $(GLOBAL_CFLAGS)
+ARFLAGS  = $(GLOBAL_ARFLAGS)
 
 TARGET      = libmd5sum_sha1sum$(strip $(STLIB_EXT))
 sources     = $(wildcard *.c)

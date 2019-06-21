@@ -1,7 +1,7 @@
 CC       = $(GLOBAL_CC)
 AR       = $(GLOBAL_AR)
 CFLAGS   =
-ARFLAGS  = rcs
+ARFLAGS  = $(GLOBAL_ARFLAGS)
 
 TARGET      = libaes$(strip $(STLIB_EXT))
 sources     = $(wildcard *.c)

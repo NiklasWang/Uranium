@@ -1,7 +1,7 @@
 CXX      = $(GLOBAL_CXX)
 AR       = $(GLOBAL_AR)
 CXXFLAGS = $(GLOBAL_CXXFLAGS)
-ARFLAGS  = $(GLOBAL_ARFLAGS) rcs
+ARFLAGS  = $(GLOBAL_ARFLAGS)
 
 TARGET      = libsp$(strip $(STLIB_EXT))
 sources     = $(wildcard *.cpp)
@@ -18,7 +18,7 @@ include $(MAKE_RULE)/find.library.make.rule
 include $(MAKE_RULE)/dependency.make.rule
 
 all: $(objects)
-	$(AR) $(ARFLAGS) $(TARGET) $^ 
+	$(AR) $(ARFLAGS) $(TARGET) $^
 
 clean:
 	rm -f $(TARGET) $(objects) $(dependence)
