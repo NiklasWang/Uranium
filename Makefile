@@ -13,7 +13,7 @@ GLOBAL_ARFLAGS   =
 GLOBAL_MAKE      = make
 GLOBAL_MAKEFLAGS =
 GLOBAL_STATIC_LIBS = liblog libutils libsp
-GLOBAL_SHARED_LIBS = libmemory -pthread
+GLOBAL_SHARED_LIBS = libmemory
 
 ROOT_DIR  = $(shell pwd)
 MAKE_RULE = $(ROOT_DIR)/makerules
