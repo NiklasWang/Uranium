@@ -11,7 +11,7 @@ dependence := $(sources:.cpp=.d)
 SHARED_LIBS = $(GLOBAL_SHARED_LIBS) libtransmission libthreads
 STATIC_LIBS = $(GLOBAL_STATIC_LIBS) 
 
-LDFLAGS+= -pthread
+LDFLAGS += -pthread
 
 include $(MAKE_RULE)/find.library.make.rule
 
