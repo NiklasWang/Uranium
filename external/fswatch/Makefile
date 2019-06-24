@@ -1,3 +1,5 @@
+include $(MAKE_RULE)/color.print.make.rule
+
 TARGET  = libfswatch$(strip $(DYLIB_EXT))
 CURRDIR = $(shell pwd)
 
@@ -10,8 +12,10 @@ endif
 #exist = $(shell if [ -f $(CURRDIR)/$(TARGET) ]; then echo "exist"; else echo "notexist"; fi;)
 
 all compile link:
+	@echo -e $(NOTICE_COLOR)"This module requires following packages, make sure they are installed in your system."$(RESTORE_COLOR)
+	@echo -e $(NOTICE_COLOR)" - automake, autopoint, libtool, gettext, etc."$(RESTORE_COLOR)
 ifneq ($(TARGET), $(notdir $(wildcard $(CURRDIR)/$(TARGET))))
-	$(call BUILE)
+	$(call BUILD)
 endif
 ifeq ($(strip $(ISCYGWIN)), y)
 	$(call CYGWIN_INSTALL)
@@ -19,7 +23,7 @@ else
 	$(call LINUX_INSTALL)
 endif
 
-define BUILE
+define BUILD
 	cd fswatch-master;   \
 	chmod +x autogen.sh; \
 	./autogen.sh;        \
@@ -29,7 +33,7 @@ endef
 
 define CYGWIN_INSTALL
 	cd fswatch-master; \
-	cp -ar  ./libfswatch/src/libfswatch/.libs/$(FILENAME) $(CURRDIR)/$(TARGET)
+	cp -ar ./libfswatch/src/libfswatch/.libs/$(FILENAME) $(CURRDIR)/$(TARGET)
 endef 
 
 define LINUX_INSTALL
