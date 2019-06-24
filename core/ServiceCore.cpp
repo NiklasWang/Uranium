@@ -60,7 +60,7 @@ int32_t ServiceCore::clientInitialize()
                     rc = NOT_INITED;
                     std::cout << "Runing monitorDirInfosScan failed!" << std::endl;
                 }
-                
+
                 rc = transferDictionaryCMD(DIR_MO_EVT, DIR_MO_EVT_LOAD_MD5INFOS, true);
                 if (FAILED(rc)) {
                     LOGE(mModule, "Failed to load code infors from remote transferDictionaryCMD\n");
@@ -70,14 +70,19 @@ int32_t ServiceCore::clientInitialize()
 
         if (SUCCEED(rc)) {
             /* Waiting for message to return */
-            // mSemFlage = true;
-            /* wait for result returned */
-#if 0
-            rc = mSemTime->wait();
-            if (FAILED(rc)) {
-                LOGE(mModule, "SemaphoreTimeout\n");
+            int32_t tryTimes = 3;
+            mSemEnable = true;
+            do {
+                /* wait for result returned */
+                rc = mSemTime->wait();
+                if (FAILED(rc)) {
+                    std::cout << "SemaphoreTimeout\n";
+                }
+            } while (FAILED(rc) && (tryTimes--));
+            if (tryTimes < 0) {
+                std::cout << "Timeout\n";
             }
-#endif
+            mSemEnable = false;
         }
     }
     printf("================== Setp3 code sync succeed ===================\n");
@@ -125,9 +130,20 @@ int32_t ServiceCore::transferCompleteWorks(void)
     return rc;
 }
 
-int32_t ServiceCore::transferModify(void)
+int32_t ServiceCore::transferModify(const std::string& inPath)
 {
     int32_t rc = NO_ERROR;
+
+    if (SUCCEED(rc)) {
+        rc = reduceTranHeaderData(inPath, appendBasePath(TRA_SYNC_FILE_NAME));
+        if (FAILED(rc)) {
+            LOGE(mModule, "Failed to prase transfer file\n");
+        }
+    }
+
+    if (SUCCEED(rc)) {
+        rc = praseEntryFile(appendBasePath(TRA_SYNC_FILE_NAME));
+    }
 
     return rc;
 }
@@ -342,11 +358,6 @@ int32_t ServiceCore::tarnsferServer2Clinet(void)
                 __rc = NO_MEMORY;
                 LOGE(mModule, "Out of memory\n");
             }
-            if (SUCCEED(__rc))
-            {
-                /* 加密文件 */
-
-            }
 
             if (SUCCEED(__rc))
             {
@@ -447,18 +458,7 @@ int32_t ServiceCore::transferStoraFilelInfos(const std::string &filePath)
     int32_t rc = NO_ERROR;
     std::string storagePath = appendBasePath(FILE_INFOS_NAME);
     std::map<std::string, uint32_t> diffFile;
-#if 0 
-    if(SUCCEED(rc)) {
-        rc = mMonitorCore->monitorDirInfosScan();
-        if(FAILED(rc)) {
-            std::cout<<"Runing monitorDirInfosScan failed\n";
-        }
-        rc = mMonitorCore->monitorDirInfosSave("/tmp/lhbinfos.bin",
-            []()->int32_t {
-                return 0;
-            });
-    }
-#endif 
+
     if (SUCCEED(rc)) {
         rc = reduceTranHeaderData(filePath, storagePath);
         if (FAILED(rc)) {
@@ -474,11 +474,20 @@ int32_t ServiceCore::transferStoraFilelInfos(const std::string &filePath)
         }
     }
 
-    if(SUCCEED(rc)) {
+    if (SUCCEED(rc)) {
         std::map<std::string, uint32_t>::iterator it;
-        for(it = diffFile.begin();it != diffFile.end();it++ )
-        {
-            printf("Key=%s value=0x%x\n",it->first.c_str(), it->second);
+        if (diffFile.begin() == diffFile.end()) {
+            /* do nothing */
+        } else {
+            rc = transferDictionaryCMD(DIR_MO_EVT, DIR_MO_EVT_MODATA, false);
+            bool fisrFlage = true;
+            for (it = diffFile.begin(); it != diffFile.end(); it++) {
+                /* do create files */
+                createEntryFile(it->first, it->second, fisrFlage);
+                fisrFlage = false;
+                // printf("Key=%s value=0x%x\n",it->first.c_str(), it->second);
+            }
+            rc = transferAppendData(appendBasePath(TRA_SYNC_FILE_NAME));
         }
     }
 
@@ -557,6 +566,8 @@ int32_t ServiceCore::doHandleMoEvt(const TRAN_HEADE_T& traHead, const std::strin
             praseStora2Local(filePath);
             break;
         case DIR_MO_EVT_MODATA:
+            std::cout << "do runing DIR_MO_EVT_MODATA\n";
+            transferModify(filePath);
             break;
         default:
             LOGE(mModule, "DIR_MO_EVT_ENUM not support\n");

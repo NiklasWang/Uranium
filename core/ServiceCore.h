@@ -18,6 +18,7 @@ namespace uranium
 {
 
 #define EVENT_FLAGE_MASK        (0x4954)
+#define MOENTRY_FLAGE_MASK      (0x4953)
 #define DIR_FILE_NAME           ("dirCMD")
 
 typedef enum  TREANFER_EVENT_ENUM {
@@ -54,6 +55,14 @@ typedef struct TRANSFER_HEADE_TAG {
     uint32_t         evtValue;
 } TRAN_HEADE_T;
 
+typedef struct TRANSFER_ENTRY_FILE_TAG {
+    uint32_t        flages;
+    char            fileName[128];
+    uint32_t        value;
+    uint32_t        fileSize;
+    // uint32_t        offset;
+} TRANSFER_ENTRY_FILE_T;
+
 #if 0
 // class TransferCore;
 #endif
@@ -80,7 +89,8 @@ private:
     int32_t transferLoadFileInfos();
     int32_t transferStoraFilelInfos(const std::string &filePath);
     // int32_t transferStoraFilelInfos(const std::string &filePath)
-
+    int32_t createEntryFile(const std::string &fileName, uint32_t value, bool fistFlage);
+    int32_t praseEntryFile(const std::string& inPath);
 private:
     int32_t doHandleMoEvt(const TRAN_HEADE_T& traHead, const std::string &filePath);
     int32_t doHandleMoAck(const TRAN_HEADE_T& traHead);
@@ -95,7 +105,7 @@ private:
     int32_t reduceTranHeaderData(const std::string &inPath, const std::string &outPath);
     std::string appendBasePath(const std::string dirPath);
     int32_t transferCompleteWorks(void);
-    int32_t transferModify(void);
+    int32_t transferModify(const std::string& inPath);
     int32_t lisnenReceiveHandler(std::string &filePath);
     TRAN_HEADE_T *createTranHeade(void);
     int32_t destoryTranHeade(TRAN_HEADE_T *tranHead);
