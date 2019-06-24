@@ -9,7 +9,7 @@ endif
 
 #exist = $(shell if [ -f $(CURRDIR)/$(TARGET) ]; then echo "exist"; else echo "notexist"; fi;)
 
-all:
+all compile link:
 ifneq ($(TARGET), $(notdir $(wildcard $(CURRDIR)/$(TARGET))))
 	$(call BUILE)
 endif

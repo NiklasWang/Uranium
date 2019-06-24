@@ -11,7 +11,11 @@ dependence := $(sources:.cpp=.d)
 
 include $(MAKE_RULE)/dependency.make.rule
 
-all: $(objects)
+all: compile link
+
+compile: $(objects)
+
+link: $(objects)
 	$(CXX) $^ $(CXXFLAGS) -o $(TARGET)
 
 clean:

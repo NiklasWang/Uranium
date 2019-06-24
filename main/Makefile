@@ -21,7 +21,11 @@ include $(MAKE_RULE)/find.library.make.rule
 
 include $(MAKE_RULE)/dependency.make.rule
 
-all: $(objects)
+all: compile link
+
+compile: $(objects)
+
+link: $(objects)
 	$(CXX) $^ $(LDFLAGS) -o $(TARGET)
 
 clean:

@@ -15,7 +15,11 @@ ifeq ($(BUILD_32BIT), y)
 
   include $(MAKE_RULE)/dependency.make.rule
 
-  all: $(objects)
+  all: compile link
+
+  compile: $(objects)
+
+  link: $(objects)
 	$(CXX) $^ $(CXXFLAGS) -o $(TARGET)
 
   clean:
@@ -23,7 +27,11 @@ ifeq ($(BUILD_32BIT), y)
 
 else
 
-  all:
+  all: compile link
+
+  compile:
+
+  link:
 
   clean:
 

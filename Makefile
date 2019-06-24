@@ -10,7 +10,7 @@ GLOBAL_CXXFLAGS  = -std=c++11 -Wall -fPIC
 
 GLOBAL_LDFLAGS   =
 GLOBAL_ARFLAGS   = rcs
-GLOBAL_MAKE      = make
+GLOBAL_MAKE      = $(MAKE)
 GLOBAL_MAKEFLAGS =
 GLOBAL_STATIC_LIBS = liblog libutils libsp
 GLOBAL_SHARED_LIBS = libmemory
@@ -27,6 +27,9 @@ EXE_EXT   =
 
 include $(MAKE_RULE)/precheck.make.rule
 include $(MAKE_RULE)/project.info.make.rule
+include $(MAKE_RULE)/multithread.compile.make.rule
+
+GLOBAL_MAKEFLAGS += #$(THREAD_ARG)
 
 ifeq ($(strip $(ISCYGWIN)), y)
   DYLIB_EXT = .dll
@@ -41,17 +44,17 @@ build: all
 
 exclude_dirs  = cygwin gui out release
 
-compile_order  = log utils memory threads external encrypt ipcsocket websocket
-compile_order += monitor transmission makerules experiment cmdline core ipc main
+link_order  = log utils memory threads external encrypt ipcsocket websocket
+link_order += monitor transmission makerules experiment cmdline core ipc main
 
 export
-unexport compile_order
+unexport link_order
 
 include $(MAKE_RULE)/submodule.make.rule
 
 include $(MAKE_RULE)/color.print.make.rule
 
-all: $(MAKE_SUB_MODULES)
+all: $(COMPILE_SUB_MODULES) $(LINK_SUB_MODULES) release
 	$(GLOBAL_MAKE) $(GLOBAL_MAKEFLAGS) -C gui all
 	@echo -e $(SUCCEED_COLOR)"Project $(PROJNAME) $(VERSION) build on $(PLATFORM) succeed."$(RESTORE_COLOR)
 
@@ -62,7 +65,9 @@ clean: $(CLEAN_SUB_MODULES)
 
 include $(MAKE_RULE)/find.all.modules.make.rule
 
-install:
+rel: release
+
+release:
 	if [ ! -d $(BIN_DIR) ]; then mkdir -p $(BIN_DIR); fi;
 	fileNum=$$(find $(MODULE_DIRS) -type f -name "*$(strip $(DYLIB_EXT))" | wc -l);  \
   if [ "$$fileNum" -ne "0" ]; then                                                 \
@@ -71,4 +76,4 @@ install:
 	cp -f `find $(MODULE_DIRS) -type f -name "$(PROJNAME)$(EXE_EXT)"` $(BIN_DIR);
 	@echo -e $(FINISH_COLOR)"All libraries $(DYLIB_EXT) have been copied to $(BIN_DIR)."$(RESTORE_COLOR)
 
-.PHONY: build all clean install $(MAKE_SUB_MODULES) $(CLEAN_SUB_MODULES)
+.PHONY: build all clean install $(MAKE_SUB_MODULES) $(COMPILE_SUB_MODULES) $(LINK_SUB_MODULES) $(CLEAN_SUB_MODULES)

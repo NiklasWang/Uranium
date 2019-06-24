@@ -1,4 +1,8 @@
-all:
+all: compile link
+
+compile:
+
+link:
 
 clean:
 

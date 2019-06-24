@@ -1,12 +1,21 @@
 dirs := $(shell find . -maxdepth 1 -type d)
 dirs := $(basename $(patsubst ./%, %, $(dirs)))
-MAKE_SUB_MODULES  := $(filter-out $(exclude_dirs), $(dirs))
-MAKE_SUB_MODULES  := $(sort $(MAKE_SUB_MODULES))
-MAKE_SUB_MODULES  := $(compile_order) $(filter-out $(compile_order), $(MAKE_SUB_MODULES))
-CLEAN_SUB_MODULES := $(addprefix clean_, $(MAKE_SUB_MODULES))
+MAKE_SUB_MODULES    := $(filter-out $(exclude_dirs), $(dirs))
+MAKE_SUB_MODULES    := $(sort $(MAKE_SUB_MODULES))
+CLEAN_SUB_MODULES   := $(addprefix clean_, $(MAKE_SUB_MODULES))
+COMPILE_SUB_MODULES := $(addprefix compile_, $(MAKE_SUB_MODULES))
+LINK_SUB_MODULES    := $(link_order) $(filter-out $(link_order), $(MAKE_SUB_MODULES))
+LINK_SUB_MODULES    := $(addprefix link_, $(MAKE_SUB_MODULES))
 
 $(MAKE_SUB_MODULES):
-	$(GLOBAL_MAKE) $(GLOBAL_MAKEFLAGS) -C $@ all
+	$(MAKE) $(addprefix compile_, $@)
+	$(MAKE) $(addprefix link_, $@)
+
+$(COMPILE_SUB_MODULES):
+	$(MAKE) compile $(GLOBAL_MAKEFLAGS) -C $(patsubst compile_%, %, $@)
+
+$(LINK_SUB_MODULES):
+	$(MAKE) link $(GLOBAL_MAKEFLAGS) -j1 -C $(patsubst link_%, %, $@)
 
 $(CLEAN_SUB_MODULES):
-	$(GLOBAL_MAKE) $(GLOBAL_MAKEFLAGS) -C $(patsubst clean_%, %, $@) clean
+	$(MAKE) clean $(GLOBAL_MAKEFLAGS) -C $(patsubst clean_%, %, $@)

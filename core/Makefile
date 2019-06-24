@@ -18,12 +18,15 @@ include $(MAKE_RULE)/dependency.make.rule
 
 include $(MAKE_RULE)/submodule.make.rule
 
-lib: $(objects)
-	$(CXX) $^ $(LDFLAGS) -o $(TARGET)
+all: compile link $(MAKE_SUB_MODULES)
 
-all: lib $(MAKE_SUB_MODULES)
+compile: $(objects) $(COMPILE_SUB_MODULES)
+
+link: $(objects)
+	$(CXX) $^ $(LDFLAGS) -o $(TARGET)
+	$(MAKE) $(LINK_SUB_MODULES)
 
 clean: $(CLEAN_SUB_MODULES)
 	rm -f $(TARGET) $(objects) $(dependence)
 
-.PHONY: clean $(MAKE_SUB_MODULES) $(CLEAN_SUB_MODULES)
+.PHONY: clean $(COMPILE_SUB_MODULES) $(LINK_SUB_MODULES) $(MAKE_SUB_MODULES) $(CLEAN_SUB_MODULES)

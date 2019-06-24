@@ -11,7 +11,11 @@ dependence := $(sources:.c=.d)
 
 include $(MAKE_RULE)/dependency.make.rule
 
-all: $(objects)
+all: compile link
+
+compile: $(objects)
+
+link: $(objects)
 	$(CC) $^ $(LDFLAGS) -o $(TARGET)
 
 clean:

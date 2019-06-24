@@ -1,0 +1,4 @@
+cpus := $(shell cat /proc/cpuinfo | grep processor | wc -l)
+
+THREAD_NUM := $(shell expr $(cpus) + 2)
+THREAD_ARG := -j$(THREAD_NUM)

@@ -1,7 +1,19 @@
-targets = $(shell ls *.make)
+makefiles := $(shell ls *.make)
+makefiles := $(basename $(patsubst %.make, %, $(makefiles)))
+MAKE_MODULES    := $(sort $(makefiles))
+CLEAN_MODULES   := $(addprefix clean_, $(MAKE_MODULES))
+COMPILE_MODULES := $(addprefix compile_, $(MAKE_MODULES))
+LINK_MODULES    := $(addprefix link_, $(MAKE_MODULES))
 
-MAKE_MODULES:
-	$(patsubst %, make all -f %;, $(targets))
+$(MAKE_MODULES):
+	$(MAKE) $(addprefix compile_, $@)
+	$(MAKE) $(addprefix link_, $@)
 
-CLEAN_MODULES:
-	$(patsubst %, make clean -f %;, $(targets))
+$(COMPILE_MODULES):
+	$(MAKE) compile $(GLOBAL_MAKEFLAGS) -f $(patsubst compile_%, %.make, $@)
+
+$(LINK_MODULES):
+	$(MAKE) link $(GLOBAL_MAKEFLAGS) -j1 -f $(patsubst link_%, %.make, $@)
+
+$(CLEAN_MODULES):
+	$(MAKE) clean $(GLOBAL_MAKEFLAGS) -f $(patsubst clean_%, %.make, $@)
