@@ -52,10 +52,13 @@ unexport link_order
 
 include $(MAKE_RULE)/submodule.make.rule
 
+include $(MAKE_RULE)/prepare.env.make.rule
 include $(MAKE_RULE)/color.print.make.rule
 
-all: $(COMPILE_SUB_MODULES) $(LINK_SUB_MODULES) release
-	$(GLOBAL_MAKE) $(GLOBAL_MAKEFLAGS) -C gui all
+all: prepare $(COMPILE_SUB_MODULES)
+	$(MAKE) all $(GLOBAL_MAKEFLAGS) -C gui
+	make $(LINK_SUB_MODULES)
+	$(MAKE) release
 	@echo -e $(SUCCEED_COLOR)"Project $(PROJNAME) $(VERSION) build on $(PLATFORM) succeed."$(RESTORE_COLOR)
 
 clean: $(CLEAN_SUB_MODULES)

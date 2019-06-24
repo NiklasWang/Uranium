@@ -21,7 +21,7 @@ all: compile link
 
 compile: $(objects)
 
-link:
+link: $(objects)
 	$(CXX) $^ $(LDFLAGS) -o $(TARGET)
 
 clean:

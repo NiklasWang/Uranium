@@ -14,7 +14,7 @@ ifneq ($(TARGET), $(notdir $(wildcard $(CURRDIR)/$(TARGET))))
 	$(call BUILE)
 endif
 ifeq ($(strip $(ISCYGWIN)), y)
-	$(call CRYWIN_INSTALL)
+	$(call CYGWIN_INSTALL)
 else
 	$(call LINUX_INSTALL)
 endif
@@ -27,20 +27,20 @@ define BUILE
 	make -j8 V=1;       
 endef
 
-define CRYWIN_INSTALL
-	fswatch-master;   \
+define CYGWIN_INSTALL
+	cd fswatch-master; \
 	cp -ar  ./libfswatch/src/libfswatch/.libs/$(FILENAME) $(CURRDIR)/$(TARGET)
 endef 
 
 define LINUX_INSTALL
-	cd fswatch-master;   \
+	cd fswatch-master; \
 	cp -ar ./libfswatch/src/libfswatch/.libs/${FILENAME} $(CURRDIR)/
 endef
 
 clean:
-	cd fswatch-master/; \
-	make celan;         \
-	make distclean;     \
+	cd fswatch-master; \
+	make clean;        \
+	make distclean;    \
 	rm -rf $(CURRDIR)/$(TARGET)*
 
 .PHONY: clean

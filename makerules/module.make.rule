@@ -13,7 +13,7 @@ $(COMPILE_MODULES):
 	$(MAKE) compile $(GLOBAL_MAKEFLAGS) -f $(patsubst compile_%, %.make, $@)
 
 $(LINK_MODULES):
-	$(MAKE) link $(GLOBAL_MAKEFLAGS) -j1 -f $(patsubst link_%, %.make, $@)
+	$(MAKE) link $(GLOBAL_MAKEFLAGS) -f $(patsubst link_%, %.make, $@)
 
 $(CLEAN_MODULES):
 	$(MAKE) clean $(GLOBAL_MAKEFLAGS) -f $(patsubst clean_%, %.make, $@)

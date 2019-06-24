@@ -5,7 +5,7 @@ MAKE_SUB_MODULES    := $(sort $(MAKE_SUB_MODULES))
 CLEAN_SUB_MODULES   := $(addprefix clean_, $(MAKE_SUB_MODULES))
 COMPILE_SUB_MODULES := $(addprefix compile_, $(MAKE_SUB_MODULES))
 LINK_SUB_MODULES    := $(link_order) $(filter-out $(link_order), $(MAKE_SUB_MODULES))
-LINK_SUB_MODULES    := $(addprefix link_, $(MAKE_SUB_MODULES))
+LINK_SUB_MODULES    := $(addprefix link_, $(LINK_SUB_MODULES))
 
 $(MAKE_SUB_MODULES):
 	$(MAKE) $(addprefix compile_, $@)
@@ -15,7 +15,7 @@ $(COMPILE_SUB_MODULES):
 	$(MAKE) compile $(GLOBAL_MAKEFLAGS) -C $(patsubst compile_%, %, $@)
 
 $(LINK_SUB_MODULES):
-	$(MAKE) link $(GLOBAL_MAKEFLAGS) -j1 -C $(patsubst link_%, %, $@)
+	$(MAKE) link $(GLOBAL_MAKEFLAGS) -C $(patsubst link_%, %, $@)
 
 $(CLEAN_SUB_MODULES):
 	$(MAKE) clean $(GLOBAL_MAKEFLAGS) -C $(patsubst clean_%, %, $@)
