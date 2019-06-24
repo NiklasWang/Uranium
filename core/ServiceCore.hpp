@@ -23,7 +23,6 @@ int32_t ServiceCore::transferDictionaryCMD(TREANFER_EVENT_ENUM evt, uint32_t cmd
     int32_t rc = NO_ERROR;
     std::string storagePath = appendBasePath(DIR_FILE_NAME);
 
-
     if (SUCCEED(rc)) {
         /* --TODO-- Package  the request command */
         TRAN_HEADE_T *pTranHead = createTranHeade();
@@ -107,6 +106,123 @@ int32_t ServiceCore::reduceTranHeaderData(const std::string &inPath, const std::
     ouStream.close();
 
     return rc;
+}
+int32_t ServiceCore::createEntryFile(const std::string &fileName, uint32_t value, bool fistFlage)
+{
+    std::string storageFile = appendBasePath(TRA_SYNC_FILE_NAME);
+    std::string origFile = mLocalPath + fileName;
+    // std::cout<<"LHB my origFilePath = "<< origFile<<"value = 0x"<< std::hex <<value << std::endl;
+    std::ofstream ouStream;
+    if (fistFlage) {
+        ouStream.open(storageFile, std::ios::binary | std::ios::trunc);
+    } else {
+        ouStream.open(storageFile, std::ios::binary | std::ios::app);
+    }
+
+    std::ifstream inStream(origFile, std::ios::binary | std::ios::ate);
+    TRANSFER_ENTRY_FILE_T entry;
+
+    memset(&entry, 0, sizeof(entry));
+    entry.flages = MOENTRY_FLAGE_MASK;
+    strcpy(entry.fileName, fileName.c_str());
+    //
+    entry.value = value;
+    //
+
+    switch (value) {
+        case MONITOR_Removed:
+            entry.fileSize = 0;
+            std::cout << "LHB " << fileName << " value = " << value << std::endl;
+            ouStream.write((char *)&entry, sizeof(TRANSFER_ENTRY_FILE_T));
+            break;
+        case MONITOR_Updated:
+        case MONITOR_Created: {
+            int32_t rc = NO_ERROR;
+            if (SUCCEED(rc)) {
+                std::cout << "LHB " << fileName << " value = " << value << std::endl;
+                entry.fileSize = inStream.tellg();
+                inStream.seekg(0);
+            }
+
+            char *buffer = new char[entry.fileSize];
+            if (ISNULL(buffer)) {
+                rc = NO_MEMORY;
+                std::cout << "Out of memory\n";
+            }
+
+            if (SUCCEED(rc)) {
+                ouStream.write((char *)&entry, sizeof(TRANSFER_ENTRY_FILE_T));
+                inStream.read(buffer, entry.fileSize);
+                ouStream.write(buffer, entry.fileSize);
+            }
+
+            delete buffer;
+        }
+        break;
+        default:
+            LOGE(mModule, "Do not suppot\n");
+            break;
+    }
+    ouStream.close();
+    inStream.close();
+    return NO_ERROR;
+}
+
+int32_t ServiceCore::praseEntryFile(const std::string& inPath)
+{
+    std::ifstream inStream(inPath, std::ios::binary);
+    uint32_t offset = 0;
+    inStream.seekg(0);
+    TRANSFER_ENTRY_FILE_T entry;
+    std::cout << "LHB read file name = " << inPath << "\n";
+    while (!inStream.eof()) {
+        memset(&entry, 0, sizeof(entry));
+        inStream.read((char *)&entry, sizeof(TRANSFER_ENTRY_FILE_T));
+        if (entry.flages != MOENTRY_FLAGE_MASK) {
+            std::cout << "Flage not match error\n";
+            break;
+        }
+        switch (entry.value) {
+            case MONITOR_Removed: {
+                std::string cmdStr = "rm -rf ";
+                cmdStr += mLocalPath;
+                cmdStr +=  entry.fileName;
+                std::cout << "system " << cmdStr << "\n";
+            }
+                // system(cmdStr.c_str());
+            break;
+
+            case MONITOR_Updated:
+            case MONITOR_Created: {
+                int32_t rc = NO_ERROR;
+                char *buffer = new char[entry.fileSize];
+                if (ISNULL(buffer)) {
+                    rc = NO_MEMORY;
+                    std::cout << "memory is not ernough\n";
+                }
+
+                if (SUCCEED(rc)) {
+                    std::string tmpFilePath = mLocalPath;
+                    tmpFilePath += entry.fileName;
+                    std::cout << "MY file path = " << tmpFilePath << "\n";
+                    // ouStream.open(tmpFilePath, std::ios::binary | std::ios::trunc);
+                    // tmpFilePath.write(buffer, entry.fileSize);
+                    // ouStream.close();
+                }
+                delete buffer;
+            }
+            break;
+
+            default:
+                break;
+        }
+        // printf("LHB receive Path=%s, value = 0x%02x\n", entry.fileName, entry.value);
+        offset += (entry.fileSize + sizeof(TRANSFER_ENTRY_FILE_T));
+        inStream.seekg(offset);
+    }
+
+    inStream.close();
+    return NO_ERROR;
 }
 
 std::string ServiceCore::appendBasePath(const std::string dirPath)

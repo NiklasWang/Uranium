@@ -16,6 +16,8 @@ namespace uranium
 #define DICTIONARY_NAME     ("direction.bin")
 #define FILE_INFOS_NAME     ("fileInfos.bin")
 #define TAR_MODIR_NAME      ("modir.tar.bz2")
+#define TRA_SYNC_FILE_NAME  ("MO_SYNC_FILE.bin")
+
 #define FILE_BUFFER_SIZE    (1024*1024)
 
 class FexTransfer : public TransferManager
