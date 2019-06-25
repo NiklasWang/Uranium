@@ -62,7 +62,8 @@ all: prepare $(COMPILE_SUB_MODULES)
 	@echo -e $(SUCCEED_COLOR)"Project $(PROJNAME) $(VERSION) build on $(PLATFORM) succeed."$(RESTORE_COLOR)
 
 clean: $(CLEAN_SUB_MODULES)
-	rm -f `find $(ROOT_DIR) -type f -name "*.d.*" -o -name "*.make.cache"`
+	rm -f `find $(ROOT_DIR) -type f -name "*.d.*"`
+	#rm -f `find $(ROOT_DIR) -type f -name "*.make.cache"`
 	@echo -e $(FINISH_COLOR)"Project $(PROJNAME) $(VERSION) all cleaned."$(RESTORE_COLOR)
 
 
