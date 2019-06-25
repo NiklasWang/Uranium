@@ -9,7 +9,7 @@ objects     = $(sources:.cpp=.o)
 dependence := $(sources:.cpp=.d)
 
 SHARED_LIBS =
-STATIC_LIBS =
+STATIC_LIBS = liblog libutils
 
 include $(MAKE_RULE)/find.library.make.rule 
 
