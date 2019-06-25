@@ -33,9 +33,10 @@ ifeq ($(findstring clean, $(MAKECMDGOALS)),)
 
   else
 
-    $(info No dependency changed found, generating...)
+    $(info No dependency cache found, generating...)
     include $(MAKE_RULE)/find.library.noncache.make.rule
     $(call SaveCache)
+
   endif
 
 endif

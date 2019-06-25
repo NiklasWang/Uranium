@@ -63,8 +63,10 @@ all: prepare $(COMPILE_SUB_MODULES)
 
 clean: $(CLEAN_SUB_MODULES)
 	rm -f `find $(ROOT_DIR) -type f -name "*.d.*"`
-	#rm -f `find $(ROOT_DIR) -type f -name "*.make.cache"`
 	@echo -e $(FINISH_COLOR)"Project $(PROJNAME) $(VERSION) all cleaned."$(RESTORE_COLOR)
+
+clean-cache:
+	rm -f `find $(ROOT_DIR) -type f -name "*.make.cache"`
 
 
 include $(MAKE_RULE)/find.all.modules.make.rule

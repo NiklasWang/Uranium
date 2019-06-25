@@ -7,8 +7,8 @@ sources     = $(wildcard *.cpp)
 objects     = $(sources:.cpp=.o)
 dependence := $(sources:.cpp=.d)
 
-SHARED_LIBS = $(GLOBAL_SHARED_LIBS)
-STATIC_LIBS = $(GLOBAL_STATIC_LIBS)
+SHARED_LIBS =
+STATIC_LIBS = liblog libutils
 
 include $(MAKE_RULE)/find.library.make.rule 
 
