@@ -2,8 +2,8 @@ ifeq ($(findstring clean, $(MAKECMDGOALS)),)
 
   CACHEFILE = $(CURRDIR)/find.library.$(TARGET).make.cache
   CURRDIR   = $(shell pwd)
-  STATIC_LIBS := $(sort $(STATIC_LIBS))
-  SHARED_LIBS := $(sort $(SHARED_LIBS))
+  STATIC_LIBS := $(strip $(STATIC_LIBS))
+  SHARED_LIBS := $(strip $(SHARED_LIBS))
 
   define SaveCache
     $(shell echo -e        \
@@ -21,19 +21,19 @@ ifeq ($(findstring clean, $(MAKECMDGOALS)),)
     CACHE_SHARED_LIBS = $(strip $(shell sed -n 2p $(CACHEFILE)))
 
     ifeq ($(CACHE_STATIC_LIBS) $(CACHE_SHARED_LIBS), $(STATIC_LIBS) $(SHARED_LIBS))
-      $(info Cache hint, reuse dependency...)
+      $(info Dependency cache $(CACHEFILE) hint, apply it.)
       CFLAGS   := $(strip $(shell sed -n 3p $(CACHEFILE)))
       CXXFLAGS := $(strip $(shell sed -n 4p $(CACHEFILE)))
       LDFLAGS  := $(strip $(shell sed -n 5p $(CACHEFILE)))
     else
-      $(info Dependency changed, refresh dependency cache...)
+      $(info Dependency changed, refresh cache $(CACHEFILE) ...)
       include $(MAKE_RULE)/find.library.noncache.make.rule
       $(call SaveCache)
     endif
 
   else
 
-    $(info No dependency cache found, generating...)
+    $(info Not found dependency cache, generating $(CACHEFILE) ...)
     include $(MAKE_RULE)/find.library.noncache.make.rule
     $(call SaveCache)
 
