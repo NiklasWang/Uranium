@@ -1,0 +1,19 @@
+STATIC_LIBS := $(filter-out $(basename $(TARGET)), $(STATIC_LIBS))
+SHARED_LIBS := $(filter-out $(basename $(TARGET)), $(SHARED_LIBS))
+
+LIB_DIRS = $(foreach libname, $(sort $(STATIC_LIBS) $(SHARED_LIBS)), \
+    $(shell $(MAKE_RULE)/find.library.make.sh $(ROOT_DIR) $(libname))  \
+)
+
+CFLAGS   += -I$(ROOT_DIR) -I$(shell pwd)
+CFLAGS   += $(patsubst %, -I%, $(LIB_DIRS))
+CXXFLAGS += -I$(ROOT_DIR) -I$(shell pwd)
+CXXFLAGS += $(patsubst %, -I%, $(LIB_DIRS))
+LDFLAGS  += -fPIC $(if $(findstring $(DYLIB_EXT), $(TARGET)), -shared)
+LDFLAGS  += $(patsubst %, -L %, $(LIB_DIRS))
+LDFLAGS  += -Wl,-Bstatic $(patsubst lib%, -l%, $(STATIC_LIBS))
+LDFLAGS  += -Wl,-Bdynamic $(patsubst lib%, -l%, $(SHARED_LIBS))
+
+CFLAGS   := $(shell echo $(CFLAGS) | tr -s ' ')
+CXXFLAGS := $(shell echo $(CXXFLAGS) | tr -s ' ')
+LDFLAGS  := $(shell echo $(LDFLAGS) | tr -s ' ')

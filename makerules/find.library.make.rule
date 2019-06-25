@@ -1,23 +1,36 @@
 ifeq ($(findstring clean, $(MAKECMDGOALS)),)
 
-STATIC_LIBS := $(filter-out $(basename $(TARGET)), $(STATIC_LIBS))
-SHARED_LIBS := $(filter-out $(basename $(TARGET)), $(SHARED_LIBS))
+  CACHEFILE = $(CURRDIR)/find.library.$(TARGET).make.cache
+  CURRDIR   = $(shell pwd)
 
-LIB_DIRS = $(foreach libname, $(sort $(STATIC_LIBS) $(SHARED_LIBS)), \
-  $(shell $(MAKE_RULE)/find.library.make.sh $(ROOT_DIR) $(libname)) \
-)
+  define SaveCache
+    $(shell echo -e        \
+      '$(STATIC_LIBS)'"\n" \
+      '$(SHARED_LIBS)'"\n" \
+      '$(CFLAGS)'     "\n" \
+      '$(CXXFLAGS)'   "\n" \
+      '$(LDFLAGS)'    "\n" > $(CACHEFILE) \
+    )
+  endef
 
-CFLAGS   += -I$(ROOT_DIR) -I$(shell pwd)
-CFLAGS   += $(patsubst %, -I%, $(LIB_DIRS))
-CXXFLAGS += -I$(ROOT_DIR) -I$(shell pwd)
-CXXFLAGS += $(patsubst %, -I%, $(LIB_DIRS))
-LDFLAGS  += -fPIC $(if $(findstring $(DYLIB_EXT), $(TARGET)), -shared)
-LDFLAGS  += $(patsubst %, -L %, $(LIB_DIRS))
-LDFLAGS  += -Wl,-Bstatic $(patsubst lib%, -l%, $(STATIC_LIBS))
-LDFLAGS  += -Wl,-Bdynamic $(patsubst lib%, -l%, $(SHARED_LIBS))
+  ifeq ($(CACHEFILE), $(wildcard $(CACHEFILE)))
 
-CFLAGS   := $(shell echo $(CFLAGS) | tr -s ' ')
-CXXFLAGS := $(shell echo $(CXXFLAGS) | tr -s ' ')
-LDFLAGS  := $(shell echo $(LDFLAGS) | tr -s ' ')
+    CACHE_STATIC_LIBS = $(strip $(shell sed -n 1p $(CACHEFILE)))
+    CACHE_SHARED_LIBS = $(strip $(shell sed -n 2p $(CACHEFILE)))
+
+    ifeq ($(CACHE_STATIC_LIBS) $(CACHE_SHARED_LIBS), $(STATIC_LIBS) $(SHARED_LIBS))
+      CFLAGS   := $(strip $(shell sed -n 3p $(CACHEFILE)))
+      CXXFLAGS := $(strip $(shell sed -n 4p $(CACHEFILE)))
+      LDFLAGS  := $(strip $(shell sed -n 5p $(CACHEFILE)))
+    else
+      $(info Dependency changed, refresh dependency cache...)
+      include $(MAKE_RULE)/find.library.noncache.make.rule
+      $(call SaveCache)
+    endif
+
+  else
+    include $(MAKE_RULE)/find.library.noncache.make.rule
+    $(call SaveCache)
+  endif
 
 endif

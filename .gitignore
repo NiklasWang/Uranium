@@ -44,5 +44,8 @@ build-uranium-gui*/*
 # Release
 !release/*
 
-#external
+# External
 external/fswatch/fswatch-master/*
+
+# makefile dependency cache
+*.cache
