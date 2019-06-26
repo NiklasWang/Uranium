@@ -1,6 +1,6 @@
 CC       = $(GLOBAL_CC)
 AR       = $(GLOBAL_AR)
-CFLAGS   =
+CFLAGS   = $(GLOBAL_CFLAGS)
 ARFLAGS  = $(GLOBAL_ARFLAGS)
 
 TARGET      = libaes$(strip $(STLIB_EXT))

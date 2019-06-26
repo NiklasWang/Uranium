@@ -8,7 +8,7 @@ objects     = $(sources:.cpp=.o)
 dependence := $(sources:.cpp=.d)
 
 SHARED_LIBS = $(GLOBAL_SHARED_LIBS) libthreads 
-STATIC_LIBS = $(GLOBAL_STATIC_LIBS)
+STATIC_LIBS = $(GLOBAL_STATIC_LIBS) libencrypt libmd5sum_sha1sum libuuid libutils libaes
 
 include $(MAKE_RULE)/find.library.make.rule
 
