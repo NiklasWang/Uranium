@@ -14,12 +14,12 @@ FexTransfer::FexTransfer(TRANSFER_STATUS_E tranDirct):
     mModule(MODULE_ENCRYPT),
     mTranDirct(tranDirct)
 {
-
+    pthread_mutex_init(&mTransMutex, NULL);
 }
 
 FexTransfer::~FexTransfer()
 {
-
+    pthread_mutex_destroy(&mTransMutex);
 }
 
 uint32_t FexTransfer::pushData(TRANSFER_BUFFER_T &cmd)
@@ -74,7 +74,9 @@ uint32_t FexTransfer::pushData(TRANSFER_BUFFER_T &cmd)
 
         cmdStr = ("fex -u ");
         cmdStr += filePath;
+        pthread_mutex_lock(&mTransMutex);
         rc = system((const char *) cmdStr.c_str());
+        pthread_mutex_unlock(&mTransMutex);
     }
 
     return rc;
@@ -101,10 +103,13 @@ uint32_t FexTransfer::pullData(TRANSFER_BUFFER_T &cmd)
     std::string timeTemp;
 
     if (SUCCEED(rc)) {
+        pthread_mutex_lock(&mTransMutex);
         rc = system((const char *) cmdStr.c_str());
+        pthread_mutex_unlock(&mTransMutex);
         if (FAILED(rc)) {
             LOGE(mModule, "Runing system failed\n");
         }
+
     }
 
     if (SUCCEED(rc)) {
@@ -164,7 +169,9 @@ uint32_t FexTransfer::pullData(TRANSFER_BUFFER_T &cmd)
         cmdStr = "fex -d ";
         cmdStr += filePath;
         std::cout << "LHB@@@@ " << cmdStr << std::endl;
+        pthread_mutex_lock(&mTransMutex);
         rc = system(cmdStr.c_str());
+        pthread_mutex_unlock(&mTransMutex);
 
     }
 

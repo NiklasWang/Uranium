@@ -37,6 +37,7 @@ private:
     ModuleType          mModule;
     TRANSFER_STATUS_E   mTranDirct;
     std::string         mFileLastTime;
+    pthread_mutex_t     mTransMutex;
 
 };
 
