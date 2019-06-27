@@ -91,6 +91,8 @@ private:
     // int32_t transferStoraFilelInfos(const std::string &filePath)
     int32_t createEntryFile(const std::string &fileName, uint32_t value, bool fistFlage);
     int32_t praseEntryFile(const std::string& inPath);
+    int32_t monitorDirCallBack(std::map<std::string, uint32_t>&diffFile);
+
 private:
     int32_t doHandleMoEvt(const TRAN_HEADE_T& traHead, const std::string &filePath);
     int32_t doHandleMoAck(const TRAN_HEADE_T& traHead);

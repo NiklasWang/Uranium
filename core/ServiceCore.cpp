@@ -7,11 +7,28 @@ namespace uranium
 
 int32_t ServiceCore::start()
 {
+    int32_t rc = NO_ERROR;
+    if (TRAN_CLINET == mTranStatus && mCodesSync) {
+        if (SUCCEED(rc)) {
+            rc = mMonitorCore->monitorDirStart();
+        }
+
+        if (SUCCEED(rc)) {
+            rc = mMonitorCore->monitorLoopProcess(
+            [this](std::map<std::string, uint32_t>&diffFile)-> int32_t {
+                return monitorDirCallBack(diffFile);
+            });
+        }
+
+    }
+#if 0
     return mThreads->run(
     []()->int32_t {
         std::cout << "Start runing" << std::endl;
         return NO_ERROR;
     });
+#endif
+    return rc;
 }
 
 int32_t ServiceCore::stop()
@@ -404,6 +421,28 @@ int32_t ServiceCore::tarnsferServer2Clinet(void)
     return rc;
 }
 
+int32_t ServiceCore::monitorDirCallBack(std::map<std::string, uint32_t>&diffFile)
+{
+    int32_t rc = NO_ERROR;
+
+    if (SUCCEED(rc)) {
+        std::map<std::string, uint32_t>::iterator it;
+        if (diffFile.begin() != diffFile.end()) {
+            rc = transferDictionaryCMD(DIR_MO_EVT, DIR_MO_EVT_MODATA, false);
+            bool fisrFlage = true;
+            for (it = diffFile.begin(); it != diffFile.end(); it++) {
+                /* do create files */
+                createEntryFile(it->first, it->second, fisrFlage);
+                fisrFlage = false;
+                // printf("Key=%s value=0x%x\n",it->first.c_str(), it->second);
+            }
+            rc = transferAppendData(appendBasePath(TRA_SYNC_FILE_NAME));
+        }
+    }
+
+    return rc;
+}
+
 int32_t ServiceCore::transferLoadFileInfos()
 {
     int32_t rc = NO_ERROR;
@@ -472,12 +511,7 @@ int32_t ServiceCore::transferStoraFilelInfos(const std::string &filePath)
 
     if (SUCCEED(rc)) {
         std::map<std::string, uint32_t>::iterator it;
-        if (diffFile.begin() == diffFile.end()) {
-            /* send singal to enable second steps */
-            if (mSemEnable) {
-                mSemTime->signal();
-            }
-        } else {
+        if (diffFile.begin() != diffFile.end()) {
             rc = transferDictionaryCMD(DIR_MO_EVT, DIR_MO_EVT_MODATA, false);
             bool fisrFlage = true;
             for (it = diffFile.begin(); it != diffFile.end(); it++) {
@@ -490,6 +524,11 @@ int32_t ServiceCore::transferStoraFilelInfos(const std::string &filePath)
         }
     }
 
+    if (SUCCEED(rc)) {
+        if (mSemEnable) {
+            mSemTime->signal();
+        }
+    }
     return rc;
 }
 
