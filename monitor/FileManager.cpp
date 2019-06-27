@@ -165,7 +165,7 @@ int32_t FileManager::fileScanToInis()
 }
 
 bool FileManager::dirCompareWithLocal(const std::string file, \
-    std::map<std::string, uint32_t> &diffFile)
+                                      std::map<std::string, uint32_t> &diffFile)
 {
     std::string tmpStr = file;
     std::map<std::string, std::string> tmpFileInfo;
@@ -303,11 +303,11 @@ int32_t FileManager::fileInfoErase(void)
 }
 
 FileManager::FileManager(const std::string &monitPath)
-    // mModule(0)
+// mModule(0)
 {
     std::string thisPath = monitPath;
     if ('/' != thisPath[thisPath.size() - 1]) {
-        thisPath += "/"; 
+        thisPath += "/";
     }
 
     mDirPath = thisPath;

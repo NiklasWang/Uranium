@@ -17,7 +17,7 @@ class MonitorCore
 public:
     bool monitorDirNotExit(void);
     bool monitorDirCompareWithLocal(const std::string file, \
-        std::map<std::string, uint32_t> &diffFile);
+                                    std::map<std::string, uint32_t> &diffFile);
     int32_t monitorTarExec(const std::string files, std::function<int32_t (void)> cb);
     int32_t monitorUntarExec(const std::string files);
     int32_t monitorDirInfosSave(const std::string path, std::function<int32_t (void)> cb);
@@ -29,7 +29,7 @@ public:
     int32_t monitorDirStop(void);
 
 public:
-    int32_t monitorLoopProcess(void);
+    int32_t monitorLoopProcess(std::function<int32_t (std::map<std::string, uint32_t>&) > cb);
     int32_t monitorLoopStop(void);
 
 public:

@@ -27,7 +27,7 @@ public:
     int32_t fileInfosLoad(const std::string path = NULL);
     int32_t fileScanToInis();
     bool dirCompareWithLocal(const std::string file, \
-        std::map<std::string, uint32_t> &diffFile);
+                             std::map<std::string, uint32_t> &diffFile);
     bool    dirNotExit(void);
     //
     //int32_t filePathSet(const std::string path);

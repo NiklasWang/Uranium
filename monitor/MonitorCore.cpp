@@ -10,8 +10,8 @@ bool MonitorCore::monitorDirNotExit(void)
         return mFileMage->dirNotExit();});
 }
 
-bool MonitorCore::monitorDirCompareWithLocal(const std::string file,\
-    std::map<std::string, uint32_t> &diffFile)
+bool MonitorCore::monitorDirCompareWithLocal(const std::string file, \
+        std::map<std::string, uint32_t> &diffFile)
 {
     return mFileMage->dirCompareWithLocal(file, diffFile);
 }
@@ -79,8 +79,9 @@ int32_t MonitorCore::monitorDirStop(void)
     });
 }
 
-int32_t MonitorCore::monitorLoopProcess(void)
+int32_t MonitorCore::monitorLoopProcess(std::function<int32_t (std::map<std::string, uint32_t>&) > cb)
 {
+
 
     if (mLoopRuning) {
         LOGE(mModule, "function has already runing....\n");
@@ -90,10 +91,33 @@ int32_t MonitorCore::monitorLoopProcess(void)
     }
 
     return mThreads->run(
-    [this]()-> int32_t {
+    [this, cb]()-> int32_t {
+        std::map<std::string, uint32_t> tmpDiffFile;
+        std::map<std::string, MONITOR_FILES_T>::iterator iter;
+        std::map<std::string, uint32_t>::iterator iter_tmp;
         do
         {
-            sleep(0.1);
+            sleep(10);
+            pthread_mutex_lock(&infoMutex);
+
+            for (iter = mFileModify.begin(); iter != mFileModify.end();) {
+                if (iter->second.envFlages & (MONITOR_Created | MONITOR_Updated | MONITOR_MovedTo)) {
+                    tmpDiffFile[iter->first] = MONITOR_Updated;
+                } else if (iter->second.envFlages & (MONITOR_Removed | MONITOR_Renamed)) {
+                    tmpDiffFile[iter->first] = MONITOR_Removed;
+                }
+                std::cout << iter->first << "=" << std::hex << iter->second.envFlages << std::endl;
+                iter = mFileModify.erase(iter);
+            }
+            // mFileModify[key] = value;
+            pthread_mutex_unlock(&infoMutex);
+
+            cb(tmpDiffFile);
+            /* clear tmpDirfile */
+            for (iter_tmp = tmpDiffFile.begin(); iter_tmp != tmpDiffFile.end();) {
+                iter_tmp = tmpDiffFile.erase(iter_tmp);
+            }
+
         } while (mLoopRuning);
         return NO_ERROR;
     });
@@ -218,6 +242,7 @@ void MonitorCore::processHandle(const std::vector<event>& events)
         }
 
         std::string key = evt.get_path();
+
         /*             --FIXME--
             do not differentiate dir or files
             need to do somethings different
@@ -225,6 +250,16 @@ void MonitorCore::processHandle(const std::vector<event>& events)
         MONITOR_FILES_T value;
         value.envFlages = envFlages;
         value.time =    evt.get_time();
+
+        auto point = key.find(mMonitorPath);
+        point += mMonitorPath.length();
+        auto tmp_str = key.substr(point);
+
+        if (tmp_str.at(0) == '/') {
+            tmp_str = tmp_str.substr(1);
+        }
+        key = tmp_str;
+
         auto result = mFileModify.find(key);
         /* correctly find key-value */
         if (result != mFileModify.end()) {
@@ -234,7 +269,7 @@ void MonitorCore::processHandle(const std::vector<event>& events)
         pthread_mutex_lock(&infoMutex);
         mFileModify[key] = value;
         pthread_mutex_unlock(&infoMutex);
-
+#if 1
         /* DEBUG used */
         std::cout << "begin:-------------------" << std::endl;
         std::map<std::string, MONITOR_FILES_T>::iterator iter;
@@ -243,6 +278,7 @@ void MonitorCore::processHandle(const std::vector<event>& events)
             // ostream << iter->first << "=" << mFileInfos[iter->first] << std::endl;
         }
         std::cout << " endl:-------------------" << std::endl;
+#endif
     }
 }
 
