@@ -19,8 +19,13 @@ public:
     int32_t generateDictionKeys(void);
     int32_t sotraDiction(const std::string  &filePath, std::function<int32_t ()>cb);
     int32_t loadDiction(const std::string &filePath);
-
+    void setDynamicEnable(void);
+    void setDynamicDisable(void);
+    void getKeys(const struct timeval &timeValue, uint8_t *key);
     // int32_t
+public:
+    int32_t encryptStream(const std::string& origFile, const std::string& destFile, const unsigned char* key16);
+    int32_t decryptStream(const std::string& origFile, const std::string& destFile, const unsigned char* key16);
 
 public:
     int32_t construct();
@@ -34,6 +39,7 @@ private:
 
 private:
     bool            mConstructed;
+    bool            mSyncFlage;
     ModuleType      mModule;
     ThreadPoolEx    *mThreads;
     Dictionary      *mDiction;

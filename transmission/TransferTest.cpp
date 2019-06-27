@@ -7,7 +7,7 @@ namespace  uranium
 int __TransferMain(int argc, char **argv)
 {
 
-    TransferCore core(TRANS_SERVER);
+    TransferCore core(TRANS_SERVER, NULL);
 
     core.construct();
     core.send("/mnt/d/lenvov_wokspace/source/androidQ");

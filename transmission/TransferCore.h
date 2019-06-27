@@ -6,11 +6,13 @@
 #include "threads/ThreadPoolEx.h"
 #include "TransferInterface.h"
 #include "TransferFactory.h"
+#include "EncryptCore.h"
 
 namespace uranium
 {
 
 class TransferFactory;
+class EncryptCore;
 class TransferCore
 {
 public:
@@ -20,7 +22,7 @@ public:
 public:
     int32_t construct();
     int32_t destruct();
-    TransferCore(TRANSFER_STATUS_ENUM tranStatus);
+    TransferCore(TRANSFER_STATUS_ENUM tranStatus, EncryptCore *encrypt);
     virtual ~TransferCore();
 
 private:
@@ -33,6 +35,7 @@ private:
     TransferManager *mTransMang;
     ThreadPoolEx    *mThreads;
     TransferFactory *mTranFact;
+    EncryptCore     *mEncrypt;
     TRANSFER_STATUS_ENUM    mTranStatus;
 };
 

@@ -29,8 +29,6 @@ int32_t ServiceCore::clientInitialize()
 
     /* step1: --TODO-- send configs file */
 
-
-#if 0
     /* step2: load dictionary file */
     if (SUCCEED(rc)) {
         mSemEnable = true;
@@ -42,7 +40,6 @@ int32_t ServiceCore::clientInitialize()
         mSemEnable = false;
     }
     printf("================== Setp2 load dictionary ok ===================\n");
-#endif
 
     /* step3:  check if the local folder is empty*/
     {
@@ -81,14 +78,13 @@ int32_t ServiceCore::clientInitialize()
             } while (FAILED(rc) && (tryTimes--));
             if (tryTimes < 0) {
                 std::cout << "Timeout\n";
+            } else {
+                mCodesSync = true;
             }
             mSemEnable = false;
         }
     }
     printf("================== Setp3 code sync succeed ===================\n");
-
-    /* step4:  ask for remote is empty */
-    mCodesSync = true;
     /* step4:  do nothings */
     return rc;
 }
@@ -234,34 +230,6 @@ int32_t ServiceCore::construct()
         }
     }
 
-    if (SUCCEED(rc)) {
-        mTransCore = new TransferCore(mTranStatus);
-        if (NOTNULL(mTransCore)) {
-            rc = mTransCore->construct();
-            if (FAILED(rc)) {
-                LOGE(mModule, "Failed Core construct mTransCore\n");
-            }
-            rc = mTransCore->receive(
-            [this](std::string & filePath)-> int32_t{
-                return lisnenReceiveHandler(filePath);
-            });
-        }
-    }
-
-    if (SUCCEED(rc)) {
-        if (mTranStatus == TRAN_CLINET) {
-            mMonitorCore = new MonitorCore(mLocalPath);
-        } else {
-            mMonitorCore = new MonitorCore(mRemotePath);
-        }
-        if (NOTNULL(mMonitorCore)) {
-            rc = mMonitorCore->construct();
-            if (FAILED(rc)) {
-                LOGE(mModule, "Failed core construct MonitorCore\n");
-            }
-        }
-    }
-
     {
         if (SUCCEED(rc)) {
             mEncryptCore = new EncryptCore();
@@ -282,6 +250,34 @@ int32_t ServiceCore::construct()
                     mDirctionLoad = true;
                 }
 
+            }
+        }
+    }
+
+    if (SUCCEED(rc)) {
+        mTransCore = new TransferCore(mTranStatus, mEncryptCore);
+        if (NOTNULL(mTransCore)) {
+            rc = mTransCore->construct();
+            if (FAILED(rc)) {
+                LOGE(mModule, "Failed Core construct mTransCore\n");
+            }
+            rc = mTransCore->receive(
+            [this](std::string & filePath)-> int32_t{
+                return lisnenReceiveHandler(filePath);
+            });
+        }
+    }
+
+    if (SUCCEED(rc)) {
+        // if (mTranStatus == TRAN_CLINET) {
+        mMonitorCore = new MonitorCore(mLocalPath);
+        // } else {
+        //     mMonitorCore = new MonitorCore(mRemotePath);
+        // }
+        if (NOTNULL(mMonitorCore)) {
+            rc = mMonitorCore->construct();
+            if (FAILED(rc)) {
+                LOGE(mModule, "Failed core construct MonitorCore\n");
             }
         }
     }
@@ -477,7 +473,10 @@ int32_t ServiceCore::transferStoraFilelInfos(const std::string &filePath)
     if (SUCCEED(rc)) {
         std::map<std::string, uint32_t>::iterator it;
         if (diffFile.begin() == diffFile.end()) {
-            /* do nothing */
+            /* send singal to enable second steps */
+            if (mSemEnable) {
+                mSemTime->signal();
+            }
         } else {
             rc = transferDictionaryCMD(DIR_MO_EVT, DIR_MO_EVT_MODATA, false);
             bool fisrFlage = true;
@@ -543,7 +542,7 @@ int32_t ServiceCore::doHandleMoEvt(const TRAN_HEADE_T& traHead, const std::strin
         case DIR_MO_EVT_LOAD:
             std::cout << "do runing DIR_MO_EVT_LOAD\n";
             /* exam if the dir is empty */
-            if (!isEmpty(mRemotePath)) {
+            if (!isEmpty(mLocalPath)) {
                 /* 压缩文件并发送返回 */
                 rc = transferDictionaryCMD(DIR_MO_ACK, DIR_MO_ACK_OK, true);
                 rc = tarnsferServer2Clinet();
@@ -564,10 +563,16 @@ int32_t ServiceCore::doHandleMoEvt(const TRAN_HEADE_T& traHead, const std::strin
             std::cout << "do runing DIR_MO_EVT_STORA\n";
             /* storage file to tmp_files */
             praseStora2Local(filePath);
+            if (mSemEnable) {
+                mSemTime->signal();
+            }
             break;
         case DIR_MO_EVT_MODATA:
             std::cout << "do runing DIR_MO_EVT_MODATA\n";
             transferModify(filePath);
+            if (mSemEnable) {
+                mSemTime->signal();
+            }
             break;
         default:
             LOGE(mModule, "DIR_MO_EVT_ENUM not support\n");
@@ -700,6 +705,11 @@ ServiceCore::ServiceCore(TRANSFER_STATUS_ENUM  tranStatus,
     mMonitorCore = NULL,
     mTransCore = NULL;
 #endif
+    // mLocalPath =
+
+    if ('/' != mLocalPath[mLocalPath.size() - 1]) {
+        mLocalPath += "/";
+    }
     std::string cmdStr;
     cmdStr = "mkdir -p ";
     cmdStr += WORK_DIRPATH;

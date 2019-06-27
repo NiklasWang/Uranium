@@ -187,9 +187,9 @@ int32_t ServiceCore::praseEntryFile(const std::string& inPath)
                 std::string cmdStr = "rm -rf ";
                 cmdStr += mLocalPath;
                 cmdStr +=  entry.fileName;
+                system(cmdStr.c_str());
                 std::cout << "system " << cmdStr << "\n";
             }
-                // system(cmdStr.c_str());
             break;
 
             case MONITOR_Updated:
@@ -205,9 +205,10 @@ int32_t ServiceCore::praseEntryFile(const std::string& inPath)
                     std::string tmpFilePath = mLocalPath;
                     tmpFilePath += entry.fileName;
                     std::cout << "MY file path = " << tmpFilePath << "\n";
-                    // ouStream.open(tmpFilePath, std::ios::binary | std::ios::trunc);
-                    // tmpFilePath.write(buffer, entry.fileSize);
-                    // ouStream.close();
+                    inStream.read((char *)buffer, entry.fileSize);
+                    std::ofstream ouStream(tmpFilePath, std::ios::binary | std::ios::trunc);
+                    ouStream.write(buffer, entry.fileSize);
+                    ouStream.close();
                 }
                 delete buffer;
             }

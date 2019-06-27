@@ -62,7 +62,6 @@ uint32_t FexTransfer::pushData(TRANSFER_BUFFER_T &cmd)
                 LOGE(mModule, "Not support!");
                 break;
         }
-
     }
 
     if (SUCCEED(rc)) {

@@ -91,31 +91,69 @@ int32_t Dictionary::sotraDiction(const std::string &filePath)
 #endif
     return rc;
 }
-
+#if 0
 template<class T, int N>
 void Dictionary::getKeys(const struct timeval  &timeValue, T(&key)[N])
+#endif
+void Dictionary::getKeys(const struct timeval  &timeValue, char *key)
 {
     uint32_t md5sum[4];
     uint32_t keyA;
     uint32_t keyB;
     uint32_t keyC;
-    uint8_t buff[128];
+    char buff[128];
+#if 0
+    if (mDynamicKey) {
+        memcpy(key, publicKeys, N);
+        return;
+    } else {
+        /* convet value to char string */
+        memset(buff, 0, sizeof(buff));
+        printf("time %ld%ld\n", (long int) timeValue.tv_sec, (long int) timeValue.tv_usec);
+        sprintf(buff, "%ld%ld", timeValue.tv_sec, timeValue.tv_usec);
+        printf("LHB %s lenght=%d\n", buff, strlen(buff));
+        /* calcule timeValue md5sum */
+        md5_buffer(buff, strlen(buff), md5sum);
+        /* md5sum */
+        keyA = md5sum[0] ^ md5sum[2];
+        keyB = md5sum[1] ^ md5sum[3];
+        keyC = ((keyA & 0xFFFF) << 16) + ((keyB >> 16) & 0xFFFF);
+        /* total sum is MAX_KEYS*16 - last 16-bits let  max size is  (MAX_KEYS*16-17)*/
+        keyC %= (((MAX_KEYS - 1) << 4) - 1);
+        printf("N=%d\n", N);
+        memcpy(key, &mKeys[keyC], N);
+    }
+#endif
+    if (mDynamicKey) {
+        memcpy(key, publicKeys, 16);
+        return;
+    } else {
+        /* convet value to char string */
+        memset(buff, 0, sizeof(buff));
+        printf("time %ld%ld\n", (long int) timeValue.tv_sec, (long int) timeValue.tv_usec);
+        sprintf(buff, "%ld%ld", timeValue.tv_sec, timeValue.tv_usec);
+        printf("LHB %s lenght=%d\n", buff, strlen(buff));
+        /* calcule timeValue md5sum */
+        md5_buffer(buff, strlen(buff), md5sum);
+        /* md5sum */
+        keyA = md5sum[0] ^ md5sum[2];
+        keyB = md5sum[1] ^ md5sum[3];
+        keyC = ((keyA & 0xFFFF) << 16) + ((keyB >> 16) & 0xFFFF);
+        /* total sum is MAX_KEYS*16 - last 16-bits let  max size is  (MAX_KEYS*16-17)*/
+        keyC %= (((MAX_KEYS - 1) << 4) - 1);
+        printf("N=%d\n", 16);
+        memcpy(key, &mKeys[keyC], 16);
+    }
+}
 
-    /* convet value to char string */
-    memset(buff, 0, sizeof(buff));
-    printf("time %ld%ld\n", (long int) timeValue.tv_sec, (long int) timeValue.tv_usec);
-    sprintf(buff, "%ld%ld", timeValue.tv_sec, timeValue.tv_usec);
-    printf("LHB %s lenght=%d\n", buff, strlen(buff));
-    /* calcule timeValue md5sum */
-    md5_buffer(buff, strlen(buff), md5sum);
-    /* md5sum */
-    keyA = md5sum[0] ^ md5sum[2];
-    keyB = md5sum[1] ^ md5sum[3];
-    keyC = ((keyA & 0xFFFF) << 16) + ((keyB >> 16) & 0xFFFF);
-    /* total sum is MAX_KEYS*16 - last 16-bits let  max size is  (MAX_KEYS*16-17)*/
-    keyC %= (((MAX_KEYS - 1) << 4) - 1);
-    printf("N=%d\n", N);
-    memcpy(key, &mKeys[keyC], N);
+void Dictionary::setDynamicEnable(void)
+{
+    mDynamicKey = true;
+}
+
+void Dictionary::setDynamicDisable(void)
+{
+    mDynamicKey = false;
 }
 
 int32_t Dictionary::construct()
@@ -155,6 +193,7 @@ int32_t Dictionary::destruct()
 Dictionary::Dictionary():
     mConstructed(false),
     fKeyInit(false),
+    mDynamicKey(false),
     mModule(MODULE_ENCRYPT),
     mKeys(NULL)
 {
