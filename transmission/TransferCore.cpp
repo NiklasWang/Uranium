@@ -17,7 +17,6 @@ int32_t TransferCore::send(const std::string path)
         pTranBuffer->mode = TRAN_MODE_FEX;
         std::string encryPath = path + ".encry";
         /* ecry path */
-        std::cout << "start 111 ------------" << path << encryPath << "\n";
         mEncrypt->encryptStream(path, encryPath, defaultPublicKeys);
 
         pTranBuffer->buffer = (void*) encryPath.c_str();
@@ -45,7 +44,6 @@ int32_t TransferCore::receive(std::function<int32_t (std::string &filePath)> cb)
             if (SUCCEED(__rc)) {
                 mPath = buffer;
                 destPath = mPath + ".decry";
-                std::cout << "start 222 ------------\n";
                 mEncrypt->decryptStream(mPath, destPath, defaultPublicKeys);
                 cb(destPath);
             }
@@ -62,11 +60,6 @@ int32_t TransferCore::construct()
 
     if (SUCCEED(rc)) {
         mTransMang = mTranFact->createTransferObject(TRAN_MODE_FEX, mTranStatus);
-#if 0
-        if (NOTNULL(mTransMang)) {
-            rc = mTransMang->
-        }
-#endif
     }
 
     if (SUCCEED(rc)) {

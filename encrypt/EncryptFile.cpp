@@ -13,7 +13,6 @@
 #include "sha.h"
 #include "aes.h"
 
-
 namespace uranium
 {
 
@@ -30,27 +29,13 @@ do {                                                            \
     }                                                           \
 } while(0)
 
-/* --------------------------------------------------------------------------*/
-/**
- * @brief EncryptFile
- *
- * @param ):
- */
-/* --------------------------------------------------------------------------*/
+
 EncryptFile::EncryptFile():
     mModule(MODULE_ENCRYPT)
 {
-    /*
-    m_pFileHeader = new FILE_HEADER_T; //(FILE_HEADER_T*) malloc(sizeof(FILE_HEADER_T));
-    ASSERT_LOG(mModule, ISNULL(m_pFileHeader), "out of memory\n");
-    */
+
 }
 
-/* --------------------------------------------------------------------------*/
-/**
- * @brief ~EncryptFile
- */
-/* --------------------------------------------------------------------------*/
 EncryptFile::~EncryptFile()
 {
 

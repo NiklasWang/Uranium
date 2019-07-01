@@ -78,13 +78,6 @@ int32_t EncryptCore::decryptStream(const std::string& origFile, const std::strin
     }
     return rc;
 }
-#if 0
-int EncryptCore::decryptStream(const std::string& origFile, const std::string& destFile, const unsigned char* key16,
-                               unsigned int (&origChecksum)[4], unsigned int (&calculateChecksum)[4])
-{
-    return mEncryMan->decryptStream(origFile, destFile, key16);
-}
-#endif
 
 int32_t EncryptCore::construct()
 {

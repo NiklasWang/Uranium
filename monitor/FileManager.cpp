@@ -13,24 +13,6 @@
 #include "sha.h"
 namespace uranium
 {
-#if 0
-int32_t FileManager::startMonitorLoop()
-{
-    int32_t rc = 0;
-    std::string moPath = "/mnt/d/lenvov_wokspace/source/Uranium";
-    std::vector<std::string> paths;
-    paths.push_back(moPath);
-    mMonitor.startMonitor(paths);
-    while (mRuning) {
-        std::vector<MONITOR_FILES_T> monitorFiles;
-        sleep(2);
-        mMonitor.getMonitorFile(monitorFiles);
-        MONITOR_FILES_T tmpMoFile;
-
-    }
-    return rc;
-}
-#endif
 
 int32_t FileManager::construct()
 {
@@ -66,9 +48,6 @@ int32_t FileManager::fileTarFromPath(const std::string compreFile)
         cmd += ";tar -jcf ";
         cmd += compreFile;
         cmd += " *";
-        // tar -jcf ");
-        // cmd += tmpStr + " " + compreFile;
-        LOGE(mModule, "run cmd =%s\n", cmd.c_str());
 
         rc = system(cmd.c_str());
         if (FAILED(rc)) {

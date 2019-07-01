@@ -22,7 +22,7 @@ public:
     void setDynamicEnable(void);
     void setDynamicDisable(void);
     void getKeys(const struct timeval &timeValue, uint8_t *key);
-    // int32_t
+
 public:
     int32_t encryptStream(const std::string& origFile, const std::string& destFile, const unsigned char* key16);
     int32_t decryptStream(const std::string& origFile, const std::string& destFile, const unsigned char* key16);

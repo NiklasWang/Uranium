@@ -60,7 +60,6 @@ int32_t MonitorCore::monitorDirStart(void)
     if (mMoniStarFlag) {
         return mMoniStarFlag;
     }
-    std::cout << std::endl << "start runing" << std::endl;
 
     return mThreads->run(
     [this]() -> int32_t{
@@ -106,7 +105,7 @@ int32_t MonitorCore::monitorLoopProcess(std::function<int32_t (std::map<std::str
                 } else if (iter->second.envFlages & (MONITOR_Removed | MONITOR_Renamed)) {
                     tmpDiffFile[iter->first] = MONITOR_Removed;
                 }
-                std::cout << iter->first << "=" << std::hex << iter->second.envFlages << std::endl;
+                // std::cout << iter->first << "=" << std::hex << iter->second.envFlages << std::endl;
                 iter = mFileModify.erase(iter);
             }
             // mFileModify[key] = value;
@@ -243,7 +242,8 @@ void MonitorCore::processHandle(const std::vector<event>& events)
 
         std::string key = evt.get_path();
 
-        /*             --FIXME--
+        /*
+                     --FIXME--
             do not differentiate dir or files
             need to do somethings different
         */
@@ -269,7 +269,7 @@ void MonitorCore::processHandle(const std::vector<event>& events)
         pthread_mutex_lock(&infoMutex);
         mFileModify[key] = value;
         pthread_mutex_unlock(&infoMutex);
-#if 1
+#if 0
         /* DEBUG used */
         std::cout << "begin:-------------------" << std::endl;
         std::map<std::string, MONITOR_FILES_T>::iterator iter;

@@ -50,7 +50,6 @@ int32_t ServiceCore::clientInitialize()
     if (SUCCEED(rc)) {
         mSemEnable = true;
         do {
-            std::cout << "\nLHB start runing load transferDictionary\n";
             rc = transferDictionaryCMD(CONFIG_EVT, CONFIG_DIC_LOAD, true);
             rc = mSemTime->wait();
         } while (FAILED(rc)); //(FAILED(rc) || (SUCCEED(mSemTime->wait())));

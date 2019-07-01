@@ -29,9 +29,6 @@ public:
     bool dirCompareWithLocal(const std::string file, \
                              std::map<std::string, uint32_t> &diffFile);
     bool    dirNotExit(void);
-    //
-    //int32_t filePathSet(const std::string path);
-    //int32_t fileStart
 
 public:
     int32_t construct();
@@ -52,7 +49,7 @@ private:
     ModuleType      mModule;
     std::string     mDirPath;
     std::map<std::string, std::string> mFileInfos;
-    // bool            mRuning;
+
 };
 
 };

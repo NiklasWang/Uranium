@@ -16,21 +16,9 @@ public:
     void generateKeys(void);
     int32_t loadDiction(const std::string  &filePath);
     int32_t sotraDiction(const std::string &filePath);
-#if 0
-    template<class T, int N>
-    void getKeys(const struct timeval &timeValue, T(&key)[N]);
-#endif
     void getKeys(const struct timeval &timeValue, char *key);
     void setDynamicEnable(void);
     void setDynamicDisable(void);
-#if 0
-    void setDictionary(const uint8_t *keys);
-    const uint8_t* getDictionary(void);
-    template<class T, int N>
-    void getKeys(const struct timeval &timeValue, T(&key)[N]);
-    int32_t loadKeys(const std::string &path);
-    int32_t storageKeys(const std::string &path);
-#endif
 
 public:
     int32_t construct();

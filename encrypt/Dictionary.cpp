@@ -102,37 +102,14 @@ void Dictionary::getKeys(const struct timeval  &timeValue, char *key)
     uint32_t keyB;
     uint32_t keyC;
     char buff[128];
-#if 0
-    if (mDynamicKey) {
-        memcpy(key, publicKeys, N);
-        return;
-    } else {
-        /* convet value to char string */
-        memset(buff, 0, sizeof(buff));
-        printf("time %ld%ld\n", (long int) timeValue.tv_sec, (long int) timeValue.tv_usec);
-        sprintf(buff, "%ld%ld", timeValue.tv_sec, timeValue.tv_usec);
-        printf("LHB %s lenght=%d\n", buff, strlen(buff));
-        /* calcule timeValue md5sum */
-        md5_buffer(buff, strlen(buff), md5sum);
-        /* md5sum */
-        keyA = md5sum[0] ^ md5sum[2];
-        keyB = md5sum[1] ^ md5sum[3];
-        keyC = ((keyA & 0xFFFF) << 16) + ((keyB >> 16) & 0xFFFF);
-        /* total sum is MAX_KEYS*16 - last 16-bits let  max size is  (MAX_KEYS*16-17)*/
-        keyC %= (((MAX_KEYS - 1) << 4) - 1);
-        printf("N=%d\n", N);
-        memcpy(key, &mKeys[keyC], N);
-    }
-#endif
+
     if (mDynamicKey) {
         memcpy(key, publicKeys, 16);
         return;
     } else {
         /* convet value to char string */
         memset(buff, 0, sizeof(buff));
-        printf("time %ld%ld\n", (long int) timeValue.tv_sec, (long int) timeValue.tv_usec);
         sprintf(buff, "%ld%ld", timeValue.tv_sec, timeValue.tv_usec);
-        printf("LHB %s lenght=%d\n", buff, strlen(buff));
         /* calcule timeValue md5sum */
         md5_buffer(buff, strlen(buff), md5sum);
         /* md5sum */
@@ -141,7 +118,6 @@ void Dictionary::getKeys(const struct timeval  &timeValue, char *key)
         keyC = ((keyA & 0xFFFF) << 16) + ((keyB >> 16) & 0xFFFF);
         /* total sum is MAX_KEYS*16 - last 16-bits let  max size is  (MAX_KEYS*16-17)*/
         keyC %= (((MAX_KEYS - 1) << 4) - 1);
-        printf("N=%d\n", 16);
         memcpy(key, &mKeys[keyC], 16);
     }
 }
@@ -209,72 +185,7 @@ Dictionary::~Dictionary()
     fKeyInit = false;
     mConstructed = false;
 }
-#if 0
-int32_t Dictionary::loadKeys(const std::string &path)
-{
-    int32_t rc = 0;
-    FILE    *pFile = NULL;
 
-    /* check file is exited */
-    rc = access(path.c_str(), F_OK);
-    CHECK_ERROR(FAILED(rc), -1, err, "File %s not exit\n", path.c_str());
-    /* open file use read  only mode */
-    pFile = fopen(path.c_str(), "r");
-    CHECK_ERROR(ISNULL(pFile), -2, err, "Open file failed\n");
-
-err:
-    if (NOTNULL(pFile)) {
-        fclose(pFile);
-    }
-
-    return rc;
-}
-
-int32_t Dictionary::storageKeys(const std::string &path)
-{
-    int32_t rc = 0;
-    FILE    *pFile = NULL;
-
-    /* check file is exited */
-    rc = access(path.c_str(), F_OK);
-    CHECK_ERROR(FAILED(rc), -1, err, "File %s not exit\n", path.c_str());
-    /* open file use read  only mode */
-    pFile = fopen(path.c_str(), "r");
-    CHECK_ERROR(ISNULL(pFile), -2, err, "Open file failed\n");
-
-    if (true != fKeyInit) {
-        makeKeys();
-    }
-
-    rc = 0;
-err:
-    if (NOTNULL(pFile)) {
-        fclose(pFile);
-    }
-
-    return rc;
-}
-
-
-
-void Dictionary::setDictionary(const uint8_t *keys)
-{
-    uint32_t keySize = 0;
-    keySize = sizeof(keys);
-    if (keySize != MAX_KEYS * 16) {
-        LOGE(mModule, "key size is not enough \n");
-        return;
-    }
-
-    memcpy(mKeys, keys, (MAX_KEYS * 16));
-
-}
-
-const uint8_t* Dictionary::getDictionary(void)
-{
-    return mKeys;
-}
-#endif
 }
 
 

@@ -3,28 +3,6 @@
 
 namespace uranium
 {
-#if 0
-typedef enum  TREANFER_EVENT_ENUM {
-    CONFIG_EVT = 0,
-    CONFIG_ACK,
-    DIR_MO_EVT,
-    DIR_MO_ACK
-} TREANFER_EVENT_E;
-
-typedef enum DIR_MO_EVT_ENUM {
-    DIR_ASK_DIR_ISEMPTY = 0,
-    DIR_ASK_DIR_NOEMPTY,
-    DIR_ASK_DIR_LOAD_MD5INFOS,
-    DIR_ASK_DIR_LOAD,
-    DIR_ASK_DIR_STORE,
-    DIR_ASK_DIR_MODATA
-} DIR_MO_EVT_E;
-
-typedef struct TRANSFER_HEADE_TAG {
-    TREANFER_EVENT_E evtKey;
-    uint32_t         evtValue;
-} TRAN_HEADE_T
-#endif
 typedef enum TRANSFER_MODE_ENUM {
     TRAN_MODE_FEX,
     TRAN_MODE_SOCKET

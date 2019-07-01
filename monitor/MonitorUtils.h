@@ -57,9 +57,6 @@ class MonitorUtils
 public:
     int32_t start();
     int32_t stop();
-    // int32_t restart();
-    // int32_t getMonitorFile(std::vector<MONITOR_FILES_T> &monitorFile);
-    //friend void processEvnets(const std::vector<event>& events, void *context);
     int32_t filtrationEvents(const std::string filePath);
     int32_t filtrationEvents(event event, uint32_t &evnFlage);
     static FSW_EVENT_CALLBACK porcessEnvet;

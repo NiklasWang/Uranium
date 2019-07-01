@@ -174,7 +174,6 @@ int32_t ServiceCore::praseEntryFile(const std::string& inPath)
     uint32_t offset = 0;
     inStream.seekg(0);
     TRANSFER_ENTRY_FILE_T entry;
-    std::cout << "LHB read file name = " << inPath << "\n";
     while (!inStream.eof()) {
         memset(&entry, 0, sizeof(entry));
         inStream.read((char *)&entry, sizeof(TRANSFER_ENTRY_FILE_T));
@@ -188,7 +187,6 @@ int32_t ServiceCore::praseEntryFile(const std::string& inPath)
                 cmdStr += mLocalPath;
                 cmdStr +=  entry.fileName;
                 system(cmdStr.c_str());
-                std::cout << "system " << cmdStr << "\n";
             }
             break;
 
@@ -204,7 +202,6 @@ int32_t ServiceCore::praseEntryFile(const std::string& inPath)
                 if (SUCCEED(rc)) {
                     std::string tmpFilePath = mLocalPath;
                     tmpFilePath += entry.fileName;
-                    std::cout << "MY file path = " << tmpFilePath << "\n";
                     inStream.read((char *)buffer, entry.fileSize);
                     std::ofstream ouStream(tmpFilePath, std::ios::binary | std::ios::trunc);
                     ouStream.write(buffer, entry.fileSize);
@@ -217,7 +214,6 @@ int32_t ServiceCore::praseEntryFile(const std::string& inPath)
             default:
                 break;
         }
-        // printf("LHB receive Path=%s, value = 0x%02x\n", entry.fileName, entry.value);
         offset += (entry.fileSize + sizeof(TRANSFER_ENTRY_FILE_T));
         inStream.seekg(offset);
     }

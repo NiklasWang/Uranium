@@ -38,19 +38,23 @@ public:
     int decryptStream(const std::string& origFile, const std::string& destFile,
                       unsigned int (&origChecksum)[4], unsigned int (&calculateChecksum)[4]);
     const unsigned char* getCryptoKeys(void);
+
 private:
     unsigned char   iv[16];
     unsigned int    mOrigChecsum[4];
     unsigned int    mCalculateChecksum[4];
     ModuleType      mModule;
 
+private:
     uint8_t* readFile(const std::string &filePath, uint32_t &length);
     uint32_t readBufferDestory(uint8_t *buffer);
     uint32_t writeFile(const std::string &filePath, const uint8_t *buffer, uint32_t length);
     uint32_t writeFileAppend(const std::string &filePath, const uint8_t *buffer, uint32_t length);
 
+private:
     EncryptFile(const EncryptFile &crpAes) = delete;
     EncryptFile &operator=(const EncryptFile &crpAes) = delete;
+
 };
 
 int __EncryptTestMain(int argc, char **argv);

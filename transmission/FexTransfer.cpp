@@ -130,17 +130,12 @@ uint32_t FexTransfer::pullData(TRANSFER_BUFFER_T &cmd)
         }
 
         int32_t pos = fexStr.find(recFileName.c_str());
-        // int32_t pos = fexStr.find("test");
         if (-1 != pos) {
-            //std::cout << "Size = " << rc << std::endl;
             std::string cliStr = fexStr.substr(pos);
-            std::cout << "LHB " << cliStr << std::endl;
             pos = cliStr.find("| ");
             if (-1 != pos) {
                 pos += 2;
                 timeTemp = cliStr.substr(pos);
-                // mFileLastTime = time;
-                //std::cout << "time value = " << timeTemp << std::endl;
             } else {
                 rc = -1;
             }
@@ -168,7 +163,6 @@ uint32_t FexTransfer::pullData(TRANSFER_BUFFER_T &cmd)
 
         cmdStr = "fex -d ";
         cmdStr += filePath;
-        std::cout << "LHB@@@@ " << cmdStr << std::endl;
         pthread_mutex_lock(&mTransMutex);
         rc = system(cmdStr.c_str());
         pthread_mutex_unlock(&mTransMutex);
@@ -180,12 +174,6 @@ uint32_t FexTransfer::pullData(TRANSFER_BUFFER_T &cmd)
         cmdStr += recFileName;
         memset(cmd.buffer, 0, cmd.length);
         strcpy((char *)cmd.buffer, cmdStr.c_str());
-#if 0
-        rc = readFile(cmdStr, (uint8_t*) cmd.buffer, cmd.length);
-        if (FAILED(rc)) {
-            LOGE(mModule, "read file %s feiled!", cmdStr.c_str());
-        }
-#endif
     }
 
     return rc;

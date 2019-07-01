@@ -11,107 +11,13 @@ void MonitorUtils::porcessEnvet(const std::vector<event>& events, void *context)
     MonitorUtils *tmpPrt = (MonitorUtils*) context;
     tmpPrt->mFunc(events);
 }
-#if 0
-void processEvnets(const std::vector<event>& events, void *context)
-{
-    int32_t rc = 0;
-    uint32_t envFlages = 0;
-    MonitorUtils *pMointor = (MonitorUtils*) context;
 
-    for (const event& evt : events) {
-        rc = pMointor->filtrationEvents(evt, envFlages);
-        if (FAILED(rc)) {
-            continue;
-        }
-
-        time_t evtTime = evt.get_time();
-        std::string path = evt.get_path();
-        rc = pMointor->filtrationEvents(path);
-        if (FAILED(rc)) {
-            continue;
-        }
-        MONITOR_FILES_T tmpMoFile;
-        tmpMoFile.time = evtTime;
-        tmpMoFile.filePath = path;
-        tmpMoFile.envFlages = envFlages;
-        /* --TODO--  add mutex to protect this contex */
-        pMointor->mMonitorFiles.push_back(tmpMoFile);
-    }
-
-}
-
-
-int32_t MonitorUtils::getMonitorFile(std::vector<MONITOR_FILES_T> &monitorFile)
-{
-    int32_t rc = 0;
-    MONITOR_FILES_T tmpMoFile;
-
-    if (ISZERO(mMonitorFiles.size())) {
-        return rc;
-    }
-
-    if (SUCCEED(rc)) {
-        do {
-            /* Filter the same suspension */
-            std::vector<MONITOR_FILES_T>::iterator iv;
-            iv = mMonitorFiles.begin();
-            tmpMoFile = *iv;
-            mMonitorFiles.erase(iv);
-            for (iv = mMonitorFiles.begin(); iv != mMonitorFiles.end();) {
-                if ((iv->filePath == tmpMoFile.filePath) && (iv->envFlages == tmpMoFile.envFlages)) {
-                    if (iv->time >= tmpMoFile.time) {
-                        tmpMoFile = *iv;
-                    }
-                    iv = mMonitorFiles.erase(iv);
-                } else {
-                    ++iv;
-                }
-            }
-            /* storage item to monitorFile */
-            monitorFile.push_back(tmpMoFile);
-        } while (!ISZERO(mMonitorFiles.size()));
-    }
-
-
-    if (SUCCEED(rc)) {
-
-    }
-    return rc;
-
-}
-
-void MonitorUtils::setMonitorDirPath(const std::vector<std::string> path)
-{
-
-    for (uint32_t i = 0; i < path.size(); i++) {
-        std::string tmpStr(fsw_realpath(path[i].c_str(), nullptr));
-        mPaths.push_back(tmpStr);
-    }
-
-}
-#endif
 int32_t MonitorUtils::filtrationEvents(const std::string filePath)
 {
     int32_t rc = NO_ERROR;
     std::string::size_type point;
     std::string  tmpStr;
 
-#if 0
-    if (SUCCEED(rc)) {
-        point = filePath.find_last_of('/');
-        if (point == std::string::npos) {
-            rc = -1;
-        }
-
-    }
-    if (SUCCEED(rc)) {
-        std::string  tmpStr = filePath.substr(point + 1);
-        std::cout << "LHB " << tmpStr << std::endl;
-        if (tmpStr.at(0) == '.') {
-            rc = -1;
-        }
-    }
-#else
     if (SUCCEED(rc)) {
         point = filePath.find('.');
         if (point != std::string::npos) {
@@ -123,10 +29,11 @@ int32_t MonitorUtils::filtrationEvents(const std::string filePath)
             }
         }
     }
+
     if (SUCCEED(rc)) {
 
     }
-#endif
+
     return rc;
 }
 
