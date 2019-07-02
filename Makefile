@@ -82,4 +82,4 @@ release:
 	cp -f `find $(MODULE_DIRS) -type f -name "$(PROJNAME)$(EXE_EXT)"` $(BIN_DIR);
 	@echo -e $(FINISH_COLOR)"All libraries $(DYLIB_EXT) have been copied to $(BIN_DIR)."$(RESTORE_COLOR)
 
-.PHONY: build all clean install $(MAKE_SUB_MODULES) $(COMPILE_SUB_MODULES) $(LINK_SUB_MODULES) $(CLEAN_SUB_MODULES)
+.PHONY: build all clean install rel release $(MAKE_SUB_MODULES) $(COMPILE_SUB_MODULES) $(LINK_SUB_MODULES) $(CLEAN_SUB_MODULES)
