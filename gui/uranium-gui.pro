@@ -30,10 +30,10 @@ SOURCES +=                       \
         main.cpp                 \
         CoreHandler.cpp          \
         MainWindow.cpp           \
-        WebSocketClient.cpp      \
-        WebSocketServer.cpp      \
         Dialogs.cpp              \
         AboutDialog.cpp          \
+        IPCClient.cpp            \
+        IPCServer.cpp            \
         ui/MainWindowUi.cpp      \
         ui/AboutUi.cpp           \
         log/LogImpl.cpp          \
@@ -49,10 +49,10 @@ SOURCES +=                       \
 HEADERS +=                       \
         MainWindow.h             \
         CoreHandler.h            \
-        WebSocketClient.h        \
-        WebSocketServer.h        \
         Dialogs.h                \
         AboutDialog.h            \
+        IPCClient.h              \
+        IPCServer.h              \
         log/LogImpl.h            \
         log/logs.h               \
         ui/MainWindowUi.h        \

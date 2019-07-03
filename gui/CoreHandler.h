@@ -6,8 +6,8 @@
 
 #include "common.h"
 #include "GuiCallback.h"
-#include "WebSocketServer.h"
-#include "WebSocketClient.h"
+#include "IPCServer.h"
+#include "IPCClient.h"
 #include "Config.h"
 #include "Semaphore.h"
 
@@ -44,6 +44,7 @@ signals:
 private slots:
     int32_t onDrawUi(std::function<int32_t ()> func);
     void onProcessError(QProcess::ProcessError error);
+    int32_t onCoreLost();
 
 public:
     int32_t construct();
@@ -52,8 +53,8 @@ public:
     virtual ~CoreHandler() override;
 
 private:
-    int32_t onSocketMessage(const QString &msg);
-    int32_t onSocketData(const QByteArray &data);
+    int32_t onCoreReady();
+    int32_t onIPCData(const QByteArray &data);
     int32_t sendCoreMessage(QString &msg);
 
 private:
@@ -61,13 +62,12 @@ private:
     ModuleType    mModule;
     MainWindowUi *mUi;
     QProcess      mCoreProcess;
-    Semaphore     mStartSem;
+    bool          mCoreReady;
     Semaphore     mGetSem;
     Semaphore     mExitSem;
     std::string   mGetResult;
-    int32_t       mCoreProcessStatus;
-    WebSocketServer *mSocketServer;
-    WebSocketClient *mSocketClient;
+    IPCServer *mIPCServer;
+    IPCClient *mIPCClient;
 };
 
 }
