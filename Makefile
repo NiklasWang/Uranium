@@ -12,8 +12,8 @@ GLOBAL_LDFLAGS   =
 GLOBAL_ARFLAGS   = rcs
 GLOBAL_MAKE      = $(MAKE)
 GLOBAL_MAKEFLAGS = SHELL=$(SHELL)
-GLOBAL_STATIC_LIBS = liblog libutils libsp
-GLOBAL_SHARED_LIBS = libmemory
+GLOBAL_STATIC_LIBS = libutils libsp
+GLOBAL_SHARED_LIBS = liblog libmemory
 
 ROOT_DIR  = $(shell pwd)
 MAKE_RULE = $(ROOT_DIR)/makerules
@@ -29,7 +29,7 @@ include $(MAKE_RULE)/precheck.make.rule
 include $(MAKE_RULE)/project.info.make.rule
 include $(MAKE_RULE)/multithread.compile.make.rule
 
-GLOBAL_MAKEFLAGS += #$(THREAD_ARG)
+GLOBAL_MAKEFLAGS +=
 
 ifeq ($(strip $(ISCYGWIN)), y)
   DYLIB_EXT = .dll

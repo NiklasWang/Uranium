@@ -72,13 +72,6 @@ int32_t CoreImpl::construct()
     }
 
     if (SUCCEED(rc)) {
-        rc = mConfig->load();
-        if (!SUCCEED(rc)) {
-            LOGE(mModule, "Failed to load configuration file");
-        }
-    }
-
-    if (SUCCEED(rc)) {
         mConstructed = true;
     }
 

@@ -86,6 +86,8 @@ WebSocketServer::~WebSocketServer()
 
 void WebSocketServer::onNewConnection()
 {
+    LOGD(mModule, "New socket connection.");
+
     QWebSocket *pSocket = mWebSocketServer->nextPendingConnection();
 
     connect(pSocket, &QWebSocket::textMessageReceived,
@@ -102,12 +104,14 @@ void WebSocketServer::onNewConnection()
 
 void WebSocketServer::processTextMessage(QString message)
 {
-     int32_t rc = mTextMsgCb(message);
+    LOGD(mModule, "New text message: %s.", message.toLatin1().data());
 
-     QWebSocket *pClient = qobject_cast<QWebSocket *>(sender());
-     if (pClient) {
-         pClient->sendTextMessage(message + (SUCCEED(rc) ? REPLY_SUCCEED : REPLY_FAILED));
-     }
+    int32_t rc = mTextMsgCb(message);
+
+    QWebSocket *pClient = qobject_cast<QWebSocket *>(sender());
+    if (pClient) {
+        pClient->sendTextMessage(message + (SUCCEED(rc) ? REPLY_SUCCEED : REPLY_FAILED));
+    }
 }
 
 void WebSocketServer::processBinaryMessage(QByteArray message)
@@ -122,6 +126,8 @@ void WebSocketServer::processBinaryMessage(QByteArray message)
 
 void WebSocketServer::socketDisconnected()
 {
+    LOGD(mModule, "Socket disconnected.");
+
     QWebSocket *pClient = qobject_cast<QWebSocket *>(sender());
     if (pClient) {
         mClients.removeAll(pClient);

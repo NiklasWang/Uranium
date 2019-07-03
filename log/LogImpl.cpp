@@ -314,7 +314,7 @@ static void save_log(const char *fmt, char *process,
 
         pthread_mutex_lock(&gWriteLock);
         snprintf(gLogLine, sizeof(gLogLine) - 1, "%s.%03ld pid %d tid %ld ",
-            timeBuf, tv.tv_usec / 1000, getpid(), getThreadId());
+            timeBuf, tv.tv_usec / 1000, getpid(), (int64_t)pthread_self());
         int32_t cnt = strlen(gLogLine);
         snprintf(gLogLine + cnt, sizeof(gLogLine) - cnt - 1,
             fmt, process, module,

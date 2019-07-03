@@ -8,8 +8,8 @@ sources     = $(wildcard *.cpp)
 objects     = $(sources:.cpp=.o)
 dependence := $(sources:.cpp=.d)
 
-SHARED_LIBS =
-STATIC_LIBS = liblog
+SHARED_LIBS = liblog
+STATIC_LIBS = libsp
 
 include $(MAKE_RULE)/find.library.make.rule 
 
