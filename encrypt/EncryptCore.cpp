@@ -141,6 +141,7 @@ int32_t EncryptCore::destruct()
 EncryptCore::EncryptCore():
     mConstructed(false),
     mSyncFlage(false),
+    mModule(MODULE_ENCRYPT),
     mThreads(NULL),
     mDiction(NULL),
     mEncryMan(NULL)
