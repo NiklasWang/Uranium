@@ -18,7 +18,8 @@
 #define ENTER "\n"
 #endif
 
-namespace uranium {
+namespace uranium
+{
 
 #define MAX_PROCESS_NAME_LEN 16
 #define LOG_FILE_PATH        PROJNAME ".log"
@@ -60,6 +61,8 @@ int8_t gDebugController[][LOG_TYPE_MAX_INVALID + 1] = {
     {     0,    1,    1,    1,    1,    1,    0}, // MODULE_UTILS
     {     0,    1,    1,    1,    1,    1,    0}, // MODULE_TOOLS
     {     0,    1,    1,    1,    1,    1,    0}, // MODULE_TESTER
+    {     0,    1,    1,    1,    1,    1,    0}, // MODULE_MONITOR
+    {     0,    1,    1,    1,    1,    1,    0}, // MODULE_MONITOR_SERVER
     {     0,    1,    1,    1,    1,    1,    0}, // MODULE_MAX_INVALID
 };
 
@@ -85,10 +88,10 @@ static int32_t getMaxInvalidId(char *text, int32_t len)
 
     for (; i < len; i++) {
         if (!((text[i] == '/') ||
-            (text[i] == '.') || (text[i] == '_') ||
-            (text[i] >= '0' && text[i] <= '9') ||
-            (text[i] >= 'A' && text[i] <= 'Z') ||
-            (text[i] >= 'a' && text[i] <= 'z'))) {
+              (text[i] == '.') || (text[i] == '_') ||
+              (text[i] >= '0' && text[i] <= '9') ||
+              (text[i] >= 'A' && text[i] <= 'Z') ||
+              (text[i] >= 'a' && text[i] <= 'z'))) {
             text[i + 1] = '\0';
             break;
         }
@@ -139,8 +142,8 @@ static char *getProcessName()
         length = strlen(gProcess);
         if (length > MAX_PROCESS_NAME_LEN) {
             memmove(gProcess,
-                gProcess + length + 1 - MAX_PROCESS_NAME_LEN,
-                MAX_PROCESS_NAME_LEN + 1);
+                    gProcess + length + 1 - MAX_PROCESS_NAME_LEN,
+                    MAX_PROCESS_NAME_LEN + 1);
         }
     }
 
@@ -169,7 +172,7 @@ static const char *getLogType(LogType type)
 }
 
 static int32_t __log_vsnprintf(char* pdst, int32_t size,
-    const char* pfmt, va_list argptr)
+                               const char* pfmt, va_list argptr)
 {
     int32_t written = 0;
 
@@ -177,24 +180,24 @@ static int32_t __log_vsnprintf(char* pdst, int32_t size,
     written = vsnprintf(pdst, size, pfmt, argptr);
 
     if ((written >= size) && (size > 0)) {
-       // Message length exceeds the buffer limit size
-       written = size - 1;
-       pdst[size - 1] = '\0';
+        // Message length exceeds the buffer limit size
+        written = size - 1;
+        pdst[size - 1] = '\0';
     }
 
     return written;
 }
 
 static void print_log(const LogType logt, const char *fmt,
-    char *process, const char *module, const char *type,
-    const char *func, const int line, const char *buf);
+                      char *process, const char *module, const char *type,
+                      const char *func, const int line, const char *buf);
 
 static void save_log(const char *fmt, char *process,
-    const char *module, const char *type,
-    const char *func, const int line, const char *buf);
+                     const char *module, const char *type,
+                     const char *func, const int line, const char *buf);
 
 void __debug_log(const ModuleType module, const LogType type,
-    const char *func, const int line, const char *fmt, ...)
+                 const char *func, const int line, const char *fmt, ...)
 {
     char    buf[DBG_LOG_MAX_LEN];
     va_list args;
@@ -204,16 +207,16 @@ void __debug_log(const ModuleType module, const LogType type,
     va_end(args);
 
     print_log(type, "%s %s%s: %s:+%d: %s\n",
-        getProcessName(), getModuleShortName(module),
-        getLogType(type), func, line, buf);
+              getProcessName(), getModuleShortName(module),
+              getLogType(type), func, line, buf);
 
     save_log("%s %s%s: %s:+%d: %s" ENTER, getProcessName(),
-        getModuleShortName(module),
-        getLogType(type), func, line, buf);
+             getModuleShortName(module),
+             getLogType(type), func, line, buf);
 }
 
 void __assert_log(const ModuleType module, const unsigned char cond,
-    const char *func, const int line, const char *fmt, ...)
+                  const char *func, const int line, const char *fmt, ...)
 {
     char    buf[DBG_LOG_MAX_LEN];
     va_list args;
@@ -224,16 +227,16 @@ void __assert_log(const ModuleType module, const unsigned char cond,
         va_end(args);
 
         print_log(LOG_TYPE_ERROR, "[<! ASSERT !>]%s %s%s: %s:+%d: %s\n",
-            getProcessName(), getModuleShortName(module),
-            "<ASSERT>", func, line, buf);
+                  getProcessName(), getModuleShortName(module),
+                  "<ASSERT>", func, line, buf);
 
         save_log("[<! ASSERT !>]%s %s%s: %s:+%d: %s" ENTER,
-            getProcessName(), getModuleShortName(module),
-            "<ASSERT>", func, line, buf);
+                 getProcessName(), getModuleShortName(module),
+                 "<ASSERT>", func, line, buf);
 
         save_log("[<! ASSERT !>] Process will suicide now." ENTER,
-            getProcessName(), getModuleShortName(MODULE_OTHERS),
-            getLogType(LOG_TYPE_FATAL), __FUNCTION__, __LINE__, buf);
+                 getProcessName(), getModuleShortName(MODULE_OTHERS),
+                 getLogType(LOG_TYPE_FATAL), __FUNCTION__, __LINE__, buf);
 
         raise(SIGTRAP);
     }
@@ -249,9 +252,9 @@ static int32_t create_backup_log(int32_t *fd, const char *fmt, char *process)
         if (FILE_EXISTS(LOG_FILE_PATH_LAST)) {
             if (unlink(LOG_FILE_PATH_LAST)) {
                 print_log(LOG_TYPE_ERROR, fmt,
-                    process, getModuleShortName(MODULE_OTHERS),
-                    getLogType(LOG_TYPE_ERROR), __FUNCTION__, __LINE__,
-                    "Failed to remove last log file " LOG_FILE_PATH_LAST);
+                          process, getModuleShortName(MODULE_OTHERS),
+                          getLogType(LOG_TYPE_ERROR), __FUNCTION__, __LINE__,
+                          "Failed to remove last log file " LOG_FILE_PATH_LAST);
             }
         }
     }
@@ -260,10 +263,10 @@ static int32_t create_backup_log(int32_t *fd, const char *fmt, char *process)
         if (FILE_EXISTS(LOG_FILE_PATH)) {
             if (rename(LOG_FILE_PATH, LOG_FILE_PATH_LAST)) {
                 print_log(LOG_TYPE_ERROR, fmt,
-                    process, getModuleShortName(MODULE_OTHERS),
-                    getLogType(LOG_TYPE_ERROR), __FUNCTION__, __LINE__,
-                    "Failed to rename log file " LOG_FILE_PATH
-                    " to " LOG_FILE_PATH_LAST);
+                          process, getModuleShortName(MODULE_OTHERS),
+                          getLogType(LOG_TYPE_ERROR), __FUNCTION__, __LINE__,
+                          "Failed to rename log file " LOG_FILE_PATH
+                          " to " LOG_FILE_PATH_LAST);
             }
         }
     }
@@ -272,9 +275,9 @@ static int32_t create_backup_log(int32_t *fd, const char *fmt, char *process)
         if (FILE_EXISTS(LOG_FILE_PATH)) {
             if (unlink(LOG_FILE_PATH)) {
                 print_log(LOG_TYPE_ERROR, fmt,
-                    process, getModuleShortName(MODULE_OTHERS),
-                    getLogType(LOG_TYPE_ERROR), __FUNCTION__, __LINE__,
-                    "Failed to remove curr log file " LOG_FILE_PATH);
+                          process, getModuleShortName(MODULE_OTHERS),
+                          getLogType(LOG_TYPE_ERROR), __FUNCTION__, __LINE__,
+                          "Failed to remove curr log file " LOG_FILE_PATH);
             }
         }
     }
@@ -283,9 +286,9 @@ static int32_t create_backup_log(int32_t *fd, const char *fmt, char *process)
         *fd = open(LOG_FILE_PATH, O_RDWR | O_CREAT | O_TRUNC, 0777);
         if (*fd < 0) {
             print_log(LOG_TYPE_ERROR, fmt,
-                process, getModuleShortName(MODULE_OTHERS),
-                getLogType(LOG_TYPE_ERROR), __FUNCTION__, __LINE__,
-                "Failed to create file " LOG_FILE_PATH " for logs.");
+                      process, getModuleShortName(MODULE_OTHERS),
+                      getLogType(LOG_TYPE_ERROR), __FUNCTION__, __LINE__,
+                      "Failed to create file " LOG_FILE_PATH " for logs.");
         }
     }
 
@@ -293,8 +296,8 @@ static int32_t create_backup_log(int32_t *fd, const char *fmt, char *process)
 }
 
 static void save_log(const char *fmt, char *process,
-    const char *module, const char *type,
-    const char *func, const int line, const char *buf)
+                     const char *module, const char *type,
+                     const char *func, const int line, const char *buf)
 {
     if (gLogfd <= 0) {
         pthread_mutex_lock(&gWriteLock);
@@ -314,28 +317,28 @@ static void save_log(const char *fmt, char *process,
 
         pthread_mutex_lock(&gWriteLock);
         snprintf(gLogLine, sizeof(gLogLine) - 1, "%s.%03ld pid %d tid %ld ",
-            timeBuf, tv.tv_usec / 1000, getpid(), (int64_t)pthread_self());
+                 timeBuf, tv.tv_usec / 1000, getpid(), (int64_t)pthread_self());
         int32_t cnt = strlen(gLogLine);
         snprintf(gLogLine + cnt, sizeof(gLogLine) - cnt - 1,
-            fmt, process, module,
-            type, func, line, buf);
+                 fmt, process, module,
+                 type, func, line, buf);
         cnt = strlen(gLogLine);
         ssize_t len = write(gLogfd, gLogLine, cnt);
         if (cnt > len) {
             char tmp[255];
             sprintf(tmp, "Log len %d bytes, written %ld bytes.",
-                cnt, len);
+                    cnt, len);
             print_log(LOG_TYPE_ERROR, fmt,
-                process, getModuleShortName(MODULE_OTHERS),
-                getLogType(LOG_TYPE_ERROR), __FUNCTION__, __LINE__, tmp);
+                      process, getModuleShortName(MODULE_OTHERS),
+                      getLogType(LOG_TYPE_ERROR), __FUNCTION__, __LINE__, tmp);
         }
         pthread_mutex_unlock(&gWriteLock);
     }
 }
 
 static void print_log(const LogType logt __attribute__((unused)),
-    const char *fmt, char *process, const char *module, const char *type,
-    const char *func, const int line, const char *buf)
+                      const char *fmt, char *process, const char *module, const char *type,
+                      const char *func, const int line, const char *buf)
 {
     printf(fmt, process, module, type, func, line, buf);
 }

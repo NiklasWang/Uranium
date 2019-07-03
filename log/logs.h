@@ -3,7 +3,8 @@
 
 #include "LogImpl.h"
 
-namespace uranium {
+namespace uranium
+{
 
 #ifndef DISABLE_LOG
 #define LOGD(module, fmt, args...) PLOGD(module, fmt, ##args)

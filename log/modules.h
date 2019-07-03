@@ -3,7 +3,8 @@
 
 #include "stdint.h"
 
-namespace uranium {
+namespace uranium
+{
 
 enum ModuleType {
     MODULE_OTHERS,
@@ -39,6 +40,8 @@ enum ModuleType {
     MODULE_UTILS,
     MODULE_TOOLS,
     MODULE_TESTER,
+    MODULE_MONITOR,
+    MODULE_MONITOR_SERVER,
     MODULE_MAX_INVALID,
 };
 

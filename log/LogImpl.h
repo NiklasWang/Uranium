@@ -4,7 +4,8 @@
 #include "version.h"
 #include "modules.h"
 
-namespace uranium {
+namespace uranium
+{
 
 enum LogType {
     LOG_TYPE_NONE,
@@ -17,10 +18,10 @@ enum LogType {
 };
 
 void __debug_log(const ModuleType module, const LogType type,
-    const char *func, const int line, const char *fmt, ...);
+                 const char *func, const int line, const char *fmt, ...);
 
 void __assert_log(const ModuleType module, const unsigned char cond,
-    const char *func, const int line, const char *fmt, ...);
+                  const char *func, const int line, const char *fmt, ...);
 
 extern int8_t gDebugController[][LOG_TYPE_MAX_INVALID + 1];
 
