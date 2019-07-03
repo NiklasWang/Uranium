@@ -13,7 +13,7 @@ int32_t Configs::get(ConfigItem item, T &value)
 
     if (SUCCEED(rc)) {
         value = "";
-        if (checkValid(item)) {
+        if (!checkValid(item)) {
             rc = PARAM_INVALID;
             LOGE(mModule, "Invalid config type %d", item);
         }
