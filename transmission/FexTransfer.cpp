@@ -11,7 +11,7 @@ namespace uranium
 {
 
 FexTransfer::FexTransfer(TRANSFER_STATUS_E tranDirct):
-    mModule(MODULE_ENCRYPT),
+    mModule(MODULE_TRANSMITION),
     mTranDirct(tranDirct)
 {
     pthread_mutex_init(&mTransMutex, NULL);

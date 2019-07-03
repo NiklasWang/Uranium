@@ -5,7 +5,7 @@ namespace uranium
 {
 
 TransferManager::TransferManager():
-    mModule(MODULE_ENCRYPT)
+    mModule(MODULE_TRANSMITION)
 {
 
 }
