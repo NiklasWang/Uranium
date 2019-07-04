@@ -4,10 +4,10 @@
 #include "TransferInterface.h"
 #include <iostream>
 #include <stdio.h>
-
+#include "ServerConfig.h"
 namespace uranium
 {
-
+#if 0
 #define CLINETFILE          ("CLI_FILE")
 #define SERVERFILE          ("SER_FILE")
 #define WORK_DIRPATH        ("/tmp/Uranium/")
@@ -17,7 +17,7 @@ namespace uranium
 #define FILE_INFOS_NAME     ("fileInfos.bin")
 #define TAR_MODIR_NAME      ("modir.tar.bz2")
 #define TRA_SYNC_FILE_NAME  ("MO_SYNC_FILE.bin")
-
+#endif 
 #define FILE_BUFFER_SIZE    (1024*1024)
 
 class FexTransfer : public TransferManager
