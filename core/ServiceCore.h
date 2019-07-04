@@ -45,7 +45,10 @@ typedef enum DIR_MO_ACK_ENUM {
 typedef enum CONFIG_EVT_ENUM {
     CONFIG_DIC_LOAD = 0xA0,
     CONFIG_DIC_STORA,
-    CONFIG_FILE_TRAN
+    CONFIG_FILE_TRAN,
+    CONFIG_FILE_STORA,
+    CONFIG_READY_STATUS,
+    CONFIG_READY_OK
     // CONFIG_DIR_STORAGE,
 } CONFIG_EVT_E;
 
@@ -78,7 +81,7 @@ private:
     int32_t clientInitialize();
 
 public:
-    ServiceCore(TRANSFER_STATUS_ENUM  tranStatus, const std::string localPath, const std::string remotePath);
+    ServiceCore(TRANSFER_STATUS_ENUM  tranStatus, const std::string localPath);
     virtual~ServiceCore();
     int32_t construct();
     int32_t destruct();
@@ -125,6 +128,7 @@ private:
     bool                    mSemEnable;
     bool                    mCodesSync;          /* Code synchronization status */
     bool                    mDirctionLoad;
+    bool                    mServerConfigStatus;
     ModuleType              mModule;
     ThreadPoolEx            *mThreads;
     SemaphoreTimeout        *mSemTime;

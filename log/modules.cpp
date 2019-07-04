@@ -2,7 +2,8 @@
 
 #include "modules.h"
 
-namespace uranium {
+namespace uranium
+{
 
 static const char *const ModuleName[] = {
     [MODULE_OTHERS]             = "others",
@@ -38,6 +39,8 @@ static const char *const ModuleName[] = {
     [MODULE_UTILS]              = "utils",
     [MODULE_TOOLS]              = "tools",
     [MODULE_TESTER]             = "tester",
+    [MODULE_MONITOR]            = "monitor",
+    [MODULE_MONITOR_SERVER]     = "monitor_server",
     [MODULE_MAX_INVALID]        = "max_invalid",
 };
 
@@ -75,6 +78,8 @@ static const char *const ModuleShortName[] = {
     [MODULE_UTILS]              = "[ UTIL]",
     [MODULE_TOOLS]              = "[ TOOL]",
     [MODULE_TESTER]             = "[TSTER]",
+    [MODULE_MONITOR]            = "[MONIT]",
+    [MODULE_MONITOR_SERVER]     = "[MO_SR]",
     [MODULE_MAX_INVALID]        = "[ INVA]",
 };
 

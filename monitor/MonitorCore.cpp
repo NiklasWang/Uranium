@@ -286,6 +286,7 @@ MonitorCore::MonitorCore(std::string monitorPath):
     mConstructed(false),
     mLoopRuning(false),
     mMoniStarFlag(false),
+    mModule(MODULE_MONITOR),
     // mFileMagePath(fileMagePath),
     mMonitorPath(monitorPath),
     mThreads(NULL)

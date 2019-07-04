@@ -90,11 +90,11 @@ int32_t TransferCore::destruct()
 }
 
 TransferCore::TransferCore(TRANSFER_STATUS_ENUM tranStatus, EncryptCore *encrypt):
+    mModule(MODULE_TRANSMITION),
     mTransMang(NULL),
     mThreads(NULL),
     mEncrypt(encrypt),
     mTranStatus(tranStatus)
-    // mModule(0),
 {
     mTranFact = TransferFactory::create();
 }

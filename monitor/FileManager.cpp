@@ -281,8 +281,8 @@ int32_t FileManager::fileInfoErase(void)
     return 0;
 }
 
-FileManager::FileManager(const std::string &monitPath)
-// mModule(0)
+FileManager::FileManager(const std::string &monitPath):
+    mModule(MODULE_MONITOR)
 {
     std::string thisPath = monitPath;
     if ('/' != thisPath[thisPath.size() - 1]) {

@@ -1,6 +1,7 @@
 #include  <iostream>
 #include "ServiceCore.h"
 #include "ServiceCore.hpp"
+#include "Configs.h"
 
 namespace uranium
 {
@@ -34,8 +35,8 @@ int32_t ServiceCore::start()
 int32_t ServiceCore::stop()
 {
     return mThreads->run(
-    []()->int32_t {
-        std::cout << "Start runing" << std::endl;
+    [this]()->int32_t {
+        LOGD(mModule, "Stop runing ....\n");
         return NO_ERROR;
     });
 }
@@ -45,6 +46,17 @@ int32_t ServiceCore::clientInitialize()
     int32_t rc = NO_ERROR;
 
     /* step1: --TODO-- send configs file */
+    /* wati for server is ready ok */
+    if (SUCCEED(rc)) {
+        mSemEnable = true;
+        do {
+            rc = transferDictionaryCMD(CONFIG_EVT, CONFIG_READY_STATUS, true);
+            rc |= mSemTime->wait();
+        } while (FAILED(rc));
+        mSemEnable = false;
+    }
+    LOGD(mModule, "================== Setp1 load configures ok ===================\n");
+
 
     /* step2: load dictionary file */
     if (SUCCEED(rc)) {
@@ -55,7 +67,7 @@ int32_t ServiceCore::clientInitialize()
         } while (FAILED(rc)); //(FAILED(rc) || (SUCCEED(mSemTime->wait())));
         mSemEnable = false;
     }
-    printf("================== Setp2 load dictionary ok ===================\n");
+    LOGD(mModule, "================== Setp2 load dictionary ok ===================\n");
 
     /* step3:  check if the local folder is empty*/
     {
@@ -71,7 +83,7 @@ int32_t ServiceCore::clientInitialize()
                 rc = mMonitorCore->monitorDirInfosScan();
                 if (FAILED(rc)) {
                     rc = NOT_INITED;
-                    std::cout << "Runing monitorDirInfosScan failed!" << std::endl;
+                    LOGE(mModule, "Runing monitorDirInfosScan failed!\n");
                 }
 
                 rc = transferDictionaryCMD(DIR_MO_EVT, DIR_MO_EVT_LOAD_MD5INFOS, true);
@@ -89,18 +101,18 @@ int32_t ServiceCore::clientInitialize()
                 /* wait for result returned */
                 rc = mSemTime->wait();
                 if (FAILED(rc)) {
-                    std::cout << "SemaphoreTimeout\n";
+                    LOGE(mModule, "SemaphoreTimeout\n");
                 }
             } while (FAILED(rc) && (tryTimes--));
             if (tryTimes < 0) {
-                std::cout << "Timeout\n";
+                LOGE(mModule, "Timeout\n");
             } else {
                 mCodesSync = true;
             }
             mSemEnable = false;
         }
     }
-    printf("================== Setp3 code sync succeed ===================\n");
+    LOGD(mModule, "================== Setp3 code sync succeed ===================\n");
     /* step4:  do nothings */
     return rc;
 }
@@ -110,6 +122,47 @@ int32_t ServiceCore::serverInitialize()
     int32_t rc = NO_ERROR;
     /* send empty to clean files */
     rc = transferDictionaryCMD(SEND_EMPTY, 0, true);
+    sleep(1);
+    // rc = transferDictionaryCMD(CONFIG_EVT, CONFIG_FILE_TRAN, true);
+    /* configs send */
+    Configs *config = new Configs();
+    rc = config->load();
+    if (SUCCEED(rc)) {
+        mServerConfigStatus = true;
+    } else {
+        mSemEnable = true;
+        do {
+            rc = mSemTime->wait();
+            if (mServerConfigStatus) {
+                rc = config->load();
+                if (SUCCEED(rc)) {
+                    mServerConfigStatus = true;
+                    break;
+                } else {
+                    mServerConfigStatus = false;
+                }
+            }
+        } while (FAILED(rc));
+        mSemEnable = false;
+    }
+
+    config->get<std::string>(CONFIG_REMOTE_PATH, mLocalPath);
+    if ('/' != mLocalPath[mLocalPath.size() - 1]) {
+        mLocalPath += "/";
+    }
+    LOGD(mModule, "remote Path = %s \n", mLocalPath.c_str());
+    rc = transferDictionaryCMD(CONFIG_EVT, CONFIG_READY_OK, true);
+    LOGD(mModule, "================ configures load ok ==================== \n");
+    SECURE_DELETE(config);
+
+    mMonitorCore = new MonitorCore(mLocalPath);
+
+    if (NOTNULL(mMonitorCore)) {
+        rc = mMonitorCore->construct();
+        if (FAILED(rc)) {
+            LOGE(mModule, "Failed core construct MonitorCore\n");
+        }
+    }
     return rc;
 }
 
@@ -145,7 +198,8 @@ int32_t ServiceCore::transferCompleteWorks(void)
 int32_t ServiceCore::transferModify(const std::string& inPath)
 {
     int32_t rc = NO_ERROR;
-
+    LOGD(mModule, "FilePath = %s", inPath.c_str());
+    LOGD(mModule, "LHB TRA_SYNC_FILE_NAME = %s", appendBasePath(TRA_SYNC_FILE_NAME).c_str());
     if (SUCCEED(rc)) {
         rc = reduceTranHeaderData(inPath, appendBasePath(TRA_SYNC_FILE_NAME));
         if (FAILED(rc)) {
@@ -168,14 +222,14 @@ int32_t ServiceCore::lisnenReceiveHandler(std::string &filePath)
 
     if (ISNULL(pTranHead)) {
         rc = NO_MEMORY;
-        printf("Out of memory\n");
+        LOGE(mModule, "Out of memory\n");
     }
 
     if (SUCCEED(rc)) {
         std::FILE* f = std::fopen(filePath.c_str(), "r");
         if (!f) {
             rc = NO_MEMORY;
-            std::cout << "Error fopen file failed\n";
+            LOGE(mModule, "Error fopen file failed\n");
         } else {
             std::fread(pTranHead, 1, sizeof(TRAN_HEADE_T), f);
             std::fclose(f);
@@ -183,16 +237,14 @@ int32_t ServiceCore::lisnenReceiveHandler(std::string &filePath)
     }
 
     if (SUCCEED(rc)) {
-
-        std::cout << "\nLisnenReceiveHandler flages = " << std::hex << pTranHead->flages << " ";
-        std::cout << " Evt_key= 0x" <<  std::hex <<  pTranHead->evtKey;
-        std::cout << " Evt_value=0x" << std::hex << pTranHead->evtValue << std::endl;
-
+        LOGD(mModule, "LisnenReceiveHandler:");
+        LOGD(mModule, "flages = 0x%02x  Evt_key= 0x%02x Evt_value=0x%02x",
+             pTranHead->flages, pTranHead->evtKey, pTranHead->evtValue);
     }
     if (SUCCEED(rc)) {
         if (pTranHead->flages != EVENT_FLAGE_MASK) {
             rc = NOT_EXIST;
-            std::cout << "Transfer data not support\n";
+            LOGE(mModule, "Transfer data not support\n");
         }
     }
 
@@ -200,26 +252,26 @@ int32_t ServiceCore::lisnenReceiveHandler(std::string &filePath)
         switch (pTranHead->evtKey) {
             case CONFIG_EVT:
                 /* --TODO-- 处理配置请求返回值 */
-                std::cout << "Do CONFIG_EVT handle\n" << std::endl;
+                LOGD(mModule, "Do CONFIG_EVT handle\n");
                 rc = doHandleConEvt(*pTranHead, filePath);
                 break;
             case CONFIG_ACK:
                 /* --TODO--配置请求返回 */
-                std::cout << "Do CONFIG_ACK handle\n" << std::endl;
+                LOGD(mModule, "Do CONFIG_ACK handle\n");
                 rc = doHandleConAck(*pTranHead);
                 break;
             case DIR_MO_EVT:
                 /* --TODO-- 文件事件请求 */
-                std::cout << "Do DIR_MO_EVT handle\n" << std::endl;
+                LOGD(mModule, "Do DIR_MO_EVT handle\n");
                 rc  = doHandleMoEvt(*pTranHead, filePath);
                 break;
             case DIR_MO_ACK:
                 /* --TODO-- 文件事件应答请求 */
-                std::cout << "Do DIR_MO_ACK handle\n" << std::endl;
+                LOGD(mModule, "Do DIR_MO_ACK handle\n");
                 rc = doHandleMoAck(*pTranHead);
                 break;
             default:
-                std::cout << "Event not support\n";
+                LOGE(mModule, "Event not support\n");
                 rc = JUMP_DONE;
                 break;
         }
@@ -285,15 +337,13 @@ int32_t ServiceCore::construct()
     }
 
     if (SUCCEED(rc)) {
-        // if (mTranStatus == TRAN_CLINET) {
-        mMonitorCore = new MonitorCore(mLocalPath);
-        // } else {
-        //     mMonitorCore = new MonitorCore(mRemotePath);
-        // }
-        if (NOTNULL(mMonitorCore)) {
-            rc = mMonitorCore->construct();
-            if (FAILED(rc)) {
-                LOGE(mModule, "Failed core construct MonitorCore\n");
+        if (mTranStatus == TRAN_CLINET) {
+            mMonitorCore = new MonitorCore(mLocalPath);
+            if (NOTNULL(mMonitorCore)) {
+                rc = mMonitorCore->construct();
+                if (FAILED(rc)) {
+                    LOGE(mModule, "Failed core construct MonitorCore\n");
+                }
             }
         }
     }
@@ -452,7 +502,7 @@ int32_t ServiceCore::transferLoadFileInfos()
         rc = mMonitorCore->monitorDirInfosScan();
         if (FAILED(rc)) {
             rc = NOT_INITED;
-            std::cout << "Runing monitorDirInfosScan failed!" << std::endl;
+            LOGE(mModule, "Runing monitorDirInfosScan failed!");
         }
     }
 
@@ -464,14 +514,14 @@ int32_t ServiceCore::transferLoadFileInfos()
             {
                 __rc  = transferDictionaryCMD(DIR_MO_EVT, DIR_MO_EVT_STORA_MD5INFOS, false);
                 if (FAILED(__rc)) {
-                    std::cout << "Runing transferDictionaryCMD failed\n";
+                    LOGE(mModule, "Runing transferDictionaryCMD failed\n");
                 }
             }
             if (SUCCEED(__rc))
             {
                 __rc = transferAppendData(filePath);
                 if (FAILED(__rc)) {
-                    std::cout << "Runing transferAppendData failed\n";
+                    LOGE(mModule, "Runing transferAppendData failed\n");
                 }
             }
 
@@ -496,7 +546,7 @@ int32_t ServiceCore::transferStoraFilelInfos(const std::string &filePath)
     if (SUCCEED(rc)) {
         rc = reduceTranHeaderData(filePath, storagePath);
         if (FAILED(rc)) {
-            std::cout << "Runing reduceTranHeaderData failed\n";
+            LOGE(mModule, "Runing reduceTranHeaderData failed\n");
         }
     }
 
@@ -504,7 +554,7 @@ int32_t ServiceCore::transferStoraFilelInfos(const std::string &filePath)
         rc = mMonitorCore->monitorDirCompareWithLocal(storagePath, diffFile);
         // rc = mMonitorCore->monitorDirInfosLoad(storagePath);
         if (FAILED(rc)) {
-            std::cout << "Runing monitorDirInfosLoad failed\n";
+            LOGE(mModule, "Runing monitorDirInfosLoad failed\n");
         }
     }
 
@@ -545,7 +595,7 @@ int32_t ServiceCore::praseStora2Local(const std::string &filePath)
         }
         storagePath += TAR_MODIR_NAME;
 
-        std::cout << "LHB tar file name = " << storagePath << std::endl;
+        LOGD(mModule, "LHB tar file name = %s", storagePath.c_str());
         std::ofstream ouStream(storagePath, std::ios::binary | std::ios::trunc);
         std::ifstream inStream(filePath, std::ios::binary | std::ios::ate);
         auto size = inStream.tellg();
@@ -578,7 +628,7 @@ int32_t ServiceCore::doHandleMoEvt(const TRAN_HEADE_T& traHead, const std::strin
     int32_t rc = NO_ERROR;
     switch (traHead.evtValue) {
         case DIR_MO_EVT_LOAD:
-            std::cout << "do runing DIR_MO_EVT_LOAD\n";
+            LOGD(mModule, "do runing DIR_MO_EVT_LOAD\n");
             /* exam if the dir is empty */
             if (!isEmpty(mLocalPath)) {
                 /* 压缩文件并发送返回 */
@@ -590,15 +640,15 @@ int32_t ServiceCore::doHandleMoEvt(const TRAN_HEADE_T& traHead, const std::strin
             }
             break;
         case DIR_MO_EVT_LOAD_MD5INFOS:
-            std::cout << "do runing DIR_MO_EVT_LOAD_MD5INFOS\n";
+            LOGD(mModule, "do runing DIR_MO_EVT_LOAD_MD5INFOS\n");
             rc = transferLoadFileInfos();
             break;
         case DIR_MO_EVT_STORA_MD5INFOS:
-            std::cout << "do runing DIR_MO_EVT_STORA_MD5INFOS\n";
+            LOGD(mModule, "do runing DIR_MO_EVT_STORA_MD5INFOS\n");
             rc = transferStoraFilelInfos(filePath);
             break;
         case DIR_MO_EVT_STORA:
-            std::cout << "do runing DIR_MO_EVT_STORA\n";
+            LOGD(mModule, "do runing DIR_MO_EVT_STORA\n");
             /* storage file to tmp_files */
             praseStora2Local(filePath);
             if (mSemEnable) {
@@ -606,7 +656,7 @@ int32_t ServiceCore::doHandleMoEvt(const TRAN_HEADE_T& traHead, const std::strin
             }
             break;
         case DIR_MO_EVT_MODATA:
-            std::cout << "do runing DIR_MO_EVT_MODATA\n";
+            LOGD(mModule, "do runing DIR_MO_EVT_MODATA\n");
             transferModify(filePath);
             if (mSemEnable) {
                 mSemTime->signal();
@@ -641,7 +691,7 @@ int32_t ServiceCore::doHandleConEvt(const TRAN_HEADE_T& traHead, const std::stri
     std::string tmpStr = storageFilePath;
     switch (traHead.evtValue) {
         case CONFIG_DIC_LOAD:
-            std::cout << "do runing DIR_MO_EVT_STORA\n";
+            LOGD(mModule, "do runing DIR_MO_EVT_STORA\n");
             tmpStr = storageFilePath;
             tmpStr += DICTIONARY_NAME;
             rc = mEncryptCore->sotraDiction(tmpStr,
@@ -660,7 +710,7 @@ int32_t ServiceCore::doHandleConEvt(const TRAN_HEADE_T& traHead, const std::stri
             });
             break;
         case  CONFIG_DIC_STORA: {
-            std::cout << "do runing CONFIG_DIC_STORA\n";
+            LOGD(mModule, "do runing CONFIG_DIC_STORA\n");
             std::string tmpStr = appendBasePath(DICTIONARY_NAME);
             rc = reduceTranHeaderData(filePath, tmpStr);
             /* load dictions */
@@ -670,9 +720,48 @@ int32_t ServiceCore::doHandleConEvt(const TRAN_HEADE_T& traHead, const std::stri
             }
         }
         break;
+
         case CONFIG_FILE_TRAN:
+            LOGD(mModule, "do runing CONFIG_FILE_TRAN\n");
+            if (SUCCEED(rc)) {
+                rc = transferDictionaryCMD(CONFIG_EVT, CONFIG_FILE_STORA, false);
+                if (FAILED(rc)) {
+                    LOGE(mModule, "Transfer failed\n");
+                }
+            }
+            if (SUCCEED(rc)) {
+                /* --FIXME--  need to change file path*/
+                rc = transferAppendData("/tmp/configuration.ini");
+                if (FAILED(rc)) {
+                    LOGE(mModule, "runing transferAppendData failed\n");
+                }
+            }
+
             break;
 
+        case CONFIG_FILE_STORA:
+            LOGD(mModule, " do runing CONFIG_FILE_STORA\n");
+            rc = reduceTranHeaderData(filePath, CONFIG_FILE_NAME);
+            mServerConfigStatus = true;
+            if (mSemEnable) {
+                mSemTime->signal();
+            }
+            break;
+        case CONFIG_READY_STATUS:
+            LOGD(mModule, "do runing CONFIG_READY_STATUS\n");
+            if (mServerConfigStatus == false) {
+                rc = transferDictionaryCMD(CONFIG_EVT, CONFIG_FILE_TRAN, true);
+            } else {
+                rc = transferDictionaryCMD(CONFIG_EVT, CONFIG_READY_OK, true);
+            }
+            break;
+
+        case CONFIG_READY_OK:
+            LOGD(mModule, "do runing CONFIG_READY_OK\n");
+            if (mSemEnable) {
+                mSemTime->signal();
+            }
+            break;
         default:
             LOGE(mModule, "CONFIG_EVT_E not support\n");
             break;
@@ -719,20 +808,20 @@ bool ServiceCore::isEmpty(const std::string dirPath)
     return rc;
 }
 
-ServiceCore::ServiceCore(TRANSFER_STATUS_ENUM  tranStatus,
-                         const std::string localPath, const std::string remotePath):
+ServiceCore::ServiceCore(TRANSFER_STATUS_ENUM  tranStatus, const std::string localPath):
     mConstructed(false),
     mSemEnable(false),
-    mCodesSync(false), // mModule
+    mCodesSync(false),
     mDirctionLoad(false),
+    mServerConfigStatus(false),
+    mModule(MODULE_MONITOR_SERVER),
     mThreads(NULL),
     mSemTime(NULL),
     mTranStatus(tranStatus),
     mTransCore(NULL),
     mMonitorCore(NULL),
     mEncryptCore(NULL),
-    mLocalPath(localPath),
-    mRemotePath(remotePath)
+    mLocalPath(localPath)
 {
 #if 0
     mSemEnable = false;
@@ -743,11 +832,11 @@ ServiceCore::ServiceCore(TRANSFER_STATUS_ENUM  tranStatus,
     mMonitorCore = NULL,
     mTransCore = NULL;
 #endif
-    // mLocalPath =
 
     if ('/' != mLocalPath[mLocalPath.size() - 1]) {
         mLocalPath += "/";
     }
+
     std::string cmdStr;
     cmdStr = "mkdir -p ";
     cmdStr += WORK_DIRPATH;

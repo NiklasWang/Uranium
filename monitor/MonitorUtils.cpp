@@ -119,6 +119,7 @@ MonitorUtils::MonitorUtils(const std::vector<std::string> path, std::function<vo
     mConstructed(false),
     mPaths(path),
     mActiveMonitor(nullptr),
+    mModule(MODULE_MONITOR),
     mFunc(func)
     // mModule(1)
 {

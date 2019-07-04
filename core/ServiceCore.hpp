@@ -111,7 +111,7 @@ int32_t ServiceCore::createEntryFile(const std::string &fileName, uint32_t value
 {
     std::string storageFile = appendBasePath(TRA_SYNC_FILE_NAME);
     std::string origFile = mLocalPath + fileName;
-    // std::cout<<"LHB my origFilePath = "<< origFile<<"value = 0x"<< std::hex <<value << std::endl;
+    std::cout << "LHB my origFilePath = " << origFile << "value = 0x" << std::hex << value << std::endl;
     std::ofstream ouStream;
     if (fistFlage) {
         ouStream.open(storageFile, std::ios::binary | std::ios::trunc);
@@ -177,12 +177,15 @@ int32_t ServiceCore::praseEntryFile(const std::string& inPath)
     while (!inStream.eof()) {
         memset(&entry, 0, sizeof(entry));
         inStream.read((char *)&entry, sizeof(TRANSFER_ENTRY_FILE_T));
+        LOGD(mModule, "LHB Flages = 0x%x 0x%x", entry.flages, MOENTRY_FLAGE_MASK);
         if (entry.flages != MOENTRY_FLAGE_MASK) {
             std::cout << "Flage not match error\n";
             break;
         }
+
         switch (entry.value) {
             case MONITOR_Removed: {
+                LOGD(mModule, "MONITOR_Removed runing...");
                 std::string cmdStr = "rm -rf ";
                 cmdStr += mLocalPath;
                 cmdStr +=  entry.fileName;
@@ -192,16 +195,18 @@ int32_t ServiceCore::praseEntryFile(const std::string& inPath)
 
             case MONITOR_Updated:
             case MONITOR_Created: {
+                LOGD(mModule, "MONITOR_Created/MONITOR_Updated runing...");
                 int32_t rc = NO_ERROR;
                 char *buffer = new char[entry.fileSize];
                 if (ISNULL(buffer)) {
                     rc = NO_MEMORY;
-                    std::cout << "memory is not ernough\n";
+                    LOGE(mModule, "memory is not ernough\n");
                 }
 
                 if (SUCCEED(rc)) {
                     std::string tmpFilePath = mLocalPath;
                     tmpFilePath += entry.fileName;
+                    LOGD(mModule, "SYNC file path = %s", tmpFilePath.c_str());
                     inStream.read((char *)buffer, entry.fileSize);
                     std::ofstream ouStream(tmpFilePath, std::ios::binary | std::ios::trunc);
                     ouStream.write(buffer, entry.fileSize);
