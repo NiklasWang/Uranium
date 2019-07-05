@@ -49,3 +49,6 @@ external/fswatch/fswatch-master/*
 
 # makefile dependency cache
 *.cache
+
+#linux_release
+!linux_release/*

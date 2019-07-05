@@ -97,7 +97,17 @@ int32_t MonitorUtils::construct()
     }
 
     if (SUCCEED(rc)) {
-        mActiveMonitor->set_recursive(true);
+        LOGD(mModule, "Set monitors param\n");
+        mActiveMonitor->set_allow_overflow(false);
+        mActiveMonitor->set_latency(true);
+        // mActiveMonitor->set_recursive(ture);
+        mActiveMonitor->set_fire_idle_event(false);
+        mActiveMonitor->set_recursive(false);
+        mActiveMonitor->set_directory_only(false);
+        // mActiveMonitor->set_event_type_filters(event_filters);
+        // mActiveMonitor->set_filters(filters);
+        mActiveMonitor->set_follow_symlinks(false);
+        mActiveMonitor->set_watch_access(false);
     }
 
     return rc;
