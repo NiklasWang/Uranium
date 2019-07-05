@@ -30,10 +30,11 @@ class MainWindowUi :
     Q_OBJECT
 
 public:
-    int32_t setupCore();
     int32_t updateUi();
     int32_t setupUi(QMainWindow *MainWindow);
     void retranslateUi(QMainWindow *MainWindow);
+    int32_t setupCore();
+    int32_t destructCore();
 
 public:
     int32_t onStarted(int32_t rc);

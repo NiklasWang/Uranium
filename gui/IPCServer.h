@@ -24,10 +24,7 @@ public:
     explicit IPCServer(quint16 port,
         std::function<int32_t (const QByteArray &)> msgCb =
             [](const QByteArray &) ->int32_t { return 0; });
-    ~IPCServer();
-
-Q_SIGNALS:
-    void closed();
+    virtual ~IPCServer() override;
 
 private Q_SLOTS:
     void onNewConnection();

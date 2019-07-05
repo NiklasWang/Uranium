@@ -78,6 +78,13 @@ int32_t MainWindow::destruct()
     }
 
     if (SUCCEED(rc)) {
+        rc = mUi->destructCore();
+        if (!SUCCEED(rc)) {
+            showError("Failed to destruct core" + rc);
+        }
+    }
+
+    if (SUCCEED(rc)) {
         SECURE_DELETE(mUi);
     }
 

@@ -29,9 +29,6 @@ int32_t CoreHandler::construct()
         if (ISNULL(mIPCServer)) {
             LOGE(mModule, "Failed to new socket server");
             rc = NO_MEMORY;
-        } else {
-            connect(mIPCServer, SIGNAL(closed()),
-                    this, SLOT(onCoreLost()));
         }
     }
 
@@ -67,6 +64,9 @@ int32_t CoreHandler::onCoreReady()
         if (!SUCCEED(rc)) {
             LOGE(mModule, "Failed to create WebSocketClient");
             rc = NO_MEMORY;
+        } else {
+            connect(mIPCClient, SIGNAL(disconnected()),
+                    this, SLOT(onCoreLost()));
         }
     }
 
@@ -74,6 +74,8 @@ int32_t CoreHandler::onCoreReady()
         rc = mIPCClient->construct();
         if (!SUCCEED(rc)) {
             LOGE(mModule, "Failed to construct ipc client, %d", rc);
+        } else {
+            mCoreReady = true;
         }
     }
 
@@ -83,10 +85,6 @@ int32_t CoreHandler::onCoreReady()
         if (!SUCCEED(rc)) {
             LOGE(mModule, "Failed to send msg %s to core", CORE_INIT);
         }
-    }
-
-    if (SUCCEED(rc)) {
-        mCoreReady = true;
     }
 
     return rc;
@@ -107,14 +105,15 @@ int32_t CoreHandler::sendCoreMessage(QString &msg)
     if (SUCCEED(rc)) {
         if (!mCoreReady) {
             rc = NOT_READY;
-            LOGE(mModule, "Can't send message '%s', core not ready yet.");
+            LOGE(mModule, "Can't send message '%s', core not ready yet.", msg.toLatin1().data());
         }
     }
 
     if (SUCCEED(rc)) {
-        int32_t size = mIPCClient->send(msg.toLatin1());
-        if (size != msg.size()) {
-            LOGE(mModule, "Message %s sent %d bytes.", msg.toLatin1().data(), size);
+        LOGD(mModule, "Send msg: '%s'", msg.toLatin1().data());
+        rc = mIPCClient->send(msg.toLatin1());
+        if (FAILED(rc)) {
+            LOGE(mModule, "Send message failed.");
             rc = UNKNOWN_ERROR;
         }
     }
@@ -141,9 +140,8 @@ int32_t CoreHandler::destruct()
     }
 
     if (SUCCEED(rc)) {
-        mExitSem.wait();
         if (!mCoreProcess.waitForFinished()) {
-            LOGE(mModule, "Failed to exit core process");
+            LOGE(mModule, "Failed to exit core process, force to exit later.");
             rc = UNKNOWN_ERROR;
         }
     }
@@ -162,6 +160,18 @@ int32_t CoreHandler::destruct()
             LOGE(mModule, "Failed to destructed ipc client, %d", rc);
         }
         SECURE_DELETE(mIPCClient);
+    }
+
+    if (SUCCEED(rc)) {
+        QStringList params;
+        params << "/F" << "/IM" << PROJNAME ".exe";
+        QProcess process;
+        process.start("taskkill", params);
+        if (!process.waitForFinished()) {
+            LOGE(mModule, "Failed to force exit core process");
+            rc = UNKNOWN_ERROR;
+            RESETRESULT(rc);
+        }
     }
 
     return RETURNIGNORE(rc, NOT_INITED);
@@ -282,7 +292,7 @@ int32_t CoreHandler::onStarted(int32_t rc)
         LOGE(mModule, "Core start failed, %d", rc);
     }
 
-    return drawUi(
+    return onDrawUi(
         [&]() -> int32_t {
             mUi->onStarted(rc);
             return NO_ERROR;
@@ -296,7 +306,7 @@ int32_t CoreHandler::onStopped(int32_t rc)
         LOGE(mModule, "Core stop failed, %d", rc);
     }
 
-    return drawUi(
+    return onDrawUi(
         [&]() -> int32_t {
             mUi->onStopped(rc);
             return NO_ERROR;
@@ -310,7 +320,7 @@ int32_t CoreHandler::onInitialized(int32_t rc)
         LOGE(mModule, "Core initialize failed, %d", rc);
     }
 
-    return drawUi(
+    return onDrawUi(
         [&]() -> int32_t {
             mUi->onInitialized(rc);
             return NO_ERROR;
@@ -320,7 +330,7 @@ int32_t CoreHandler::onInitialized(int32_t rc)
 
 int32_t CoreHandler::appendDebugger(const std::string &str)
 {
-    return drawUi(
+    return onDrawUi(
         [&]() -> int32_t {
             mUi->appendDebugger(str);
             return NO_ERROR;
@@ -330,7 +340,7 @@ int32_t CoreHandler::appendDebugger(const std::string &str)
 
 int32_t CoreHandler::appendShell(const std::string &str)
 {
-    return drawUi(
+    return onDrawUi(
         [&]() -> int32_t {
             mUi->appendShell(str);
             return NO_ERROR;
@@ -348,15 +358,15 @@ int32_t CoreHandler::onIPCData(const QByteArray &data)
     if (COMPARE_SAME_STRING(str, GREETING_GUI)) {
         rc = onCoreReady();
     } else if (COMPARE_SAME_STRING(str, BYE_GUI)) {
-        mExitSem.signal();
+        LOGD(mModule, "Core process exited.");
     } else if (COMPARE_SAME_LEN_STRING(str, CORE_INIT, strlen(CORE_INIT))) {
-        int32_t _rc = ISNULL(strstr(str, REPLY_SUCCEED)) ? NO_ERROR : UNKNOWN_ERROR;
+        int32_t _rc = NOTNULL(strstr(str, REPLY_SUCCEED)) ? NO_ERROR : UNKNOWN_ERROR;
         onInitialized(_rc);
     } else if (COMPARE_SAME_LEN_STRING(str, CORE_START, strlen(CORE_START))) {
-        int32_t _rc = ISNULL(strstr(str, REPLY_SUCCEED)) ? NO_ERROR : UNKNOWN_ERROR;
+        int32_t _rc = NOTNULL(strstr(str, REPLY_SUCCEED)) ? NO_ERROR : UNKNOWN_ERROR;
         onStarted(_rc);
     } else if (COMPARE_SAME_LEN_STRING(str, CORE_STOP, strlen(CORE_STOP))) {
-        int32_t _rc = ISNULL(strstr(str, REPLY_SUCCEED)) ? NO_ERROR : UNKNOWN_ERROR;
+        int32_t _rc = NOTNULL(strstr(str, REPLY_SUCCEED)) ? NO_ERROR : UNKNOWN_ERROR;
         onStopped(_rc);
     } else if (COMPARE_SAME_LEN_STRING(str, GUI_DEBUG, strlen(GUI_DEBUG))) {
         appendDebugger(str);

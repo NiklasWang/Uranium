@@ -5,7 +5,7 @@
 
 namespace uranium {
 
-IPCClient::IPCClient(QString ip, int32_t port,
+IPCClient::IPCClient(QString ip, uint16_t port,
     std::function<int32_t (const QByteArray &)> msgCb) :
     mModule(MODULE_IPC),
     mIp(ip),
@@ -17,7 +17,7 @@ IPCClient::IPCClient(QString ip, int32_t port,
             this, SLOT(onConnected()));
 
     connect(&mSocket, SIGNAL(disconnected()),
-            this, SLOT(closed()));
+            this, SIGNAL(disconnected()));
 
     connect(&mSocket, SIGNAL(error(QAbstractSocket::SocketError)),
             this, SLOT(onError(QAbstractSocket::SocketError)));
@@ -120,7 +120,8 @@ int32_t IPCClient::send(const QByteArray &data)
 
     if (SUCCEED(rc)) {
         int64_t size = mSocket.write(data);
-        if (size == data.size()) {
+        if (size != data.size()) {
+            rc = UNKNOWN_ERROR;
             LOGE(mModule, "Failed to send all data, %d/%d", size, data.size());
         }
     }

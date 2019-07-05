@@ -12,7 +12,7 @@
 
 #include "LogImpl.h"
 
-#define ENTER "\r\n"
+#define ENTER "\n"
 
 namespace uranium {
 

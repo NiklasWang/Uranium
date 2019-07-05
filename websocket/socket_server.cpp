@@ -42,7 +42,7 @@ int32_t start_server(int32_t *socketfd, int32_t port)
     if (SUCCEED(rc)) {
         memset((unsigned char *)&server_addr, 0, sizeof(server_addr));
         server_addr.sin_family = AF_INET;
-        server_addr.sin_port = port;
+        server_addr.sin_port = htons(port);
         server_addr.sin_addr.s_addr = htonl(INADDR_ANY);
         rc = bind(sockfd, (struct sockaddr *)&server_addr, sizeof(server_addr));
         if (!SUCCEED(rc)) {

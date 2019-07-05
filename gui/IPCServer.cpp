@@ -30,9 +30,6 @@ int32_t IPCServer::construct()
             connect(mSocketServer, SIGNAL(newConnection()),
                     this, SLOT(onNewConnection()));
 
-            connect(mSocketServer, SIGNAL(closed()),
-                    this, SIGNAL(closed()));
-
             connect(mSocketServer, SIGNAL(acceptError(QAbstractSocket::SocketError)),
                     this, SLOT(onAcceptError(QAbstractSocket::SocketError)));
 

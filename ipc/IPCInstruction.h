@@ -4,7 +4,7 @@
 namespace uranium {
 
 #define GUI_SOCK_PORT   8081
-#define CORE_SOCK_PORT  8082
+#define CORE_SOCK_PORT  8084
 
 #define CORE_INIT       "CORE_INIT"
 #define CORE_START      "CORE_START"

@@ -374,13 +374,30 @@ int32_t MainWindowUi::setupCore()
     int32_t rc = NO_ERROR;
 
     if (SUCCEED(rc)) {
-        mCore = new CoreHandler();
+        mCore = new CoreHandler(this);
         if (NOTNULL(mCore)) {
             rc = mCore->construct();
             if (FAILED(rc)) {
-                showError("Failed to construct core handler" + rc);
+                showError("Failed to construct core" + rc);
             }
         }
+    }
+
+    return rc;
+}
+
+int32_t MainWindowUi::destructCore()
+{
+    int32_t rc = NO_ERROR;
+
+    if (SUCCEED(rc)) {
+        if (NOTNULL(mCore)) {
+            rc = mCore->destruct();
+            if (FAILED(rc)) {
+                showError("Failed to destruct core" + rc);
+            }
+        }
+        SECURE_DELETE(mCore);
     }
 
     return rc;

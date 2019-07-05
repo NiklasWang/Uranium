@@ -30,7 +30,7 @@ private slots:
 
 public:
     explicit MainWindow(QApplication *app, QWidget *parent = nullptr);
-    ~MainWindow();
+    virtual ~MainWindow() override;
     int32_t construct();
     int32_t destruct();
 

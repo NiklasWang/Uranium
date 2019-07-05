@@ -15,7 +15,7 @@ class IPCClient :
 
 public:
     int32_t send(const QByteArray &data);
-    explicit IPCClient(QString ip, int32_t port,
+    explicit IPCClient(QString ip, uint16_t port,
         std::function<int32_t (const QByteArray &)> msgCb =
             [](const QByteArray &) -> int32_t { return 0; });
     virtual ~IPCClient() override;
@@ -25,7 +25,7 @@ public:
     int32_t destruct();
 
 Q_SIGNALS:
-    void closed();
+    void disconnected();
 
 private Q_SLOTS:
     void onConnected();
@@ -40,7 +40,7 @@ private:
     bool        mConstructed;
     QTcpSocket  mSocket;
     QString     mIp;
-    int32_t     mPort;
+    uint16_t    mPort;
     bool        mReady;
     std::function<int32_t (const QByteArray &)> mMsgCb;
 };

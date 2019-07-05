@@ -194,7 +194,7 @@ int32_t IPCServer::replyMessageCb(const std::string base, int32_t _rc)
     }
 
     if (SUCCEED(rc)) {
-        msg << base << " " << SUCCEED(_rc) ? REPLY_SUCCEED : REPLY_FAILED;
+        msg << base << " " << (SUCCEED(_rc) ? REPLY_SUCCEED : REPLY_FAILED);
         rc = mIPCClient->sendMessage(msg.str());
         if (FAILED(rc)) {
             LOGE(mModule, "Failed reply IPC, %s, %d", msg.str().c_str(), rc);
@@ -266,7 +266,7 @@ int32_t IPCServer::handleGetConfig(const char *msg)
     if (SUCCEED(rc)) {
         reply << msg << " ";
         if (isBool) {
-            reply << boolResult ? BOOL_TRUE : BOOL_FALSE;
+            reply << (boolResult ? BOOL_TRUE : BOOL_FALSE);
         } else {
             reply << stringResult;
         }

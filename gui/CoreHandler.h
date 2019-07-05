@@ -64,7 +64,6 @@ private:
     QProcess      mCoreProcess;
     bool          mCoreReady;
     Semaphore     mGetSem;
-    Semaphore     mExitSem;
     std::string   mGetResult;
     IPCServer *mIPCServer;
     IPCClient *mIPCClient;
