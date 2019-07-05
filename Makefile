@@ -42,7 +42,7 @@ endif
 
 build: all
 
-exclude_dirs  = cygwin gui out release
+exclude_dirs  = cygwin gui out release linux_release
 
 link_order  = log utils memory threads external encrypt ipcsocket websocket
 link_order += monitor transmission makerules experiment cmdline core ipc main
@@ -82,4 +82,9 @@ release:
 	cp -f `find $(MODULE_DIRS) -type f -name "$(PROJNAME)$(EXE_EXT)"` $(BIN_DIR);
 	@echo -e $(FINISH_COLOR)"All libraries $(DYLIB_EXT) have been copied to $(BIN_DIR)."$(RESTORE_COLOR)
 
-.PHONY: build all clean install rel release $(MAKE_SUB_MODULES) $(COMPILE_SUB_MODULES) $(LINK_SUB_MODULES) $(CLEAN_SUB_MODULES)
+linux_release:
+	find . -path './linux_release' -name "*.so" -exec cp -ar {} linux_release/ \;
+	cp -ar external/fswatch/lib* linux_release/
+	cp -ar core/tester/server_tester linux_release/
+
+.PHONY: build all clean install rel release linux_release $(MAKE_SUB_MODULES) $(COMPILE_SUB_MODULES) $(LINK_SUB_MODULES) $(CLEAN_SUB_MODULES)
