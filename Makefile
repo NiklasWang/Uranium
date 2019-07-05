@@ -83,7 +83,7 @@ release:
 	@echo -e $(FINISH_COLOR)"All libraries $(DYLIB_EXT) have been copied to $(BIN_DIR)."$(RESTORE_COLOR)
 
 linux_release:
-	find . -path './linux_release' -name "*.so" -exec cp -ar {} linux_release/ \;
+	find -path "./linux_release" -prune -o  -path "./release" -prune -o -name "*.so" -exec cp -ar {} linux_release/ \;
 	cp -ar external/fswatch/lib* linux_release/
 	cp -ar core/tester/server_tester linux_release/
 
