@@ -5,6 +5,9 @@
 #include <functional>
 #include <dirent.h>
 #include <sys/types.h>
+#include <iostream>
+#include <unistd.h>
+#include <pwd.h>
 
 #include "common.h"
 #include "threads/ThreadPoolEx.h"
@@ -79,6 +82,7 @@ public:
 private:
     int32_t serverInitialize();
     int32_t clientInitialize();
+    std::string getUserName();
 
 public:
     ServiceCore(TRANSFER_STATUS_ENUM  tranStatus, const std::string localPath);

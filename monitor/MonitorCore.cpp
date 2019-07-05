@@ -25,11 +25,12 @@ int32_t MonitorCore::monitorTarExec(const std::string files, std::function<int32
     });
 }
 
-int32_t MonitorCore::monitorUntarExec(const std::string files)
+int32_t MonitorCore::monitorUntarExec(const std::string files, std::function<int32_t ()>cb)
 {
     return mThreads->run(
-    [this, files]() -> int32_t{
-        return mFileMage->fileUntarToPath(files);
+    [this, files, cb]() -> int32_t{
+        mFileMage->fileUntarToPath(files);
+        return cb();
     });
 }
 

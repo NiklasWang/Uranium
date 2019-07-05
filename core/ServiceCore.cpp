@@ -8,28 +8,37 @@ namespace uranium
 
 int32_t ServiceCore::start()
 {
-    int32_t rc = NO_ERROR;
-    if (TRAN_CLINET == mTranStatus && mCodesSync) {
-        if (SUCCEED(rc)) {
-            rc = mMonitorCore->monitorDirStart();
-        }
-
-        if (SUCCEED(rc)) {
-            rc = mMonitorCore->monitorLoopProcess(
-            [this](std::map<std::string, uint32_t>&diffFile)-> int32_t {
-                return monitorDirCallBack(diffFile);
-            });
-        }
-
-    }
-#if 0
     return mThreads->run(
-    []()->int32_t {
-        std::cout << "Start runing" << std::endl;
-        return NO_ERROR;
+    [this]()->int32_t {
+        int32_t __rc = NO_ERROR;
+        if (TRAN_CLINET == mTranStatus)
+        {
+            while (1) {
+                if (mCodesSync) {
+                    if (SUCCEED(__rc)) {
+                        LOGD(mModule, "Start monitorDirStart");
+                        __rc = mMonitorCore->monitorDirStart();
+                        if (FAILED(__rc)) {
+                            LOGE(mModule, "runing monitorDirStart failed");
+                        }
+                    }
+
+                    if (SUCCEED(__rc)) {
+                        __rc = mMonitorCore->monitorLoopProcess(
+                        [this](std::map<std::string, uint32_t>&diffFile)-> int32_t {
+                            return monitorDirCallBack(diffFile);
+                        });
+                        if (FAILED(__rc)) {
+                            LOGE(mModule, "monitoringLoopProcess failed");
+                        }
+                    }
+                    break;
+                }
+                sleep(1);
+            }
+        }
+        return __rc;
     });
-#endif
-    return rc;
 }
 
 int32_t ServiceCore::stop()
@@ -45,6 +54,8 @@ int32_t ServiceCore::clientInitialize()
 {
     int32_t rc = NO_ERROR;
 
+    // getUserName();
+
     /* step1: --TODO-- send configs file */
     /* wati for server is ready ok */
     if (SUCCEED(rc)) {
@@ -56,7 +67,6 @@ int32_t ServiceCore::clientInitialize()
         mSemEnable = false;
     }
     LOGD(mModule, "================== Setp1 load configures ok ===================\n");
-
 
     /* step2: load dictionary file */
     if (SUCCEED(rc)) {
@@ -95,7 +105,6 @@ int32_t ServiceCore::clientInitialize()
 
         if (SUCCEED(rc)) {
             /* Waiting for message to return */
-            int32_t tryTimes = 3;
             mSemEnable = true;
             do {
                 /* wait for result returned */
@@ -103,12 +112,8 @@ int32_t ServiceCore::clientInitialize()
                 if (FAILED(rc)) {
                     LOGE(mModule, "SemaphoreTimeout\n");
                 }
-            } while (FAILED(rc) && (tryTimes--));
-            if (tryTimes < 0) {
-                LOGE(mModule, "Timeout\n");
-            } else {
-                mCodesSync = true;
-            }
+            } while (FAILED(rc));
+            mCodesSync = true;
             mSemEnable = false;
         }
     }
@@ -120,49 +125,82 @@ int32_t ServiceCore::clientInitialize()
 int32_t ServiceCore::serverInitialize()
 {
     int32_t rc = NO_ERROR;
+    Configs *config = NULL;
     /* send empty to clean files */
-    rc = transferDictionaryCMD(SEND_EMPTY, 0, true);
-    sleep(1);
-    // rc = transferDictionaryCMD(CONFIG_EVT, CONFIG_FILE_TRAN, true);
-    /* configs send */
-    Configs *config = new Configs();
-    rc = config->load();
     if (SUCCEED(rc)) {
-        mServerConfigStatus = true;
-    } else {
-        mSemEnable = true;
-        do {
-            rc = mSemTime->wait();
-            if (mServerConfigStatus) {
-                rc = config->load();
-                if (SUCCEED(rc)) {
-                    mServerConfigStatus = true;
-                    break;
-                } else {
-                    mServerConfigStatus = false;
-                }
-            }
-        } while (FAILED(rc));
-        mSemEnable = false;
-    }
-
-    config->get<std::string>(CONFIG_REMOTE_PATH, mLocalPath);
-    if ('/' != mLocalPath[mLocalPath.size() - 1]) {
-        mLocalPath += "/";
-    }
-    LOGD(mModule, "remote Path = %s \n", mLocalPath.c_str());
-    rc = transferDictionaryCMD(CONFIG_EVT, CONFIG_READY_OK, true);
-    LOGD(mModule, "================ configures load ok ==================== \n");
-    SECURE_DELETE(config);
-
-    mMonitorCore = new MonitorCore(mLocalPath);
-
-    if (NOTNULL(mMonitorCore)) {
-        rc = mMonitorCore->construct();
+        rc = transferDictionaryCMD(SEND_EMPTY, 0, true);
         if (FAILED(rc)) {
-            LOGE(mModule, "Failed core construct MonitorCore\n");
+            LOGE(mModule, "Runing transferDictionaryCMD failed\n");
+        }
+        sleep(1);
+    }
+
+    if (SUCCEED(rc)) {
+        config = new Configs();
+        if (ISNULL(config)) {
+            LOGE(mModule, "Create Configs failed(memory out)\n");
+            rc = NO_MEMORY;
         }
     }
+
+    if (SUCCEED(rc)) {
+        rc = config->load();
+        if (SUCCEED(rc)) {
+            mServerConfigStatus = true;
+        } else {
+            mSemEnable = true;
+            do {
+                rc = mSemTime->wait();
+                if (mServerConfigStatus) {
+                    rc = config->load();
+                    if (SUCCEED(rc)) {
+                        mServerConfigStatus = true;
+                        break;
+                    } else {
+                        mServerConfigStatus = false;
+                    }
+                }
+            } while (FAILED(rc));
+            mSemEnable = false;
+        }
+    }
+
+    if (SUCCEED(rc)) {
+        config->get<std::string>(CONFIG_REMOTE_PATH, mLocalPath);
+        if ('/' != mLocalPath[mLocalPath.size() - 1]) {
+            mLocalPath += "/";
+        }
+        LOGD(mModule, "remote Path = %s \n", mLocalPath.c_str());
+    }
+
+    if (isEmpty(mLocalPath)) {
+        LOGE(mModule, "dictionaryary %s is empty or not exits\n", mLocalPath.c_str());
+        rc = NOT_FOUND;
+    }
+
+
+    if (SUCCEED(rc)) {
+        rc = transferDictionaryCMD(CONFIG_EVT, CONFIG_READY_OK, true);
+        if (FAILED(rc)) {
+            LOGE(mModule, "Runing transferDictionaryCMD failed\n");
+        }
+    }
+
+    if (SUCCEED(rc)) {
+        mMonitorCore = new MonitorCore(mLocalPath);
+        if (NOTNULL(mMonitorCore)) {
+            rc = mMonitorCore->construct();
+            if (FAILED(rc)) {
+                LOGE(mModule, "Failed core construct MonitorCore\n");
+            }
+        }
+    }
+
+    if (SUCCEED(rc)) {
+        LOGD(mModule, "================ configures load ok ==================== \n");
+    }
+
+    SECURE_DELETE(config);
     return rc;
 }
 
@@ -209,6 +247,10 @@ int32_t ServiceCore::transferModify(const std::string& inPath)
 
     if (SUCCEED(rc)) {
         rc = praseEntryFile(appendBasePath(TRA_SYNC_FILE_NAME));
+    }
+
+    if (mSemEnable) {
+        mSemTime->signal();
     }
 
     return rc;
@@ -400,66 +442,38 @@ int32_t ServiceCore::tarnsferServer2Clinet(void)
 {
     int32_t rc = NO_ERROR;
 
-    std::string  tarFileName(WORK_DIRPATH);
-
-    if (TRAN_CLINET == mTranStatus) {
-        tarFileName += CLINET_PATH;
-    } else {
-        tarFileName += SERVER_PATH;
-    }
+    std::string  tarFileName("/tmp/");
+    tarFileName += getUserName();
 
     if (SUCCEED(rc)) {
         /*  Package all files in the monitoring directory */
+        /* delete old files */
+        std::string cmd = "mkdir -p ";
+        cmd += tarFileName;
+        rc = system(cmd.c_str());
         tarFileName += TAR_MODIR_NAME;
+        cmd = "rm -rf ";
+        cmd += tarFileName;
+        rc = system(cmd.c_str());
+
         rc = mMonitorCore->monitorTarExec(tarFileName,
         [ = ](void)-> int32_t{
             int32_t __rc = NO_ERROR;
-            TRAN_HEADE_T* traHead = createTranHeade();
-            if (ISNULL(traHead))
+
+            if (SUCCEED(__rc))
             {
-                __rc = NO_MEMORY;
-                LOGE(mModule, "Out of memory\n");
+                __rc = transferDictionaryCMD(DIR_MO_EVT, DIR_MO_EVT_STORA, false);
+                if (FAILED(__rc)) {
+                    LOGE(mModule, "Create transfer header failed\n");
+                }
             }
 
             if (SUCCEED(__rc))
             {
-                /* Return files to the client */
-                traHead->evtKey     = DIR_MO_EVT;
-                traHead->evtValue   = DIR_MO_EVT_STORA;
+                __rc = transferAppendData(tarFileName);
             }
 
-            if (SUCCEED(__rc))
-            {
-                /* storage file  and send through fex */
-                std::string storagePath = WORK_DIRPATH;
-                if (TRAN_CLINET == mTranStatus) {
-                    storagePath += CLINET_PATH;
-                } else {
-                    storagePath += SERVER_PATH;
-                }
-                storagePath += DIR_FILE_NAME;
-
-                std::ofstream ouStream(storagePath, std::ios::binary | std::ios::trunc);
-                ouStream.write((char *)traHead, sizeof(TRAN_HEADE_T));
-                std::ifstream inStream(tarFileName, std::ios::binary | std::ios::ate);
-
-                auto size = inStream.tellg();
-                inStream.seekg(0);
-                char *buffer = new char[size];
-
-                if (ISNULL(buffer)) {
-                    LOGE(mModule, "Out of memory\n");
-                } else {
-                    inStream.read(buffer, size);
-                    ouStream.write(buffer, size);
-                    delete buffer;
-                }
-
-                inStream.close();
-                ouStream.close();
-                destoryTranHeade(traHead);
-                mTransCore->send(storagePath);
-            }
+            // __rc = system(cmd.c_str());
             return __rc;
         });
 
@@ -575,6 +589,7 @@ int32_t ServiceCore::transferStoraFilelInfos(const std::string &filePath)
 
     if (SUCCEED(rc)) {
         if (mSemEnable) {
+            mCodesSync = true;
             mSemTime->signal();
         }
     }
@@ -584,42 +599,32 @@ int32_t ServiceCore::transferStoraFilelInfos(const std::string &filePath)
 int32_t ServiceCore::praseStora2Local(const std::string &filePath)
 {
     return mThreads->run(
-    [ = ]()->int32_t {
-        std::string storagePath = WORK_DIRPATH;
-        if (TRAN_CLINET == mTranStatus)
-        {
-            storagePath += CLINET_PATH;
-        } else
-        {
-            storagePath += SERVER_PATH;
-        }
-        storagePath += TAR_MODIR_NAME;
+    [this, filePath]()->int32_t {
+        int32_t __rc = NO_ERROR;
+        std::string storagePath = appendBasePath(TAR_MODIR_NAME);
 
-        LOGD(mModule, "LHB tar file name = %s", storagePath.c_str());
-        std::ofstream ouStream(storagePath, std::ios::binary | std::ios::trunc);
-        std::ifstream inStream(filePath, std::ios::binary | std::ios::ate);
-        auto size = inStream.tellg();
-        if (!ISZERO(size))
+        if (SUCCEED(__rc))
         {
-            size -= sizeof(TRAN_HEADE_T);
-        }
-        inStream.seekg(sizeof(TRAN_HEADE_T));
-        char *buffer = new char[size];
-
-        if (ISNULL(buffer))
-        {
-            LOGE(mModule, "Out of memory\n");
-        } else
-        {
-            inStream.read(buffer, size);
-            ouStream.write(buffer, size);
-            delete buffer;
+            __rc = reduceTranHeaderData(filePath, storagePath);
+            if (FAILED(__rc)) {
+                LOGE(mModule, "Runing reduceTranHeaderData failed\n");
+            }
         }
 
-        inStream.close();
-        ouStream.close();
-        return mMonitorCore->monitorUntarExec(storagePath);
+        if (SUCCEED(__rc))
+        {
+            __rc = mMonitorCore->monitorUntarExec(storagePath,
+            [this]()->int32_t {
+                if (mSemEnable)
+                {
+                    mCodesSync = true;
+                    mSemTime->signal();
+                }
+                return NO_ERROR;
+            });
+        }
 
+        return __rc;
     });
 }
 
@@ -651,16 +656,11 @@ int32_t ServiceCore::doHandleMoEvt(const TRAN_HEADE_T& traHead, const std::strin
             LOGD(mModule, "do runing DIR_MO_EVT_STORA\n");
             /* storage file to tmp_files */
             praseStora2Local(filePath);
-            if (mSemEnable) {
-                mSemTime->signal();
-            }
             break;
         case DIR_MO_EVT_MODATA:
             LOGD(mModule, "do runing DIR_MO_EVT_MODATA\n");
             transferModify(filePath);
-            if (mSemEnable) {
-                mSemTime->signal();
-            }
+
             break;
         default:
             LOGE(mModule, "DIR_MO_EVT_ENUM not support\n");
@@ -731,7 +731,7 @@ int32_t ServiceCore::doHandleConEvt(const TRAN_HEADE_T& traHead, const std::stri
             }
             if (SUCCEED(rc)) {
                 /* --FIXME--  need to change file path*/
-                rc = transferAppendData("/tmp/configuration.ini");
+                rc = transferAppendData(CONFIG_FILE_NAME);
                 if (FAILED(rc)) {
                     LOGE(mModule, "runing transferAppendData failed\n");
                 }
@@ -772,38 +772,6 @@ int32_t ServiceCore::doHandleConEvt(const TRAN_HEADE_T& traHead, const std::stri
 int32_t ServiceCore::doHandleConAck(const TRAN_HEADE_T& traHead)
 {
     int32_t rc = NO_ERROR;
-
-    return rc;
-}
-
-bool ServiceCore::isEmpty(const std::string dirPath)
-{
-    bool rc = true;
-    DIR *dir = opendir(dirPath.c_str());
-    struct dirent *ent;
-    if (dir == NULL) {
-        LOGE(mModule, "seekkey.c-98-opendir\n");
-        rc = false;
-    }
-    if (rc) {
-        while (1) {
-            ent = readdir(dir);
-            if (ent <= 0) {
-                break;
-            }
-            if ((strcmp(".", ent->d_name) == 0) || (strcmp("..", ent->d_name) == 0)) {
-                continue;
-            }
-            if ((ent->d_type == 4) || (ent->d_type == 8)) {
-                rc = false;
-                break;
-            }
-        }
-    }
-
-    if (NOTNULL(dir)) {
-        closedir(dir);
-    }
 
     return rc;
 }
