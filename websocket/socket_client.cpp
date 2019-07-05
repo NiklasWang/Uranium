@@ -33,10 +33,10 @@ int32_t connect_to_server(int32_t *fd, int32_t port)
         rc = connect(sockfd, (struct sockaddr *)&server_addr, sizeof(server_addr));
         if (rc != 0) {
             rc = NOT_READY;
-            LOGD(MODULE_SOCKET_CLIENT, "Client connect to server "
-                "failed, %s, may not started", strerror(errno));
+            LOGD(MODULE_SOCKET_CLIENT, "Client connect to server:%d "
+                "failed, %s, may not started", port, strerror(errno));
         } else {
-            LOGD(MODULE_SOCKET_CLIENT, "Client connected to server socket:%d.", port);
+            LOGI(MODULE_SOCKET_CLIENT, "Client connected to server socket:%d.", port);
         }
     }
 

@@ -7,7 +7,7 @@
 #include "common.h"
 #include "IPCInstruction.h"
 #include "CoreHandler.h"
-#include "WebSocketClient.h"
+#include "IPCClient.h"
 #include "ui/MainWindowUi.h"
 
 namespace uranium {
@@ -21,22 +21,22 @@ int32_t CoreHandler::construct()
     }
 
     if (SUCCEED(rc)) {
-        mSocketServer = new WebSocketServer(GUI_SOCK_PORT,
-            [this](const QString &msg) -> int32_t {
-                return onSocketMessage(msg);
-            },
+        mIPCServer = new IPCServer(GUI_SOCK_PORT,
             [this](const QByteArray &data) -> int32_t {
-                return onSocketData(data);
+                return onIPCData(data);
             }
         );
-        if (ISNULL(mSocketServer)) {
+        if (ISNULL(mIPCServer)) {
             LOGE(mModule, "Failed to new socket server");
             rc = NO_MEMORY;
+        } else {
+            connect(mIPCServer, SIGNAL(closed()),
+                    this, SLOT(onCoreLost()));
         }
     }
 
     if (SUCCEED(rc)) {
-        rc = mSocketServer->construct();
+        rc = mIPCServer->construct();
         if (FAILED(rc)) {
             LOGE(mModule, "Failed to construct socket server, %d", rc);
         }
@@ -44,10 +44,36 @@ int32_t CoreHandler::construct()
 
     if (SUCCEED(rc)) {
         mCoreProcess.start(PROJNAME ".exe");
-        mStartSem.wait();
-        if (!SUCCEED(mCoreProcessStatus)) {
-            LOGF(mModule, "Fatal error from core process, %d", mCoreProcessStatus);
-            rc = SYS_ERROR;
+    }
+
+    if (SUCCEED(rc)) {
+        mConstructed = true;
+    }
+
+    return rc;
+}
+
+int32_t CoreHandler::onCoreReady()
+{
+    int32_t rc = NO_ERROR;
+
+    if (SUCCEED(rc)) {
+        mIPCClient = new IPCClient(
+            "127.0.0.1", CORE_SOCK_PORT,
+            [this](const QByteArray &data) -> int32_t {
+                return onIPCData(data);
+            }
+        );
+        if (!SUCCEED(rc)) {
+            LOGE(mModule, "Failed to create WebSocketClient");
+            rc = NO_MEMORY;
+        }
+    }
+
+    if (SUCCEED(rc)) {
+        rc = mIPCClient->construct();
+        if (!SUCCEED(rc)) {
+            LOGE(mModule, "Failed to construct ipc client, %d", rc);
         }
     }
 
@@ -60,30 +86,37 @@ int32_t CoreHandler::construct()
     }
 
     if (SUCCEED(rc)) {
-        QString url = "ws://127.0.0.1:";
-        url.append(CORE_SOCK_PORT);
-        mSocketClient = new WebSocketClient(url);
-        if (!SUCCEED(rc)) {
-            LOGE(mModule, "Failed to create WebSocketClient");
-            rc = NO_MEMORY;
-        }
-    }
-
-    if (SUCCEED(rc)) {
-        mConstructed = true;
+        mCoreReady = true;
     }
 
     return rc;
+}
+
+int32_t CoreHandler::onCoreLost()
+{
+    mCoreReady = false;
+    LOGE(mModule, "Lost control with core.");
+
+    return NO_ERROR;
 }
 
 int32_t CoreHandler::sendCoreMessage(QString &msg)
 {
     int32_t rc = NO_ERROR;
 
-    int32_t size = mSocketClient->sendMessage(msg);
-    if (size != msg.size()) {
-        LOGE(mModule, "Message %s sent %d bytes.", msg.toLatin1().data(), size);
-        rc = UNKNOWN_ERROR;
+    if (SUCCEED(rc)) {
+        if (!mCoreReady) {
+            rc = NOT_READY;
+            LOGE(mModule, "Can't send message '%s', core not ready yet.");
+        }
+    }
+
+    if (SUCCEED(rc)) {
+        int32_t size = mIPCClient->send(msg.toLatin1());
+        if (size != msg.size()) {
+            LOGE(mModule, "Message %s sent %d bytes.", msg.toLatin1().data(), size);
+            rc = UNKNOWN_ERROR;
+        }
     }
 
     return rc;
@@ -116,12 +149,19 @@ int32_t CoreHandler::destruct()
     }
 
     if (SUCCEED(rc)) {
-        rc = mSocketServer->destruct();
+        rc = mIPCServer->destruct();
         if (FAILED(rc)) {
-            LOGE(mModule, "Failed to destructed socket server, %d", rc);
+            LOGE(mModule, "Failed to destructed ipc server, %d", rc);
         }
-        SECURE_DELETE(mSocketServer);
-        SECURE_DELETE(mSocketClient);
+        SECURE_DELETE(mIPCServer);
+    }
+
+    if (SUCCEED(rc)) {
+        rc = mIPCClient->destruct();
+        if (FAILED(rc)) {
+            LOGE(mModule, "Failed to destructed ipc client, %d", rc);
+        }
+        SECURE_DELETE(mIPCClient);
     }
 
     return RETURNIGNORE(rc, NOT_INITED);
@@ -298,13 +338,15 @@ int32_t CoreHandler::appendShell(const std::string &str)
     );
 }
 
-int32_t CoreHandler::onSocketMessage(const QString &msg)
+int32_t CoreHandler::onIPCData(const QByteArray &data)
 {
     int32_t rc = NO_ERROR;
+    QString msg(data);
     char *str = msg.toLatin1().data();
 
+    LOGD(mModule, "Received msg: '%s'", str);
     if (COMPARE_SAME_STRING(str, GREETING_GUI)) {
-        mStartSem.signal();
+        rc = onCoreReady();
     } else if (COMPARE_SAME_STRING(str, BYE_GUI)) {
         mExitSem.signal();
     } else if (COMPARE_SAME_LEN_STRING(str, CORE_INIT, strlen(CORE_INIT))) {
@@ -330,20 +372,13 @@ int32_t CoreHandler::onSocketMessage(const QString &msg)
     return rc;
 }
 
-int32_t CoreHandler::onSocketData(const QByteArray &data)
-{
-    LOGE(mModule, "Received unknown data, %d bytes", data.size());
-
-    return NO_ERROR;
-}
-
 CoreHandler::CoreHandler(MainWindowUi *ui) :
     mConstructed(false),
     mModule(MODULE_GUI),
     mUi(ui),
-    mCoreProcessStatus(NO_ERROR),
-    mSocketServer(nullptr),
-    mSocketClient(nullptr)
+    mCoreReady(false),
+    mIPCServer(nullptr),
+    mIPCClient(nullptr)
 {
     qRegisterMetaType<std::function<int32_t ()> >("std::function<int32_t ()>");
 
@@ -370,10 +405,9 @@ int32_t CoreHandler::onDrawUi(std::function<int32_t ()> func)
 void CoreHandler::onProcessError(QProcess::ProcessError error)
 {
     LOGE(mModule, "Core process error, %d", error);
+
     if (error == QProcess::FailedToStart) {
         LOGF(mModule, "Core process failed to start.");
-        mCoreProcessStatus = error + 1;
-        mStartSem.signal();
     }
 }
 
