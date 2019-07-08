@@ -126,6 +126,12 @@ int32_t IPCClient::send(const QByteArray &data)
         }
     }
 
+    if (SUCCEED(rc)) {
+        if (!mSocket.waitForBytesWritten()) {
+            LOGE(mModule, "Failed to wait msg written.");
+        }
+    }
+
     return rc;
 }
 

@@ -10,6 +10,8 @@
 #include "IPCClient.h"
 #include "ui/MainWindowUi.h"
 
+#define MAX_WAIT_CORE_TIME 1000 // ms
+
 namespace uranium {
 
 int32_t CoreHandler::construct()
@@ -110,11 +112,12 @@ int32_t CoreHandler::sendCoreMessage(QString &msg)
     }
 
     if (SUCCEED(rc)) {
-        LOGD(mModule, "Send msg: '%s'", msg.toLatin1().data());
         rc = mIPCClient->send(msg.toLatin1());
         if (FAILED(rc)) {
             LOGE(mModule, "Send message failed.");
             rc = UNKNOWN_ERROR;
+        } else {
+            LOGD(mModule, "Sent msg: '%s'", msg.toLatin1().data());
         }
     }
 
@@ -140,7 +143,7 @@ int32_t CoreHandler::destruct()
     }
 
     if (SUCCEED(rc)) {
-        if (!mCoreProcess.waitForFinished()) {
+        if (!mCoreProcess.waitForFinished(MAX_WAIT_CORE_TIME)) {
             LOGE(mModule, "Failed to exit core process, force to exit later.");
             rc = UNKNOWN_ERROR;
         }
