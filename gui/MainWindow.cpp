@@ -14,7 +14,7 @@ MainWindow::MainWindow(QApplication *app, QWidget *parent) :
     mConstructed(false),
     mApp(app),
     mParent(parent),
-    mUi(new Ui::MainWindow),
+    mUi(new Ui::MainWindow()),
     mAbout(nullptr)
 {
     gMW = this;

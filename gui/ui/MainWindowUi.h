@@ -30,11 +30,16 @@ class MainWindowUi :
     Q_OBJECT
 
 public:
+    MainWindowUi();
+    virtual ~MainWindowUi() override;
+
+public:
     int32_t updateUi();
     int32_t setupUi(QMainWindow *MainWindow);
     void retranslateUi(QMainWindow *MainWindow);
     int32_t setupCore();
     int32_t destructCore();
+    int32_t loadConfig();
 
 public:
     int32_t onStarted(int32_t rc);
@@ -47,7 +52,14 @@ signals:
     void quit();
     void about();
 
+private slots:
+    int32_t onStartButtonClicked();
+    int32_t onSelectButonClicked();
+    int32_t setConfig(bool checked);
+    int32_t setConfig(const QString &setting);
+
 private:
+    bool         mStarted;
     CoreHandler *mCore;
 
 private:

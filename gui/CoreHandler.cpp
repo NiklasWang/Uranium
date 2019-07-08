@@ -209,7 +209,7 @@ int32_t CoreHandler::getConfig(ConfigItem key, std::string &value)
     mutex.lock();
 
     if (SUCCEED(rc)) {
-        if (checkValid(key)) {
+        if (!checkValid(key)) {
             LOGE(mModule, "Invalid key, %d", key);
             rc = PARAM_INVALID;
         }

@@ -16,6 +16,7 @@
 #include <QtWidgets/QTextEdit>
 #include <QtWidgets/QVBoxLayout>
 #include <QtWidgets/QWidget>
+#include <QFileDialog>
 
 #include "version.h"
 #include "common.h"
@@ -24,6 +25,16 @@
 #include "Dialogs.h"
 
 namespace uranium {
+
+MainWindowUi::MainWindowUi() :
+    mStarted(false),
+    mCore(nullptr)
+{
+}
+
+MainWindowUi::~MainWindowUi()
+{
+}
 
 int32_t MainWindowUi::setupUi(QMainWindow *MainWindow)
 {
@@ -109,6 +120,7 @@ int32_t MainWindowUi::setupUi(QMainWindow *MainWindow)
         font1.setWeight(75);
         mStartPushButton->setFont(font1);
         mCheckBoxGridLayout->addWidget(mStartPushButton, 0, 4, 5, 1);
+        connect(mStartPushButton, SIGNAL(clicked()), this, SLOT(onStartButtonClicked()));
     }
 
     if (SUCCEED(rc)) {
@@ -204,6 +216,7 @@ int32_t MainWindowUi::setupUi(QMainWindow *MainWindow)
         mSelectPushButton->setObjectName(QStringLiteral("mSelectPushButton"));
         mSelectPushButton->setFont(lineEditFont);
         mInputBoxGridLayout->addWidget(mSelectPushButton, 3, 2, 1, 1);
+        connect(mSelectPushButton, SIGNAL(clicked()), this, SLOT(onSelectButonClicked()));
     }
 
     if (SUCCEED(rc)) {
@@ -215,6 +228,7 @@ int32_t MainWindowUi::setupUi(QMainWindow *MainWindow)
         mPasswordLineEdit = new QLineEdit(mVerticalLayoutWidget);
         mPasswordLineEdit->setObjectName(QStringLiteral("mPasswordLineEdit"));
         mPasswordLineEdit->setFont(lineEditFont);
+        mPasswordLineEdit->setEchoMode(QLineEdit::Password);
         mInputBoxGridLayout->addWidget(mPasswordLineEdit, 1, 1, 1, 2);
     }
 
@@ -319,6 +333,17 @@ int32_t MainWindowUi::setupUi(QMainWindow *MainWindow)
         mMenuHelp->addAction(mActionAbout);
     }
 
+    if (SUCCEED(rc)) {
+        connect(mMasterCheckBox,        SIGNAL(toggled(bool)), this, SLOT(setConfig(bool)));
+        connect(mDebugCheckBox,         SIGNAL(toggled(bool)), this, SLOT(setConfig(bool)));
+        connect(mEncryptionCheckBox,    SIGNAL(toggled(bool)), this, SLOT(setConfig(bool)));
+        connect(mRemoteControlCheckBox, SIGNAL(toggled(bool)), this, SLOT(setConfig(bool)));
+        connect(mPasswordLineEdit,      SIGNAL(textChanged(const QString &)), this, SLOT(setConfig(const QString &)));
+        connect(mUserNameLineEdit,      SIGNAL(textChanged(const QString &)), this, SLOT(setConfig(const QString &)));
+        connect(mRemoteDirLineEdit,     SIGNAL(textChanged(const QString &)), this, SLOT(setConfig(const QString &)));
+        connect(mLocalDirLineEdit,      SIGNAL(textChanged(const QString &)), this, SLOT(setConfig(const QString &)));
+    }
+
     if (SUCCEED(rc) || !SUCCEED(rc)) {
         retranslateUi(MainWindow);
         QMetaObject::connectSlotsByName(MainWindow);
@@ -378,8 +403,15 @@ int32_t MainWindowUi::setupCore()
         if (NOTNULL(mCore)) {
             rc = mCore->construct();
             if (FAILED(rc)) {
-                showError("Failed to construct core" + rc);
+                showError("Failed to construct core, " + rc);
             }
+        }
+    }
+
+    if (SUCCEED(rc)) {
+        rc = loadConfig();
+        if (FAILED(rc)) {
+            showError("Failed to load config, " + rc);
         }
     }
 
@@ -394,7 +426,7 @@ int32_t MainWindowUi::destructCore()
         if (NOTNULL(mCore)) {
             rc = mCore->destruct();
             if (FAILED(rc)) {
-                showError("Failed to destruct core" + rc);
+                showError("Failed to destruct core, " + rc);
             }
         }
         SECURE_DELETE(mCore);
@@ -410,28 +442,32 @@ int32_t MainWindowUi::updateUi()
 
 int32_t MainWindowUi::onStarted(int32_t rc)
 {
+    mStarted = SUCCEED(rc);
+
     QImage Image;
-    Image.load(SUCCEED(rc) ? ":/status/succeed" : ":/status/failed");
+    Image.load(mStarted ? ":/status/succeed" : ":/status/failed");
     QPixmap pixmap = QPixmap::fromImage(Image);
     QPixmap fitPixmap = pixmap.scaled(mStartedLabel->width(),
         mStartedLabel->height(), Qt::IgnoreAspectRatio, Qt::SmoothTransformation);
     mStartedLabel->setPixmap(fitPixmap);
     mStartPushButton->setText(QApplication::translate("MainWindow",
-        SUCCEED(rc) ? " Stop " : " Start ", nullptr));
+        mStarted ? " Stop " : " Start ", nullptr));
 
     return NO_ERROR;
 }
 
 int32_t MainWindowUi::onStopped(int32_t rc)
 {
+    mStarted = FAILED(rc);
+
     QImage Image;
-    Image.load(SUCCEED(rc) ? ":/status/question" : ":/status/failed");
+    Image.load(!mStarted ? ":/status/question" : ":/status/failed");
     QPixmap pixmap = QPixmap::fromImage(Image);
     QPixmap fitPixmap = pixmap.scaled(mStartedLabel->width(),
         mStartedLabel->height(), Qt::IgnoreAspectRatio, Qt::SmoothTransformation);
     mStartedLabel->setPixmap(fitPixmap);
     mStartPushButton->setText(QApplication::translate("MainWindow",
-        SUCCEED(rc) ? " Start " : " Stop ", nullptr));
+        !mStarted ? " Start " : " Stop ", nullptr));
 
     return NO_ERROR;
 }
@@ -468,6 +504,142 @@ int32_t MainWindowUi::appendShell(std::string str)
     mShellTextEditor->setTextCursor(cursor);
 
     return NO_ERROR;
+}
+
+int32_t MainWindowUi::onStartButtonClicked()
+{
+    int32_t rc = NO_ERROR;
+    pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
+    pthread_mutex_lock(&mutex);
+
+    if (SUCCEED(rc)) {
+        if (mStarted) {
+            rc = mCore->stop();
+            if (!SUCCEED(rc)) {
+                showError("Failed to stop core");
+            }
+        } else {
+            rc = mCore->start();
+            if (!SUCCEED(rc)) {
+                showError("Failed to start core");
+            }
+        }
+    }
+    pthread_mutex_unlock(&mutex);
+
+    return rc;
+}
+
+int32_t MainWindowUi::onSelectButonClicked()
+{
+    int32_t rc = NO_ERROR;
+    QString path;
+
+    if (SUCCEED(rc)) {
+        QString old = mLocalDirLineEdit->text();
+        path = QFileDialog::getExistingDirectory(mCentralWidget,
+            "Choose Path Directory", old.toLocal8Bit().data(),
+            QFileDialog::ShowDirsOnly | QFileDialog::DontResolveSymlinks);
+        mLocalDirLineEdit->setText(QApplication::translate("MainWindow",
+            path.toLocal8Bit().data(), nullptr));
+    }
+
+    if (SUCCEED(rc)) {
+        rc = mCore->setConfig(CONFIG_LOCAL_PATH, path.toLocal8Bit().data());
+        if (!SUCCEED(rc)) {
+            QString err = "Failed to set local path to";
+            showError(err + path.toLocal8Bit().data());
+        }
+    }
+
+    return rc;
+}
+
+int32_t MainWindowUi::loadConfig()
+{
+    int32_t rc = NO_ERROR;
+
+    bool master = true;
+    bool encryption = true;
+    bool debug = true;
+    bool shell = false;
+    std::string username;
+    std::string password;
+    std::string localpath;
+    std::string remotePath;
+
+    if (SUCCEED(rc)) {
+        rc  = mCore->getConfig(CONFIG_MASTER_MODE, master);
+        rc |= mCore->getConfig(CONFIG_ENCRYPTION, encryption);
+        rc |= mCore->getConfig(CONFIG_DEBUG_MODE, debug);
+        rc |= mCore->getConfig(CONFIG_REMOTE_SHELL, shell);
+        rc |= mCore->getConfig(CONFIG_USERNAME, username);
+        rc |= mCore->getConfig(CONFIG_PASSWORD, password);
+        rc |= mCore->getConfig(CONFIG_LOCAL_PATH, localpath);
+        rc |= mCore->getConfig(CONFIG_REMOTE_PATH, remotePath);
+        if (FAILED(rc)) {
+            showError("gui load config failed.");
+        }
+    }
+
+    if (SUCCEED(rc)) {
+        mMasterCheckBox->setChecked(master);
+        mDebugCheckBox->setChecked(debug);
+        mEncryptionCheckBox->setChecked(encryption);
+        mRemoteControlCheckBox->setChecked(shell);
+        mPasswordLineEdit->setText(password.c_str());
+        mUserNameLineEdit->setText(username.c_str());
+        mRemoteDirLineEdit->setText(remotePath.c_str());
+        mLocalDirLineEdit->setText(localpath.c_str());
+    }
+
+    return rc;
+}
+
+int32_t MainWindowUi::setConfig(bool checked)
+{
+    int32_t rc = NO_ERROR;
+
+    QString name = sender()->objectName();
+    if (name == "mMasterCheckBox") {
+        rc = mCore->setConfig(CONFIG_MASTER_MODE, checked);
+    } else if (name == "mDebugCheckBox") {
+        rc = mCore->setConfig(CONFIG_DEBUG_MODE, checked);
+    } else if (name == "mEncryptionCheckBox") {
+        rc = mCore->setConfig(CONFIG_ENCRYPTION, checked);
+    } else if (name == "mRemoteControlCheckBox") {
+        rc = mCore->setConfig(CONFIG_REMOTE_SHELL, checked);
+    }
+
+    if (FAILED(rc)) {
+        QString err = "failed to set config.";
+        showError(err + name);
+    }
+
+    return rc;
+}
+
+int32_t MainWindowUi::setConfig(const QString &set)
+{
+    int32_t rc = NO_ERROR;
+
+    QString name = sender()->objectName();
+    if (name == "mPasswordLineEdit") {
+        rc = mCore->setConfig(CONFIG_PASSWORD, set.toLatin1().data());
+    } else if (name == "mUserNameLineEdit") {
+        rc = mCore->setConfig(CONFIG_USERNAME, set.toLatin1().data());
+    } else if (name == "mRemoteDirLineEdit") {
+        rc = mCore->setConfig(CONFIG_REMOTE_PATH, set.toLatin1().data());
+    } else if (name == "mLocalDirLineEdit") {
+        rc = mCore->setConfig(CONFIG_LOCAL_PATH, set.toLatin1().data());
+    }
+
+    if (FAILED(rc)) {
+        QString err = "failed to set config.";
+        showError(err + name);
+    }
+
+    return rc;
 }
 
 }
