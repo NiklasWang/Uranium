@@ -10,7 +10,7 @@ std::string ServiceCore::getUserName()
     struct passwd* pwd;
     userid = getuid();
     pwd = getpwuid(userid);
-    std::cout << "User name is: " << pwd->pw_name << std::endl;
+    LOGD(mModule, "User name is: %s\n", pwd->pw_name);
     return pwd->pw_name;
 }
 
@@ -83,17 +83,28 @@ int32_t ServiceCore::transferAppendData(const std::string &inFilePath, const std
 
     if (SUCCEED(rc)) {
         inStream.seekg(0);
-
-        char *buffer = new char[size];
+        char *buffer = new char[WRITE_BUFFER_PAGE];
         if (ISNULL(buffer)) {
             rc = NO_MEMORY;
             LOGE(mModule, "Out of memory\n");
         } else {
-            inStream.read(buffer, size);
-            ostream.write(buffer, size);
-            delete buffer;
+            uint32_t page = size / WRITE_BUFFER_PAGE;
+            uint32_t last_size = size % WRITE_BUFFER_PAGE;
+            LOGD(mModule, "Page = %d,  last_size = %d", page, last_size);
+            for (uint32_t i = 0; i < page; i++) {
+                memset(buffer, 0, WRITE_BUFFER_PAGE);
+                inStream.read(buffer, WRITE_BUFFER_PAGE);
+                ostream.write(buffer, WRITE_BUFFER_PAGE);
+            }
+            if (last_size) {
+                memset(buffer, 0, WRITE_BUFFER_PAGE);
+                inStream.read(buffer, last_size);
+                ostream.write(buffer, last_size);
+            }
         }
+        SECURE_DELETE(buffer);
     }
+
 
     inStream.close();
     ostream.close();
@@ -136,8 +147,10 @@ int32_t ServiceCore::reduceTranHeaderData(const std::string &inPath, const std::
     if (SUCCEED(rc)) {
         inStream.seekg(sizeof(TRAN_HEADE_T));
         size -= sizeof(TRAN_HEADE_T);
+    }
 
-        buffer = new char[size];
+    if (SUCCEED(rc)) {
+        buffer = new char[WRITE_BUFFER_PAGE];
         if (ISNULL(buffer)) {
             rc = NO_MEMORY;
             LOGE(mModule, "Out of memory\n");
@@ -145,11 +158,22 @@ int32_t ServiceCore::reduceTranHeaderData(const std::string &inPath, const std::
     }
 
     if (SUCCEED(rc)) {
-        inStream.read(buffer, size);
-        ouStream.write(buffer, size);
-        delete buffer;
+        uint32_t page = size / WRITE_BUFFER_PAGE;
+        uint32_t last_size = size % WRITE_BUFFER_PAGE;
+        for (uint32_t i = 0; i < page; i++) {
+            memset(buffer, 0, WRITE_BUFFER_PAGE);
+            inStream.read(buffer, WRITE_BUFFER_PAGE);
+            ouStream.write(buffer, WRITE_BUFFER_PAGE);
+        }
+        if (last_size) {
+            memset(buffer, 0, WRITE_BUFFER_PAGE);
+            inStream.read(buffer, last_size);
+            ouStream.write(buffer, last_size);
+        }
+
     }
 
+    SECURE_DELETE(buffer);
     inStream.close();
     ouStream.close();
 
@@ -205,19 +229,29 @@ int32_t ServiceCore::createEntryFile(const std::string &fileName, uint32_t value
                     inStream.seekg(0);
                 }
 
-                char *buffer = new char[entry.fileSize];
-                if (ISNULL(buffer)) {
-                    rc = NO_MEMORY;
-                    std::cout << "Out of memory\n";
-                }
-
                 if (SUCCEED(rc)) {
-                    ouStream.write((char *)&entry, sizeof(TRANSFER_ENTRY_FILE_T));
-                    inStream.read(buffer, entry.fileSize);
-                    ouStream.write(buffer, entry.fileSize);
+                    char *buffer = new char[WRITE_BUFFER_PAGE];
+                    if (ISNULL(buffer)) {
+                        rc = NO_MEMORY;
+                        LOGE(mModule, "Out of memory\n");
+                    } else {
+                        uint32_t page = entry.fileSize / WRITE_BUFFER_PAGE;
+                        uint32_t last_size = entry.fileSize % WRITE_BUFFER_PAGE;
+                        ouStream.write((char *)&entry, sizeof(TRANSFER_ENTRY_FILE_T));
+                        for (uint32_t i = 0; i < page; i++) {
+                            memset(buffer, 0, WRITE_BUFFER_PAGE);
+                            inStream.read(buffer, WRITE_BUFFER_PAGE);
+                            ouStream.write(buffer, WRITE_BUFFER_PAGE);
+                        }
+                        if (last_size) {
+                            memset(buffer, 0, WRITE_BUFFER_PAGE);
+                            inStream.read(buffer, last_size);
+                            ouStream.write(buffer, last_size);
+                        }
+                    }
+                    SECURE_DELETE(buffer);
                 }
 
-                delete buffer;
             }
             break;
             default:
@@ -271,7 +305,8 @@ int32_t ServiceCore::praseEntryFile(const std::string& inPath)
                 case MONITOR_Created: {
                     LOGD(mModule, "MONITOR_Created/MONITOR_Updated runing...");
                     int32_t rc = NO_ERROR;
-                    char *buffer = new char[entry.fileSize];
+
+                    char *buffer = new char[WRITE_BUFFER_PAGE];
                     if (ISNULL(buffer)) {
                         rc = NO_MEMORY;
                         LOGE(mModule, "memory is not ernough\n");
@@ -281,15 +316,34 @@ int32_t ServiceCore::praseEntryFile(const std::string& inPath)
                         std::string tmpFilePath = mLocalPath;
                         tmpFilePath += entry.fileName;
                         LOGD(mModule, "SYNC file path = %s", tmpFilePath.c_str());
-                        inStream.read((char *)buffer, entry.fileSize);
                         std::ofstream ouStream(tmpFilePath, std::ios::binary | std::ios::trunc);
-                        ouStream.write(buffer, entry.fileSize);
+                        \
+                        if (!ouStream.is_open()) {
+                            LOGE(mModule, "Open %s failed\n", tmpFilePath.c_str());
+                            rc = NOT_FOUND;
+                        }
+                        if (SUCCEED(rc)) {
+                            uint32_t page = entry.fileSize / WRITE_BUFFER_PAGE;
+                            uint32_t last_size = entry.fileSize % WRITE_BUFFER_PAGE;
+                            for (uint32_t i = 0; i < page; i++) {
+                                memset(buffer, 0, WRITE_BUFFER_PAGE);
+                                inStream.read((char *)buffer, WRITE_BUFFER_PAGE);
+                                ouStream.write(buffer, WRITE_BUFFER_PAGE);
+                            }
+                            if (last_size) {
+                                memset(buffer, 0, WRITE_BUFFER_PAGE);
+                                inStream.read((char *)buffer, last_size);
+                                ouStream.write(buffer, last_size);
+                            }
+
+                        }
+
                         ouStream.close();
                     }
-                    delete buffer;
+
+                    SECURE_DELETE(buffer);
                 }
                 break;
-
                 default:
                     break;
             }

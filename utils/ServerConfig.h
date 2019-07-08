@@ -10,6 +10,7 @@
 #define FILE_INFOS_NAME     ("fileInfos.bin")
 #define TAR_MODIR_NAME      ("modir.tar.bz2")
 #define TRA_SYNC_FILE_NAME  ("MO_SYNC_FILE.bin")
+#define WRITE_BUFFER_PAGE   (4 * 1024 * 1204)
 
 
 #endif 
