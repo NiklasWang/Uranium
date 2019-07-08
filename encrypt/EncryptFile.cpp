@@ -4,7 +4,13 @@
 #include <string.h>
 #include <math.h>
 #include <time.h>
+#include <functional>
+#include <sys/types.h>
+#include <unistd.h>
+#include <pwd.h>
+#include <fstream>
 
+#include "common.h"
 #include "common.h"
 #include "logs.h"
 #include "MemMgmt.h"
@@ -12,22 +18,12 @@
 #include "md5.h"
 #include "sha.h"
 #include "aes.h"
+#include "ServerConfig.h"
 
 namespace uranium
 {
 
 using namespace std;
-
-#define CHECK_ERROR(cond, retval, lable, fmt, args...)  \
-do {                                                            \
-    if(cond) {                                                  \
-        LOGE(mModule, fmt, ##args);                             \
-        LOGE(mModule, "%s() return %d\n",                       \
-                __func__, retval);                              \
-        rc = retval;                                            \
-        goto lable;                                             \
-    }                                                           \
-} while(0)
 
 
 EncryptFile::EncryptFile():
@@ -164,21 +160,20 @@ uint32_t EncryptFile::writeFileAppend(const std::string &filePath, const uint8_t
 int EncryptFile::encryptStream(const string& origFile, const string& destFile, const unsigned char* key16)
 {
     uint32_t origFileLength = 0;
-    uint32_t destFileLength = 0;
-    uint8_t *pOrigBuffer = NULL;
-    uint8_t *pDestBuffer = NULL;
+    char *pOrigBuffer = NULL;
+    char *pDestBuffer = NULL;
     FILE_HEADER_T *pFileHeader = NULL;
     uint8_t ivs[16];
     AES_KEY aesKs;
-    int rc = 0;
+    std::ofstream ostream(destFile, std::ios::binary | std::ios::trunc);
+    std::ifstream inStream(origFile, std::ios::binary | std::ios::ate);
+    int32_t rc = 0;
 
-    if (SUCCEED(rc)) {
-        pOrigBuffer = readFile(origFile, origFileLength);
-        if (ISNULL(pOrigBuffer)) {
-            rc = -1;
-            LOGE(mModule, "read file failed!\n");
-        }
+    if(!inStream.is_open() || !ostream.is_open()) {
+        LOGE(mModule, "File %s or %s  not exit", origFile.c_str(),  destFile.c_str());
+        rc |= NOT_FOUND;
     }
+
     if (SUCCEED(rc))  {
         pFileHeader = new FILE_HEADER_T;
         if (ISNULL(pFileHeader)) {
@@ -186,106 +181,176 @@ int EncryptFile::encryptStream(const string& origFile, const string& destFile, c
             LOGE(mModule, "out of memory\n");
         }
     }
+
+    /* read file length */
+    if(SUCCEED(rc)) {
+        origFileLength = inStream.tellg();
+        if (origFileLength == 0) {
+            LOGE(mModule, "file is empty\n");
+            rc = NOT_EXIST;
+        }
+        inStream.seekg(0);     
+    }
+
+    /* calcule md5sum */
     if (SUCCEED(rc)) {
         memset(pFileHeader, 0, sizeof(FILE_HEADER_T));
         pFileHeader->magicID = MAGIC_ID;
         pFileHeader->fileLength = origFileLength;
-        md5_buffer((const char*)pOrigBuffer, origFileLength, pFileHeader->checksum);
-    }
-
-    if (SUCCEED(rc)) {
-        destFileLength = align_len_to_size(origFileLength, 16);
-        pDestBuffer = (uint8_t*) new uint8_t[destFileLength];
-        if (ISNULL(pDestBuffer)) {
-            rc = -1;
-            LOGE(mModule, "out of memory\n");
+        FILE *pFile = fopen(origFile.c_str(), "r");
+        if(ISNULL(pFile)) {
+            LOGE(mModule, "Open file %s failed\n", origFile.c_str());
+            rc = NOT_FOUND;
+        }else {
+           md5_stream(pFile, pFileHeader->checksum); 
+           fclose(pFile);
+           ostream.write((char *)pFileHeader, sizeof(FILE_HEADER_T)); 
         }
     }
-
+    
     if (SUCCEED(rc)) {
         memset(ivs, 0, sizeof(ivs));
         private_AES_set_encrypt_key(key16, 128, &aesKs);
-        AES_cbc_encrypt(pOrigBuffer, pDestBuffer, origFileLength, &aesKs,  ivs, 1);
     }
 
-    if (SUCCEED(rc)) {
-        writeFile(destFile, (const uint8_t *)pFileHeader, sizeof(FILE_HEADER_T));
-        writeFileAppend(destFile, pDestBuffer, destFileLength);
+    if(SUCCEED(rc)) {
+        pOrigBuffer = new char[WRITE_BUFFER_PAGE];
+        pDestBuffer = new char[WRITE_BUFFER_PAGE];
+        if(ISNULL(pOrigBuffer) || ISNULL(pDestBuffer)) {
+            LOGE(mModule, "Out of memory\n");
+            rc = NO_MEMORY;
+        }
     }
 
-    readBufferDestory(pOrigBuffer);
+    if(SUCCEED(rc)) {
+        uint32_t page = origFileLength / WRITE_BUFFER_PAGE;
+        uint32_t last_size = origFileLength % WRITE_BUFFER_PAGE;
+        for(uint32_t i = 0; i< page; i++)
+        {   
+            memset(pOrigBuffer, 0, WRITE_BUFFER_PAGE);
+            memset(pDestBuffer, 0, WRITE_BUFFER_PAGE);
+            inStream.read(pOrigBuffer, WRITE_BUFFER_PAGE);
+            AES_cbc_encrypt((uint8_t *) pOrigBuffer, (uint8_t *)pDestBuffer, WRITE_BUFFER_PAGE, &aesKs,  ivs, 1);
+            ostream.write(pDestBuffer, WRITE_BUFFER_PAGE); 
+        }
+        if(last_size) {
+            memset(pOrigBuffer, 0, WRITE_BUFFER_PAGE);
+            memset(pDestBuffer, 0, WRITE_BUFFER_PAGE);
+            inStream.read(pOrigBuffer, last_size);
+            last_size = align_len_to_size(last_size, 16);
+            AES_cbc_encrypt((uint8_t *) pOrigBuffer,(uint8_t *) pDestBuffer, last_size, &aesKs,  ivs, 1);
+            ostream.write(pDestBuffer, last_size);       
+        }
+    }    
+
+    SECURE_DELETE(pOrigBuffer);
     SECURE_DELETE(pDestBuffer);
     SECURE_DELETE(pFileHeader);
+    inStream.close();
+    ostream.close();
+
     return rc;
 }
 
 int EncryptFile::decryptStream(const string& origFile, const string& destFile, const unsigned char* key16)
 {
-    uint32_t origFileLength = 0;
-    uint32_t destFileLength = 0;
-    uint8_t *pOrigBuffer = NULL;
-    uint8_t *pDestBuffer = NULL;
-    uint8_t *pStartFile = NULL;
-    FILE_HEADER_T *pFileHeader = NULL;
+    char *oriBuffer = NULL;
+    char *dstBuffer = NULL;
+    FILE_HEADER_T *pFileHeader = new FILE_HEADER_T;
+    std::ofstream ostream(destFile, std::ios::binary | std::ios::trunc);
+    std::ifstream inStream(origFile, std::ios::binary | std::ios::ate);
     uint8_t ivs[16];
     AES_KEY aesKs;
     int rc = 0;
 
-    if (SUCCEED(rc)) {
-        pOrigBuffer = readFile(origFile, origFileLength);
-        if (ISNULL(pOrigBuffer)) {
-            rc = -1;
-            LOGE(mModule, "read file failed!\n");
-        }
+    if(!ostream.is_open() || !inStream.is_open()) {
+        LOGE(mModule, "File %s or %s  not exit", origFile.c_str(),  destFile.c_str());
+        rc = NOT_FOUND;
     }
 
-    if (SUCCEED(rc))  {
-        pFileHeader = new FILE_HEADER_T;
-        if (ISNULL(pFileHeader)) {
-            rc = -1;
-            LOGE(mModule, "out of memory\n");
+    if(SUCCEED(rc)) {
+        if(ISNULL(pFileHeader)) {
+            LOGE(mModule, "Out of memory");
+            rc = NO_MEMORY;
         }
     }
 
     if (SUCCEED(rc)) {
-        memcpy(pFileHeader, pOrigBuffer, sizeof(FILE_HEADER_T));
-        if (pFileHeader->magicID != MAGIC_ID) {
-            rc = -1;
-            LOGE(mModule, "files magicID failed!\n");
+        uint32_t size = inStream.tellg();
+        inStream.seekg(0); 
+        if(size < sizeof(FILE_HEADER_T)) {
+            LOGE(mModule, "origFile size is error\n");
+            rc = NO_MEMORY;
+        }else{
+            inStream.read((char *)pFileHeader, sizeof(FILE_HEADER_T));
+            if(pFileHeader->magicID != MAGIC_ID) {
+                LOGE(mModule, "encry file magicID failed\n");
+                rc = NOT_SUPPORTED;
+            }
+
+            if(size < pFileHeader->fileLength) {
+                LOGE(mModule,"file lose data\n");
+                rc = BAD_PROTOCAL;
+            }
         }
     }
 
-    if (SUCCEED(rc)) {
-        destFileLength = align_len_to_size(pFileHeader->fileLength, 16);
-        pStartFile = pOrigBuffer + sizeof(FILE_HEADER_T);
-        pDestBuffer = new uint8_t[destFileLength];
-        if (ISNULL(pDestBuffer)) {
-            rc = -1;
-            LOGE(mModule, "Out of memory\n");
-        }
-    }
-
-    if (SUCCEED(rc)) {
-        memset(pDestBuffer, 0, destFileLength);
+    if(SUCCEED(rc)) {
         private_AES_set_decrypt_key(key16, 128, &aesKs);
-        memset(ivs, 0, sizeof(ivs));
-        AES_cbc_encrypt(pStartFile, pDestBuffer, destFileLength, &aesKs, (unsigned char*) ivs, 0);
+        memset(ivs, 0, sizeof(ivs));        
+    }
 
+    if(SUCCEED(rc)) {
+        oriBuffer = new char[WRITE_BUFFER_PAGE];
+        dstBuffer = new char[WRITE_BUFFER_PAGE];
+        if(ISNULL(oriBuffer) || ISNULL(dstBuffer)) {
+            rc = NO_MEMORY;
+            LOGE(mModule, "Out of memory");
+        }
+    }
+
+    if(SUCCEED(rc)) {
+        uint32_t page = pFileHeader->fileLength / WRITE_BUFFER_PAGE;
+        uint32_t last_size = pFileHeader->fileLength % WRITE_BUFFER_PAGE;
+        uint32_t last_size16 = align_len_to_size(last_size, 16);
+        for(uint32_t i =0; i<page; i++) 
+        {
+            memset(oriBuffer, 0 , WRITE_BUFFER_PAGE);
+            memset(dstBuffer, 0 , WRITE_BUFFER_PAGE);
+            inStream.read(oriBuffer, WRITE_BUFFER_PAGE); 
+            AES_cbc_encrypt((uint8_t *)oriBuffer,(uint8_t *) dstBuffer, WRITE_BUFFER_PAGE, &aesKs, (unsigned char*) ivs, 0);
+            ostream.write(dstBuffer, WRITE_BUFFER_PAGE);
+        }
+        if(last_size) {
+            memset(oriBuffer, 0 , WRITE_BUFFER_PAGE);
+            memset(dstBuffer, 0 , WRITE_BUFFER_PAGE);
+            inStream.read(oriBuffer, last_size16); 
+            AES_cbc_encrypt((uint8_t *) oriBuffer,(uint8_t *) dstBuffer, last_size16, &aesKs, (unsigned char*) ivs, 0);
+            ostream.write(dstBuffer, last_size);            
+        }
+    }
+
+    if (SUCCEED(rc)) {
         /* storage orig checksum */
         memcpy(mOrigChecsum, pFileHeader->checksum, sizeof(mOrigChecsum));
-
         /* calculate checksum */
         memset(mCalculateChecksum, 0, sizeof(mCalculateChecksum));
-        md5_buffer((const char*)pDestBuffer, pFileHeader->fileLength, mCalculateChecksum);
+        FILE *pFile = fopen(destFile.c_str(), "r");
+        if(ISNULL(pFile)) {
+            LOGE(mModule, "Open file %s failed\n", destFile.c_str());
+            rc = NOT_FOUND;
+        }else {
+            md5_stream(pFile, mCalculateChecksum);
+            fclose(pFile);
+        }
+
     }
 
-    if (SUCCEED(rc)) {
-        writeFile(destFile, pDestBuffer, pFileHeader->fileLength);
-    }
-
-    readBufferDestory(pOrigBuffer);
-    SECURE_DELETE(pDestBuffer);
+    SECURE_DELETE(oriBuffer);
+    SECURE_DELETE(dstBuffer);
     SECURE_DELETE(pFileHeader);
+    inStream.close();
+    ostream.close();
 
     return rc;
 }
