@@ -164,6 +164,7 @@ int32_t ServiceCore::createEntryFile(const std::string &fileName, uint32_t value
     std::ofstream ouStream;
     int32_t rc = NO_ERROR;
     TRANSFER_ENTRY_FILE_T entry;
+    std::ifstream inStream(origFile, std::ios::binary | std::ios::ate);
 
     if (fistFlage) {
         ouStream.open(storageFile, std::ios::binary | std::ios::trunc);
@@ -176,19 +177,11 @@ int32_t ServiceCore::createEntryFile(const std::string &fileName, uint32_t value
         rc = NOT_FOUND;
     }
 
-    std::ifstream inStream(origFile, std::ios::binary | std::ios::ate);
-    if (!inStream.is_open()) {
-        LOGE(mModule, "Open %s failed\n", origFile.c_str());
-        rc = NOT_FOUND;
-    }
-
     if (SUCCEED(rc)) {
         memset(&entry, 0, sizeof(entry));
         entry.flages = MOENTRY_FLAGE_MASK;
         strcpy(entry.fileName, fileName.c_str());
-        //
         entry.value = value;
-        //
 
         switch (value) {
             case MONITOR_Removed:
@@ -199,6 +192,13 @@ int32_t ServiceCore::createEntryFile(const std::string &fileName, uint32_t value
             case MONITOR_Updated:
             case MONITOR_Created: {
                 int32_t rc = NO_ERROR;
+
+                if (SUCCEED(rc)) {
+                    if (!inStream.is_open()) {
+                        LOGE(mModule, "Open %s failed\n", origFile.c_str());
+                        rc = NOT_FOUND;
+                    }
+                }
                 if (SUCCEED(rc)) {
                     std::cout << "LHB " << fileName << " value = " << value << std::endl;
                     entry.fileSize = inStream.tellg();
@@ -225,8 +225,12 @@ int32_t ServiceCore::createEntryFile(const std::string &fileName, uint32_t value
                 break;
         }
     }
-    ouStream.close();
-    inStream.close();
+
+    {
+        ouStream.close();
+        inStream.close();
+    }
+
     return rc;
 }
 
