@@ -96,7 +96,7 @@ static int32_t getMaxInvalidId(char *text, int32_t len)
 static char *getProcessName()
 {
     strcpy(gProcess, PROJNAME);
-    strcat(gProcess, " gui");
+    strcat(gProcess, "-gui");
 
     return gProcess;
 }

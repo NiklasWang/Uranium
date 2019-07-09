@@ -63,13 +63,11 @@ int32_t IPCServer::destruct()
     return RETURNIGNORE(rc, NOT_INITED);
 }
 
-IPCServer::IPCServer(quint16 port,
-    std::function<int32_t (const QByteArray &)> msgCb) :
+IPCServer::IPCServer(quint16 port) :
     mConstructed(false),
     mModule(MODULE_IPC),
     mPort(port),
-    mSocketServer(nullptr),
-    mMsgCb(msgCb)
+    mSocketServer(nullptr)
 {
 }
 
@@ -131,9 +129,9 @@ int32_t IPCServer::processMessage(const QByteArray &message)
     int32_t rc = NO_ERROR;
 
     if (SUCCEED(rc)) {
-        rc = mMsgCb(message);
+        rc = newData(message);
         if (!SUCCEED(rc)) {
-            LOGE(mModule, "Failed to process msg, %d", rc);
+            LOGE(mModule, "Failed to emit msg, %d", rc);
         }
     }
 
@@ -165,6 +163,11 @@ void IPCServer::onAcceptError(QAbstractSocket::SocketError err)
          NOTNULL(mSocketServer) ?
              mSocketServer->errorString().toLatin1().data() :
              "null");
+}
+
+int32_t IPCServer::onExec(std::function<int32_t ()> func)
+{
+    return func();
 }
 
 }

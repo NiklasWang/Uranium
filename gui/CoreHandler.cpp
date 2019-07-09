@@ -1,7 +1,8 @@
 #include <sstream>
 
-#include <QProcess>
-#include <QMutexLocker>
+#include <QtCore/QProcess>
+#include <QtCore/QThread>
+#include <QtCore/QMutexLocker>
 
 #include "version.h"
 #include "common.h"
@@ -23,19 +24,38 @@ int32_t CoreHandler::construct()
     }
 
     if (SUCCEED(rc)) {
-        mIPCServer = new IPCServer(GUI_SOCK_PORT,
-            [this](const QByteArray &data) -> int32_t {
-                return onIPCData(data);
-            }
-        );
+        mIPCServer = new IPCServer(GUI_SOCK_PORT);
         if (ISNULL(mIPCServer)) {
             LOGE(mModule, "Failed to new socket server");
             rc = NO_MEMORY;
+        } else {
+            connect(this, SIGNAL(ipcServerExec(std::function<int32_t ()>)),
+                    mIPCServer, SLOT(onExec(std::function<int32_t ()>)),
+                    Qt::BlockingQueuedConnection);
+
+            connect(mIPCServer, SIGNAL(newData(const QByteArray)),
+                    this, SLOT(onIPCServerData(const QByteArray)),
+                    Qt::BlockingQueuedConnection);
         }
     }
 
     if (SUCCEED(rc)) {
-        rc = mIPCServer->construct();
+        mIPCServerThread = new QThread();
+        if (ISNULL(mIPCServerThread)) {
+            rc = NO_MEMORY;
+            LOGE(mModule, "Failed to create ipc server thread.");
+        } else {
+            mIPCServer->moveToThread(mIPCServerThread);
+            mIPCServerThread->start();
+        }
+    }
+
+    if (SUCCEED(rc)) {
+        rc = ipcServerExec(
+            [this]() -> int32_t {
+                return mIPCServer->construct();
+            }
+        );
         if (FAILED(rc)) {
             LOGE(mModule, "Failed to construct socket server, %d", rc);
         }
@@ -150,10 +170,16 @@ int32_t CoreHandler::destruct()
     }
 
     if (SUCCEED(rc)) {
-        rc = mIPCServer->destruct();
+        rc = ipcServerExec(
+            [this]() -> int32_t {
+                return mIPCServer->destruct();
+            }
+        );
         if (FAILED(rc)) {
             LOGE(mModule, "Failed to destructed ipc server, %d", rc);
         }
+        mIPCServerThread->exit();
+        SECURE_DELETE(mIPCServerThread);
         SECURE_DELETE(mIPCServer);
     }
 
@@ -385,13 +411,19 @@ int32_t CoreHandler::onIPCData(const QByteArray &data)
     return rc;
 }
 
+int32_t CoreHandler::onIPCServerData(const QByteArray data)
+{
+    return onIPCData(data);
+}
+
 CoreHandler::CoreHandler(MainWindowUi *ui) :
     mConstructed(false),
     mModule(MODULE_GUI),
     mUi(ui),
     mCoreReady(false),
     mIPCServer(nullptr),
-    mIPCClient(nullptr)
+    mIPCClient(nullptr),
+    mIPCServerThread(nullptr)
 {
     qRegisterMetaType<std::function<int32_t ()> >("std::function<int32_t ()>");
 
