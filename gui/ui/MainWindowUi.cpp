@@ -408,13 +408,6 @@ int32_t MainWindowUi::setupCore()
         }
     }
 
-    if (SUCCEED(rc)) {
-        rc = loadConfig();
-        if (FAILED(rc)) {
-            showError("Failed to load config, " + rc);
-        }
-    }
-
     return rc;
 }
 
@@ -472,16 +465,26 @@ int32_t MainWindowUi::onStopped(int32_t rc)
     return NO_ERROR;
 }
 
-int32_t MainWindowUi::onInitialized(int32_t rc)
+int32_t MainWindowUi::onInitialized(int32_t result)
 {
-    mStartPushButton->setEnabled(SUCCEED(rc));
+    int32_t rc = NO_ERROR;
 
-    QImage Image;
-    Image.load(SUCCEED(rc) ? ":/status/succeed" : ":/status/failed");
-    QPixmap pixmap = QPixmap::fromImage(Image);
-    QPixmap fitPixmap = pixmap.scaled(mStatusLabel->width(),
-        mStatusLabel->height(), Qt::IgnoreAspectRatio, Qt::SmoothTransformation);
-    mStatusLabel->setPixmap(fitPixmap);
+    if (SUCCEED(rc)) {
+        QImage Image;
+        Image.load(SUCCEED(result) ? ":/status/succeed" : ":/status/failed");
+        QPixmap pixmap = QPixmap::fromImage(Image);
+        QPixmap fitPixmap = pixmap.scaled(mStatusLabel->width(),
+            mStatusLabel->height(), Qt::IgnoreAspectRatio, Qt::SmoothTransformation);
+        mStatusLabel->setPixmap(fitPixmap);
+        mStartPushButton->setEnabled(SUCCEED(result));
+    }
+
+    if (SUCCEED(rc)) {
+        rc = loadConfig();
+        if (FAILED(rc)) {
+            showError("Failed to load config, " + rc);
+        }
+    }
 
     return NO_ERROR;
 }
