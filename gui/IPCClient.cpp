@@ -21,8 +21,6 @@ IPCClient::IPCClient(QString ip, uint16_t port,
 
     connect(&mSocket, SIGNAL(error(QAbstractSocket::SocketError)),
             this, SLOT(onError(QAbstractSocket::SocketError)));
-
-
 }
 
 int32_t IPCClient::construct()

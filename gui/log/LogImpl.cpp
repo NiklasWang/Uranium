@@ -9,6 +9,7 @@
 #include <sys/time.h>
 
 #include <QApplication>
+#include <QtCore/QThread>
 
 #include "LogImpl.h"
 
@@ -267,8 +268,8 @@ static void save_log(const char *fmt, char *process,
         gettimeofday(&tv, NULL);
 
         pthread_mutex_lock(&gWriteLock);
-        snprintf(gLogLine, sizeof(gLogLine) - 1, "%s.%03ld pid %d tid na ",
-            timeBuf, tv.tv_usec / 1000, getpid());
+        snprintf(gLogLine, sizeof(gLogLine) - 1, "%s.%03ld pid %d tid 0x%4x ",
+            timeBuf, tv.tv_usec / 1000, getpid(), QThread::currentThreadId());
         int32_t cnt = strlen(gLogLine);
         snprintf(gLogLine + cnt, sizeof(gLogLine) - cnt - 1,
             fmt, process, module,

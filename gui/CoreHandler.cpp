@@ -290,7 +290,7 @@ int32_t CoreHandler::setConfig(ConfigItem key, std::string &value)
     QString msg(CORE_GET_CONFIG " ");
 
     if (SUCCEED(rc)) {
-        if (checkValid(key)) {
+        if (!checkValid(key)) {
             LOGE(mModule, "Invalid key, %d", key);
             rc = PARAM_INVALID;
         }
