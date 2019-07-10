@@ -20,7 +20,7 @@ int main(int argc, char *argv[])
         w.show();
         rc = a.exec();
     } else {
-        uranium::showError("Failed to construct main window, " + rc);
+        uranium::showError("Failed to construct main window.");
     }
 
     return rc;

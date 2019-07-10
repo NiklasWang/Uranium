@@ -24,6 +24,10 @@
 #include "CoreHandler.h"
 #include "Dialogs.h"
 
+#define DEFAULT_WINDOW_WIDTH  608
+#define WINDOW_SHELL_WIDTH    1209
+#define DEFAULT_WINDOW_HEIGHT 848
+
 namespace uranium {
 
 MainWindowUi::MainWindowUi() :
@@ -45,10 +49,11 @@ int32_t MainWindowUi::setupUi(QMainWindow *MainWindow)
     QSizePolicy virtualExpandingPolicy(QSizePolicy::Preferred, QSizePolicy::Expanding);
 
     if (SUCCEED(rc)) {
+        mMainWindow = MainWindow;
         if (MainWindow->objectName().isEmpty()) {
             MainWindow->setObjectName(QStringLiteral("MainWindow"));
         }
-        MainWindow->resize(1209, 848);
+        MainWindow->resize(DEFAULT_WINDOW_WIDTH, DEFAULT_WINDOW_HEIGHT);
     }
 
     if (SUCCEED(rc)) {
@@ -334,14 +339,15 @@ int32_t MainWindowUi::setupUi(QMainWindow *MainWindow)
     }
 
     if (SUCCEED(rc)) {
-        connect(mMasterCheckBox,        SIGNAL(toggled(bool)), this, SLOT(setConfig(bool)));
+        connect(mRemoteControlCheckBox, SIGNAL(toggled(bool)), this, SLOT(showShellWindow(bool)));
+        /*connect(mMasterCheckBox,        SIGNAL(toggled(bool)), this, SLOT(setConfig(bool)));
         connect(mDebugCheckBox,         SIGNAL(toggled(bool)), this, SLOT(setConfig(bool)));
         connect(mEncryptionCheckBox,    SIGNAL(toggled(bool)), this, SLOT(setConfig(bool)));
         connect(mRemoteControlCheckBox, SIGNAL(toggled(bool)), this, SLOT(setConfig(bool)));
         connect(mPasswordLineEdit,      SIGNAL(textChanged(const QString &)), this, SLOT(setConfig(const QString &)));
         connect(mUserNameLineEdit,      SIGNAL(textChanged(const QString &)), this, SLOT(setConfig(const QString &)));
         connect(mRemoteDirLineEdit,     SIGNAL(textChanged(const QString &)), this, SLOT(setConfig(const QString &)));
-        connect(mLocalDirLineEdit,      SIGNAL(textChanged(const QString &)), this, SLOT(setConfig(const QString &)));
+        connect(mLocalDirLineEdit,      SIGNAL(textChanged(const QString &)), this, SLOT(setConfig(const QString &)));*/
     }
 
     if (SUCCEED(rc) || !SUCCEED(rc)) {
@@ -403,7 +409,7 @@ int32_t MainWindowUi::setupCore()
         if (NOTNULL(mCore)) {
             rc = mCore->construct();
             if (FAILED(rc)) {
-                showError("Failed to construct core, " + rc);
+                showError("Failed to construct core.");
             }
         }
     }
@@ -419,7 +425,7 @@ int32_t MainWindowUi::destructCore()
         if (NOTNULL(mCore)) {
             rc = mCore->destruct();
             if (FAILED(rc)) {
-                showError("Failed to destruct core, " + rc);
+                showError("Failed to destruct core.");
             }
         }
         SECURE_DELETE(mCore);
@@ -482,7 +488,7 @@ int32_t MainWindowUi::onInitialized(int32_t result)
     if (SUCCEED(rc)) {
         rc = loadConfig();
         if (FAILED(rc)) {
-            showError("Failed to load config, " + rc);
+            showError("Failed to load config.");
         }
     }
 
@@ -509,6 +515,13 @@ int32_t MainWindowUi::appendShell(std::string str)
     return NO_ERROR;
 }
 
+void MainWindowUi::showShellWindow(bool checked)
+{
+    mMainWindow->resize(
+        checked ? WINDOW_SHELL_WIDTH : DEFAULT_WINDOW_WIDTH,
+        DEFAULT_WINDOW_HEIGHT);
+}
+
 int32_t MainWindowUi::onStartButtonClicked()
 {
     int32_t rc = NO_ERROR;
@@ -519,12 +532,12 @@ int32_t MainWindowUi::onStartButtonClicked()
         if (mStarted) {
             rc = mCore->stop();
             if (!SUCCEED(rc)) {
-                showError("Failed to stop core");
+                showError("Failed to stop core.");
             }
         } else {
             rc = mCore->start();
             if (!SUCCEED(rc)) {
-                showError("Failed to start core");
+                showError("Failed to start core.");
             }
         }
     }
@@ -572,6 +585,13 @@ int32_t MainWindowUi::loadConfig()
     std::string remotePath;
 
     if (SUCCEED(rc)) {
+        mPasswordLineEdit->setText(QApplication::translate("MainWindow", "Loading...", nullptr));
+        mUserNameLineEdit->setText(QApplication::translate("MainWindow", "Loading...", nullptr));
+        mRemoteDirLineEdit->setText(QApplication::translate("MainWindow", "Loading...", nullptr));
+        mLocalDirLineEdit->setText(QApplication::translate("MainWindow", "Loading...", nullptr));
+    }
+
+    /*if (SUCCEED(rc)) {
         rc  = mCore->getConfig(CONFIG_MASTER_MODE, master);
         rc |= mCore->getConfig(CONFIG_ENCRYPTION, encryption);
         rc |= mCore->getConfig(CONFIG_DEBUG_MODE, debug);
@@ -594,7 +614,7 @@ int32_t MainWindowUi::loadConfig()
         mUserNameLineEdit->setText(username.c_str());
         mRemoteDirLineEdit->setText(remotePath.c_str());
         mLocalDirLineEdit->setText(localpath.c_str());
-    }
+    }*/
 
     return rc;
 }

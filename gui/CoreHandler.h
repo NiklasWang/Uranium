@@ -5,6 +5,7 @@
 #include <QProcess>
 
 #include "common.h"
+#include "TimedSemaphore.h"
 #include "GuiCallback.h"
 #include "IPCServer.h"
 #include "IPCClient.h"
@@ -40,6 +41,7 @@ public:
 
 signals:
     int32_t exec(std::function<int32_t ()> func);
+    void exitServer();
 
 private slots:
     int32_t onExec(std::function<int32_t ()> func);
@@ -58,14 +60,14 @@ private:
     int32_t sendCoreMessage(QString &msg);
 
 private:
-    bool          mConstructed;
-    ModuleType    mModule;
-    MainWindowUi *mUi;
-    QProcess      mCoreProcess;
-    bool          mCoreReady;
-    std::string   mGetResult;
-    IPCServer    *mIPCServer;
-    IPCClient    *mIPCClient;
+    bool           mConstructed;
+    ModuleType     mModule;
+    MainWindowUi  *mUi;
+    QProcess       mCoreProcess;
+    bool           mCoreReady;
+    std::string    mGetResult;
+    IPCServer     *mIPCServer;
+    IPCClient     *mIPCClient;
 };
 
 }

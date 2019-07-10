@@ -57,6 +57,7 @@ private slots:
     int32_t onSelectButonClicked();
     int32_t setConfig(bool checked);
     int32_t setConfig(const QString &setting);
+    void showShellWindow(bool checked);
 
 private:
     bool         mStarted;
@@ -99,6 +100,7 @@ private:
     QMenu       *mMenuFile;
     QMenu       *mMenuHelp;
     QStatusBar  *mStatusBar;
+    QMainWindow *mMainWindow;
 };
 
 }

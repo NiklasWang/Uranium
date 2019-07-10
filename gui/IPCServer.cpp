@@ -1,10 +1,38 @@
 #include <QtCore/QDebug>
+#include <QtCore/QEventLoop>
 
 #include "common.h"
 #include "IPCServer.h"
 #include "IPCInstruction.h"
 
 namespace uranium {
+
+void IPCServer::run()
+{
+    int32_t rc = NO_ERROR;
+
+    if (SUCCEED(rc)) {
+        rc = construct();
+        if (FAILED(rc)) {
+            LOGE(mModule, "Failed to construct ipc server, %d", rc);
+        }
+    }
+
+    if (SUCCEED(rc)) {
+        QEventLoop loop;
+        connect(this, SIGNAL(exitServer()), &loop, SLOT(quit()));
+        loop.exec();
+    }
+
+    if (SUCCEED(rc)) {
+        rc = destruct();
+        if (FAILED(rc)) {
+            LOGE(mModule, "Failed to destruct ipc server, %d", rc);
+        }
+    }
+
+    return;
+}
 
 int32_t IPCServer::construct()
 {
@@ -15,7 +43,7 @@ int32_t IPCServer::construct()
     }
 
     if (SUCCEED(rc)) {
-        mSocketServer = new QTcpServer(this);
+        mSocketServer = new QTcpServer();
         if (ISNULL(mSocketServer)) {
             LOGE(mModule, "Failed to new QIPCServer");
             rc = NO_MEMORY;
@@ -61,33 +89,6 @@ int32_t IPCServer::destruct()
     }
 
     return RETURNIGNORE(rc, NOT_INITED);
-}
-
-int32_t IPCServer::waitForReadyRead(int32_t ms)
-{
-    int32_t rc = NOT_READY;
-    QTcpSocket *pSocket = nullptr;
-
-    if (mClients.size() > 0) {
-        rc = NO_ERROR;
-    }
-
-    if (SUCCEED(rc)) {
-        pSocket = *(mClients.end() - 1);
-        if (ISNULL(pSocket)) {
-            rc = NOT_READY;
-            LOGE(mModule, "Invalid socket client, nullptr");
-        }
-    }
-
-    if (SUCCEED(rc)) {
-        if (!pSocket->waitForReadyRead(ms)) {
-            rc = TIMEDOUT;
-            LOGE(mModule, "Failed to wait for ready read in %d ms", ms);
-        }
-    }
-
-    return rc;
 }
 
 IPCServer::IPCServer(quint16 port,
@@ -158,6 +159,13 @@ int32_t IPCServer::processMessage(const QByteArray &message)
     int32_t rc = NO_ERROR;
 
     if (SUCCEED(rc)) {
+        rc = mMsgCb(message);
+        if (!SUCCEED(rc)) {
+            LOGE(mModule, "Failed to process message in cb, %d", rc);
+        }
+    }
+
+    if (SUCCEED(rc)) {
         rc = newData(message);
         if (!SUCCEED(rc)) {
             LOGE(mModule, "Failed to emit msg, %d", rc);
@@ -165,17 +173,12 @@ int32_t IPCServer::processMessage(const QByteArray &message)
     }
 
     if (SUCCEED(rc)) {
-        rc = mMsgCb(message);
-        if (!SUCCEED(rc)) {
-            LOGE(mModule, "Failed to process message in cb, %d", rc);
+        QTcpSocket *pClient = qobject_cast<QTcpSocket *>(sender());
+        if (pClient) {
+            QString msg(message);
+            msg.append(SUCCEED(rc) ? REPLY_SUCCEED : REPLY_FAILED);
+            pClient->write(msg.toLatin1());
         }
-    }
-
-    QTcpSocket *pClient = qobject_cast<QTcpSocket *>(sender());
-    if (pClient) {
-        QString msg(message);
-        msg.append(SUCCEED(rc) ? REPLY_SUCCEED : REPLY_FAILED);
-        pClient->write(msg.toLatin1());
     }
 
     return rc;

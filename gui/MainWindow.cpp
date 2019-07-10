@@ -49,14 +49,14 @@ int32_t MainWindow::construct()
     if (SUCCEED(rc)) {
         rc = mUi->setupUi(this);
         if (rc != NO_ERROR) {
-            showError("Failed to construct main window ui, " + rc);
+            showError("Failed to construct main window ui.");
         }
     }
 
     if (SUCCEED(rc)) {
         rc = mUi->setupCore();
         if (!SUCCEED(rc)) {
-            showError("Failed to setup core" + rc);
+            showError("Failed to setup core.");
         }
     }
 
@@ -80,7 +80,7 @@ int32_t MainWindow::destruct()
     if (SUCCEED(rc)) {
         rc = mUi->destructCore();
         if (!SUCCEED(rc)) {
-            showError("Failed to destruct core" + rc);
+            showError("Failed to destruct core.");
         }
     }
 
@@ -133,7 +133,7 @@ int32_t MainWindow::showAbout()
     if (SUCCEED(rc)) {
         mAbout = new AboutDialog();
         if (ISNULL(mAbout)) {
-            showError("Failed to create about dialog");
+            showError("Failed to create about dialog.");
             rc = NO_MEMORY;
         } else {
             connect(mAbout, SIGNAL(destroyed(QObject*)),
@@ -144,7 +144,7 @@ int32_t MainWindow::showAbout()
     if (SUCCEED(rc)) {
         rc = mAbout->setup();
         if (!SUCCEED(rc)) {
-            showError("Failed to setup about dialog");
+            showError("Failed to setup about dialog.");
         }
     }
 

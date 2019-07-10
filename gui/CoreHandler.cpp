@@ -2,6 +2,7 @@
 
 #include <QtCore/QProcess>
 #include <QtCore/QThread>
+#include <QtCore/QEventLoop>
 #include <QtCore/QMutexLocker>
 
 #include "version.h"
@@ -12,6 +13,7 @@
 #include "ui/MainWindowUi.h"
 
 #define MAX_WAIT_CONFIG_TIME    300
+#define MAX_WAIT_SERVER_EXIT    100
 #define MAX_WAIT_CORE_EXIT_TIME 1000 // ms
 
 namespace uranium {
@@ -33,13 +35,10 @@ int32_t CoreHandler::construct()
         if (ISNULL(mIPCServer)) {
             LOGE(mModule, "Failed to new socket server");
             rc = NO_MEMORY;
-        }
-    }
-
-    if (SUCCEED(rc)) {
-        rc = mIPCServer->construct();
-        if (FAILED(rc)) {
-            LOGE(mModule, "Failed to construct socket server, %d", rc);
+        } else {
+            connect(this, SIGNAL(exitServer()), mIPCServer, SIGNAL(exitServer()));
+            mIPCServer->start();
+            mIPCServer->moveToThread(mIPCServer);
         }
     }
 
@@ -152,10 +151,9 @@ int32_t CoreHandler::destruct()
     }
 
     if (SUCCEED(rc)) {
-        rc = mIPCServer->destruct();
-        if (FAILED(rc)) {
-            LOGE(mModule, "Failed to destructed ipc server, %d", rc);
-        }
+        exitServer();
+        mIPCServer->wait(MAX_WAIT_SERVER_EXIT);
+        mIPCServer->exit();
         SECURE_DELETE(mIPCServer);
     }
 
@@ -227,10 +225,9 @@ int32_t CoreHandler::getConfig(ConfigItem key, std::string &value)
     }
 
     if (SUCCEED(rc)) {
-        rc = mIPCServer->waitForReadyRead(MAX_WAIT_CONFIG_TIME);
-        if (FAILED(rc)) {
-            LOGE(mModule, "Failed to destructed ipc server, %d", rc);
-        }
+        QEventLoop loop;
+        connect(mIPCServer, SIGNAL(newData(const QByteArray)), &loop, SLOT(quit()));
+        loop.exec();
     }
 
     if (SUCCEED(rc)) {
@@ -302,7 +299,7 @@ int32_t CoreHandler::onStarted(int32_t rc)
         LOGE(mModule, "Core start failed, %d", rc);
     }
 
-    return onExec(
+    return exec(
         [&]() -> int32_t {
             mUi->onStarted(rc);
             return NO_ERROR;
@@ -316,7 +313,7 @@ int32_t CoreHandler::onStopped(int32_t rc)
         LOGE(mModule, "Core stop failed, %d", rc);
     }
 
-    return onExec(
+    return exec(
         [&]() -> int32_t {
             mUi->onStopped(rc);
             return NO_ERROR;
@@ -330,7 +327,7 @@ int32_t CoreHandler::onInitialized(int32_t rc)
         LOGE(mModule, "Core initialize failed, %d", rc);
     }
 
-    return onExec(
+    return exec(
         [&]() -> int32_t {
             mUi->onInitialized(rc);
             return NO_ERROR;
@@ -340,7 +337,7 @@ int32_t CoreHandler::onInitialized(int32_t rc)
 
 int32_t CoreHandler::appendDebugger(const std::string &str)
 {
-    return onExec(
+    return exec(
         [&]() -> int32_t {
             mUi->appendDebugger(str);
             return NO_ERROR;
@@ -350,7 +347,7 @@ int32_t CoreHandler::appendDebugger(const std::string &str)
 
 int32_t CoreHandler::appendShell(const std::string &str)
 {
-    return onExec(
+    return exec(
         [&]() -> int32_t {
             mUi->appendShell(str);
             return NO_ERROR;
@@ -366,7 +363,11 @@ int32_t CoreHandler::onIPCData(const QByteArray &data)
 
     LOGD(mModule, "Received msg: '%s'", str);
     if (COMPARE_SAME_STRING(str, GREETING_GUI)) {
-        rc = onCoreReady();
+        rc = exec(
+            [this]() -> int32_t {
+                return onCoreReady();
+            }
+        );
     } else if (COMPARE_SAME_STRING(str, BYE_GUI)) {
         LOGD(mModule, "Core process exited.");
     } else if (COMPARE_SAME_LEN_STRING(str, CORE_INIT, strlen(CORE_INIT))) {

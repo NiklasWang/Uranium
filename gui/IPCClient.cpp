@@ -78,7 +78,7 @@ IPCClient::~IPCClient()
 
 void IPCClient::onConnected()
 {
-    LOGD(mModule, "Web socket connected to client.");
+    LOGD(mModule, "Ipc client connected to server.");
 
     connect(&mSocket, SIGNAL(readyRead()),
             this, SLOT(onReadyRead()));
