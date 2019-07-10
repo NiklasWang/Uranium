@@ -63,11 +63,40 @@ int32_t IPCServer::destruct()
     return RETURNIGNORE(rc, NOT_INITED);
 }
 
-IPCServer::IPCServer(quint16 port) :
+int32_t IPCServer::waitForReadyRead(int32_t ms)
+{
+    int32_t rc = NOT_READY;
+    QTcpSocket *pSocket = nullptr;
+
+    if (mClients.size() > 0) {
+        rc = NO_ERROR;
+    }
+
+    if (SUCCEED(rc)) {
+        pSocket = *(mClients.end() - 1);
+        if (ISNULL(pSocket)) {
+            rc = NOT_READY;
+            LOGE(mModule, "Invalid socket client, nullptr");
+        }
+    }
+
+    if (SUCCEED(rc)) {
+        if (!pSocket->waitForReadyRead(ms)) {
+            rc = TIMEDOUT;
+            LOGE(mModule, "Failed to wait for ready read in %d ms", ms);
+        }
+    }
+
+    return rc;
+}
+
+IPCServer::IPCServer(quint16 port,
+    std::function<int32_t (const QByteArray &)> msgCb) :
     mConstructed(false),
     mModule(MODULE_IPC),
     mPort(port),
-    mSocketServer(nullptr)
+    mSocketServer(nullptr),
+    mMsgCb(msgCb)
 {
 }
 
@@ -135,6 +164,13 @@ int32_t IPCServer::processMessage(const QByteArray &message)
         }
     }
 
+    if (SUCCEED(rc)) {
+        rc = mMsgCb(message);
+        if (!SUCCEED(rc)) {
+            LOGE(mModule, "Failed to process message in cb, %d", rc);
+        }
+    }
+
     QTcpSocket *pClient = qobject_cast<QTcpSocket *>(sender());
     if (pClient) {
         QString msg(message);
@@ -163,11 +199,6 @@ void IPCServer::onAcceptError(QAbstractSocket::SocketError err)
          NOTNULL(mSocketServer) ?
              mSocketServer->errorString().toLatin1().data() :
              "null");
-}
-
-int32_t IPCServer::onExec(std::function<int32_t ()> func)
-{
-    return func();
 }
 
 }

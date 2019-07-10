@@ -21,7 +21,10 @@ class IPCServer :
 public:
     int32_t construct();
     int32_t destruct();
-    explicit IPCServer(quint16 port);
+    int32_t waitForReadyRead(int32_t ms);
+    explicit IPCServer(quint16 port,
+       std::function<int32_t (const QByteArray &)> msgCb =
+           [](const QByteArray &) -> int32_t { return 0; });
     virtual ~IPCServer() override;
 
 signals:
@@ -32,7 +35,6 @@ private Q_SLOTS:
     int32_t onReadyRead();
     void socketDisconnected();
     void onAcceptError(QAbstractSocket::SocketError);
-    int32_t onExec(std::function<int32_t ()> func);
 
 private:
     int32_t processMessage(const QByteArray &message);
@@ -43,6 +45,7 @@ private:
     uint16_t             mPort;
     QTcpServer          *mSocketServer;
     QList<QTcpSocket *>  mClients;
+    std::function<int32_t (const QByteArray &)> mMsgCb;
 };
 
 };

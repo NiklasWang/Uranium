@@ -11,7 +11,8 @@
 #include "IPCClient.h"
 #include "ui/MainWindowUi.h"
 
-#define MAX_WAIT_CORE_TIME 1000 // ms
+#define MAX_WAIT_CONFIG_TIME    300
+#define MAX_WAIT_CORE_EXIT_TIME 1000 // ms
 
 namespace uranium {
 
@@ -24,38 +25,19 @@ int32_t CoreHandler::construct()
     }
 
     if (SUCCEED(rc)) {
-        mIPCServer = new IPCServer(GUI_SOCK_PORT);
+        mIPCServer = new IPCServer(GUI_SOCK_PORT,
+           [this](const QByteArray &data) -> int32_t {
+               return onIPCData(data);
+           }
+        );
         if (ISNULL(mIPCServer)) {
             LOGE(mModule, "Failed to new socket server");
             rc = NO_MEMORY;
-        } else {
-            connect(this, SIGNAL(ipcServerExec(std::function<int32_t ()>)),
-                    mIPCServer, SLOT(onExec(std::function<int32_t ()>)),
-                    Qt::BlockingQueuedConnection);
-
-            connect(mIPCServer, SIGNAL(newData(const QByteArray)),
-                    this, SLOT(onIPCServerData(const QByteArray)),
-                    Qt::BlockingQueuedConnection);
         }
     }
 
     if (SUCCEED(rc)) {
-        mIPCServerThread = new QThread();
-        if (ISNULL(mIPCServerThread)) {
-            rc = NO_MEMORY;
-            LOGE(mModule, "Failed to create ipc server thread.");
-        } else {
-            mIPCServer->moveToThread(mIPCServerThread);
-            mIPCServerThread->start();
-        }
-    }
-
-    if (SUCCEED(rc)) {
-        rc = ipcServerExec(
-            [this]() -> int32_t {
-                return mIPCServer->construct();
-            }
-        );
+        rc = mIPCServer->construct();
         if (FAILED(rc)) {
             LOGE(mModule, "Failed to construct socket server, %d", rc);
         }
@@ -163,23 +145,17 @@ int32_t CoreHandler::destruct()
     }
 
     if (SUCCEED(rc)) {
-        if (!mCoreProcess.waitForFinished(MAX_WAIT_CORE_TIME)) {
+        if (!mCoreProcess.waitForFinished(MAX_WAIT_CORE_EXIT_TIME)) {
             LOGE(mModule, "Failed to exit core process, force to exit later.");
             rc = UNKNOWN_ERROR;
         }
     }
 
     if (SUCCEED(rc)) {
-        rc = ipcServerExec(
-            [this]() -> int32_t {
-                return mIPCServer->destruct();
-            }
-        );
+        rc = mIPCServer->destruct();
         if (FAILED(rc)) {
             LOGE(mModule, "Failed to destructed ipc server, %d", rc);
         }
-        mIPCServerThread->exit();
-        SECURE_DELETE(mIPCServerThread);
         SECURE_DELETE(mIPCServer);
     }
 
@@ -247,8 +223,13 @@ int32_t CoreHandler::getConfig(ConfigItem key, std::string &value)
         rc = sendCoreMessage(msg);
         if (!SUCCEED(rc)) {
             LOGE(mModule, "Failed to send msg %s to core", msg.toLatin1().data());
-        } else {
-            mGetSem.wait();
+        }
+    }
+
+    if (SUCCEED(rc)) {
+        rc = mIPCServer->waitForReadyRead(MAX_WAIT_CONFIG_TIME);
+        if (FAILED(rc)) {
+            LOGE(mModule, "Failed to destructed ipc server, %d", rc);
         }
     }
 
@@ -321,7 +302,7 @@ int32_t CoreHandler::onStarted(int32_t rc)
         LOGE(mModule, "Core start failed, %d", rc);
     }
 
-    return onDrawUi(
+    return onExec(
         [&]() -> int32_t {
             mUi->onStarted(rc);
             return NO_ERROR;
@@ -335,7 +316,7 @@ int32_t CoreHandler::onStopped(int32_t rc)
         LOGE(mModule, "Core stop failed, %d", rc);
     }
 
-    return onDrawUi(
+    return onExec(
         [&]() -> int32_t {
             mUi->onStopped(rc);
             return NO_ERROR;
@@ -349,7 +330,7 @@ int32_t CoreHandler::onInitialized(int32_t rc)
         LOGE(mModule, "Core initialize failed, %d", rc);
     }
 
-    return onDrawUi(
+    return onExec(
         [&]() -> int32_t {
             mUi->onInitialized(rc);
             return NO_ERROR;
@@ -359,7 +340,7 @@ int32_t CoreHandler::onInitialized(int32_t rc)
 
 int32_t CoreHandler::appendDebugger(const std::string &str)
 {
-    return onDrawUi(
+    return onExec(
         [&]() -> int32_t {
             mUi->appendDebugger(str);
             return NO_ERROR;
@@ -369,7 +350,7 @@ int32_t CoreHandler::appendDebugger(const std::string &str)
 
 int32_t CoreHandler::appendShell(const std::string &str)
 {
-    return onDrawUi(
+    return onExec(
         [&]() -> int32_t {
             mUi->appendShell(str);
             return NO_ERROR;
@@ -403,17 +384,11 @@ int32_t CoreHandler::onIPCData(const QByteArray &data)
         appendShell(str);
     } else if (COMPARE_SAME_LEN_STRING(str, CORE_GET_CONFIG, strlen(CORE_GET_CONFIG))) {
         mGetResult = str;
-        mGetSem.signal();
     } else if (COMPARE_SAME_LEN_STRING(str, CORE_SET_CONFIG, strlen(GUI_SHELL))) {
         // don't care set config reply
     }
 
     return rc;
-}
-
-int32_t CoreHandler::onIPCServerData(const QByteArray data)
-{
-    return onIPCData(data);
 }
 
 CoreHandler::CoreHandler(MainWindowUi *ui) :
@@ -422,13 +397,12 @@ CoreHandler::CoreHandler(MainWindowUi *ui) :
     mUi(ui),
     mCoreReady(false),
     mIPCServer(nullptr),
-    mIPCClient(nullptr),
-    mIPCServerThread(nullptr)
+    mIPCClient(nullptr)
 {
     qRegisterMetaType<std::function<int32_t ()> >("std::function<int32_t ()>");
 
-    connect(this, SIGNAL(drawUi(std::function<int32_t ()>)),
-            this, SLOT(onDrawUi(std::function<int32_t ()>)),
+    connect(this, SIGNAL(exec(std::function<int32_t ()>)),
+            this, SLOT(onExec(std::function<int32_t ()>)),
             Qt::BlockingQueuedConnection);
 
     connect(&mCoreProcess, SIGNAL(error(QProcess::ProcessError)),
@@ -442,7 +416,7 @@ CoreHandler::~CoreHandler()
     }
 }
 
-int32_t CoreHandler::onDrawUi(std::function<int32_t ()> func)
+int32_t CoreHandler::onExec(std::function<int32_t ()> func)
 {
     return func();
 }

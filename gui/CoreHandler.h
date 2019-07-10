@@ -39,14 +39,12 @@ public:
     virtual int32_t appendShell(const std::string &str) override;
 
 signals:
-    int32_t drawUi(std::function<int32_t ()> func);
-    int32_t ipcServerExec(std::function<int32_t ()> func);
+    int32_t exec(std::function<int32_t ()> func);
 
 private slots:
-    int32_t onDrawUi(std::function<int32_t ()> func);
+    int32_t onExec(std::function<int32_t ()> func);
     void onProcessError(QProcess::ProcessError error);
     int32_t onCoreLost();
-    int32_t onIPCServerData(const QByteArray data);
 
 public:
     int32_t construct();
@@ -65,11 +63,9 @@ private:
     MainWindowUi *mUi;
     QProcess      mCoreProcess;
     bool          mCoreReady;
-    Semaphore     mGetSem;
     std::string   mGetResult;
     IPCServer    *mIPCServer;
     IPCClient    *mIPCClient;
-    QThread      *mIPCServerThread;
 };
 
 }
