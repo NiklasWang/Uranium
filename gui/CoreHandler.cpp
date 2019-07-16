@@ -260,7 +260,8 @@ int32_t CoreHandler::loadConfig()
 int32_t CoreHandler::onConfig(const QString &value)
 {
     int32_t rc = NO_ERROR;
-    const char *str = value.toLatin1().data();
+    QByteArray byte = value.toLatin1();
+    const char *str = byte.data();
     ConfigItem item = CONFIG_MAX_INVALID;
     std::string tmp;
     std::istringstream ss(str);
@@ -320,7 +321,7 @@ int32_t CoreHandler::onConfig(const QString &value)
             case CONFIG_REMOTE_PATH: {
                 rc = exec(
                     [&]() -> int32_t {
-                        return mUi->updateConfig(item, result.c_str());
+                        return mUi->updateConfig(item, QString(result.c_str()));
                     }
                 );
                 if (FAILED(rc)) {
@@ -456,8 +457,8 @@ int32_t CoreHandler::appendShell(const std::string &str)
 int32_t CoreHandler::onIPCData(const QByteArray &data)
 {
     int32_t rc = NO_ERROR;
-    QString msg(data);
-    char *str = msg.toLatin1().data();
+    QByteArray byte = data;
+    char *str = byte.data();
 
     LOGD(mModule, "Received msg: '%s'", str);
     if (COMPARE_SAME_STRING(str, GREETING_GUI)) {
@@ -483,7 +484,7 @@ int32_t CoreHandler::onIPCData(const QByteArray &data)
         appendShell(str);
     } else if (COMPARE_SAME_LEN_STRING(str, CORE_GET_CONFIG, strlen(CORE_GET_CONFIG))) {
         onConfig(str);
-    } else if (COMPARE_SAME_LEN_STRING(str, CORE_SET_CONFIG, strlen(GUI_SHELL))) {
+    } else if (COMPARE_SAME_LEN_STRING(str, CORE_SET_CONFIG, strlen(CORE_SET_CONFIG))) {
         // don't care set config reply
     }
 
