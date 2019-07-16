@@ -58,12 +58,14 @@ private:
     int32_t onCoreReady();
     int32_t onIPCData(const QByteArray &data);
     int32_t sendCoreMessage(QString &msg);
+    int32_t killCore();
+    int32_t launchCore();
 
 private:
     bool           mConstructed;
     ModuleType     mModule;
     MainWindowUi  *mUi;
-    QProcess       mCoreProcess;
+    QProcess      *mCoreProcess;
     bool           mCoreReady;
     std::string    mGetResult;
     IPCServer     *mIPCServer;

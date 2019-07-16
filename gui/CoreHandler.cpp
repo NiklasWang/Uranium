@@ -43,7 +43,17 @@ int32_t CoreHandler::construct()
     }
 
     if (SUCCEED(rc)) {
-        mCoreProcess.start(PROJNAME ".exe");
+        rc = killCore();
+        if (FAILED(rc)) {
+            LOGE(mModule, "Failed to kill core, %d", rc);
+        }
+    }
+
+    if (SUCCEED(rc)) {
+        rc = launchCore();
+        if (FAILED(rc)) {
+            LOGE(mModule, "Failed to launch core, %d", rc);
+        }
     }
 
     if (SUCCEED(rc)) {
@@ -101,6 +111,37 @@ int32_t CoreHandler::onCoreLost()
     return NO_ERROR;
 }
 
+int32_t CoreHandler::launchCore()
+{
+    int32_t rc = NO_ERROR;
+
+    mCoreProcess = new QProcess();
+    if (ISNULL(mCoreProcess)) {
+        rc = NO_MEMORY;
+        LOGE(mModule, "Failed to new process.");
+    } else {
+        connect(mCoreProcess, SIGNAL(error(QProcess::ProcessError)),
+                this, SLOT(onProcessError(QProcess::ProcessError)));
+
+        mCoreProcess->start(PROJNAME ".exe");
+    }
+
+    return rc;
+}
+
+int32_t CoreHandler::killCore()
+{
+    QStringList params;
+    params << "/F" << "/IM" << PROJNAME ".exe";
+    QProcess process;
+    process.start("taskkill", params);
+    if (!process.waitForFinished()) {
+        LOGE(mModule, "Failed to force exit core process");
+    }
+
+    return NO_ERROR;
+}
+
 int32_t CoreHandler::sendCoreMessage(QString &msg)
 {
     int32_t rc = NO_ERROR;
@@ -144,7 +185,7 @@ int32_t CoreHandler::destruct()
     }
 
     if (SUCCEED(rc)) {
-        if (!mCoreProcess.waitForFinished(MAX_WAIT_CORE_EXIT_TIME)) {
+        if (!mCoreProcess->waitForFinished(MAX_WAIT_CORE_EXIT_TIME)) {
             LOGE(mModule, "Failed to exit core process, force to exit later.");
             rc = UNKNOWN_ERROR;
         }
@@ -166,14 +207,9 @@ int32_t CoreHandler::destruct()
     }
 
     if (SUCCEED(rc)) {
-        QStringList params;
-        params << "/F" << "/IM" << PROJNAME ".exe";
-        QProcess process;
-        process.start("taskkill", params);
-        if (!process.waitForFinished()) {
-            LOGE(mModule, "Failed to force exit core process");
-            rc = UNKNOWN_ERROR;
-            RESETRESULT(rc);
+        rc = killCore();
+        if (FAILED(rc)) {
+            LOGE(mModule, "Failed to kill core, %d", rc);
         }
     }
 
@@ -405,9 +441,6 @@ CoreHandler::CoreHandler(MainWindowUi *ui) :
     connect(this, SIGNAL(exec(std::function<int32_t ()>)),
             this, SLOT(onExec(std::function<int32_t ()>)),
             Qt::BlockingQueuedConnection);
-
-    connect(&mCoreProcess, SIGNAL(error(QProcess::ProcessError)),
-            this, SLOT(onProcessError(QProcess::ProcessError)));
 }
 
 CoreHandler::~CoreHandler()
