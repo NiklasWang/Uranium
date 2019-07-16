@@ -238,11 +238,108 @@ int32_t CoreHandler::stop()
     return rc;
 }
 
-int32_t CoreHandler::getConfig(ConfigItem key, std::string &value)
+int32_t CoreHandler::loadConfig()
 {
     int32_t rc = NO_ERROR;
-    QMutex mutex;
-    mutex.lock();
+
+    if (mConfigLoading == CONFIG_MAX_INVALID) {
+        LOGE(mModule, "Loading config finished.");
+        rc = ALREADY_INITED;
+    }
+
+    if (SUCCEED(rc)) {
+        rc = getConfig(mConfigLoading);
+        if (FAILED(rc)) {
+            LOGE(mModule, "Failed to get config %s", whoamI(mConfigLoading));
+        }
+    }
+
+    return rc;
+}
+
+int32_t CoreHandler::onConfig(const QString &value)
+{
+    int32_t rc = NO_ERROR;
+    const char *str = value.toLatin1().data();
+    ConfigItem item = CONFIG_MAX_INVALID;
+    std::string tmp;
+    std::istringstream ss(str);
+    std::string result;
+
+    if (SUCCEED(rc)) {
+        ss >> tmp;
+        if (tmp != CORE_GET_CONFIG) {
+            rc = INVALID_FORMAT;
+            LOGE(mModule, "Unknown msg received, %s", str);
+        }
+    }
+
+    if (SUCCEED(rc)) {
+        ss >> tmp;
+        if (tmp != whoamI(mConfigLoading)) {
+            rc = INVALID_FORMAT;
+            LOGE(mModule, "Item mismatch, %s", str);
+        } else {
+            item = getConfigItem(tmp.c_str());
+        }
+    }
+
+    if (SUCCEED(rc)) {
+        mConfigLoading = static_cast<ConfigItem>(mConfigLoading + 1);
+        if (mConfigLoading != CONFIG_MAX_INVALID) {
+            rc = exec(
+                [&]() -> int32_t {
+                    return loadConfig();
+                }
+            );
+            if (FAILED(rc)) {
+                LOGE(mModule, "Failed to continously load config, %d", rc);
+            }
+        }
+    }
+
+    if (SUCCEED(rc)) {
+        ss >> result;
+        switch (item) {
+            case CONFIG_MASTER_MODE:
+            case CONFIG_ENCRYPTION:
+            case CONFIG_DEBUG_MODE:
+            case CONFIG_REMOTE_SHELL: {
+                rc = exec(
+                    [&]() -> int32_t {
+                        return mUi->updateConfig(item, result == BOOL_TRUE);
+                    }
+                );
+                if (FAILED(rc)) {
+                    LOGE(mModule, "Failed to update config, %s", whoamI(item));
+                }
+            } break;
+            case CONFIG_USERNAME:
+            case CONFIG_PASSWORD:
+            case CONFIG_LOCAL_PATH:
+            case CONFIG_REMOTE_PATH: {
+                rc = exec(
+                    [&]() -> int32_t {
+                        return mUi->updateConfig(item, result.c_str());
+                    }
+                );
+                if (FAILED(rc)) {
+                    LOGE(mModule, "Failed to update config, %s", whoamI(item));
+                }
+            } break;
+            default: {
+                rc = INVALID_FORMAT;
+                LOGE(mModule, "Invalid item type got, %s", str);
+            }
+        }
+    }
+
+    return rc;
+}
+
+int32_t CoreHandler::getConfig(ConfigItem key)
+{
+    int32_t rc = NO_ERROR;
 
     if (SUCCEED(rc)) {
         if (!checkValid(key)) {
@@ -258,41 +355,6 @@ int32_t CoreHandler::getConfig(ConfigItem key, std::string &value)
         if (!SUCCEED(rc)) {
             LOGE(mModule, "Failed to send msg %s to core", msg.toLatin1().data());
         }
-    }
-
-    if (SUCCEED(rc)) {
-        QEventLoop loop;
-        connect(mIPCServer, SIGNAL(newData(const QByteArray)), &loop, SLOT(quit()));
-        loop.exec();
-    }
-
-    if (SUCCEED(rc)) {
-        std::string tmp;
-        std::istringstream ss(mGetResult);
-        ss >> tmp;
-        if (tmp != CORE_GET_CONFIG) {
-            LOGE(mModule, "Unknown msg received, %s", mGetResult.c_str());
-        }
-        ss >> tmp;
-        if (tmp != whoamI(key)) {
-            LOGE(mModule, "Item mismatch, %s", mGetResult.c_str());
-        }
-        ss >> value;
-    }
-
-    mutex.unlock();
-    return rc;
-}
-
-int32_t CoreHandler::getConfig(ConfigItem key, bool &value)
-{
-    int32_t rc = NO_ERROR;
-    std::string str;
-
-    value = false;
-    rc = getConfig(key, str);
-    if (SUCCEED(rc) && str == BOOL_TRUE) {
-        value = true;
     }
 
     return rc;
@@ -420,7 +482,7 @@ int32_t CoreHandler::onIPCData(const QByteArray &data)
     } else if (COMPARE_SAME_LEN_STRING(str, GUI_SHELL, strlen(GUI_SHELL))) {
         appendShell(str);
     } else if (COMPARE_SAME_LEN_STRING(str, CORE_GET_CONFIG, strlen(CORE_GET_CONFIG))) {
-        mGetResult = str;
+        onConfig(str);
     } else if (COMPARE_SAME_LEN_STRING(str, CORE_SET_CONFIG, strlen(GUI_SHELL))) {
         // don't care set config reply
     }
@@ -433,6 +495,7 @@ CoreHandler::CoreHandler(MainWindowUi *ui) :
     mModule(MODULE_GUI),
     mUi(ui),
     mCoreReady(false),
+    mConfigLoading(CONFIG_MASTER_MODE),
     mIPCServer(nullptr),
     mIPCClient(nullptr)
 {

@@ -20,6 +20,8 @@
 #include <QtWidgets/QVBoxLayout>
 #include <QtWidgets/QWidget>
 
+#include "Config.h"
+
 namespace uranium {
 
 class CoreHandler;
@@ -39,7 +41,8 @@ public:
     void retranslateUi(QMainWindow *MainWindow);
     int32_t setupCore();
     int32_t destructCore();
-    int32_t loadConfig();
+    int32_t updateConfig(ConfigItem item, bool value);
+    int32_t updateConfig(ConfigItem item, const QString &value);
 
 public:
     int32_t onStarted(int32_t rc);

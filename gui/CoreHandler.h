@@ -25,9 +25,8 @@ class CoreHandler :
 public:
     int32_t start();
     int32_t stop();
-
-    int32_t getConfig(ConfigItem key, std::string &value);
-    int32_t getConfig(ConfigItem key, bool &value);
+    int32_t loadConfig();
+    int32_t getConfig(ConfigItem key);
 
     int32_t setConfig(ConfigItem key, std::string &value);
     int32_t setConfig(ConfigItem key, bool value);
@@ -57,6 +56,7 @@ public:
 private:
     int32_t onCoreReady();
     int32_t onIPCData(const QByteArray &data);
+    int32_t onConfig(const QString &value);
     int32_t sendCoreMessage(QString &msg);
     int32_t killCore();
     int32_t launchCore();
@@ -67,7 +67,7 @@ private:
     MainWindowUi  *mUi;
     QProcess      *mCoreProcess;
     bool           mCoreReady;
-    std::string    mGetResult;
+    ConfigItem     mConfigLoading;
     IPCServer     *mIPCServer;
     IPCClient     *mIPCClient;
 };
