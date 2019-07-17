@@ -126,7 +126,7 @@ void IPCServer::onNewConnection()
 int32_t IPCServer::onReadyRead()
 {
     int32_t rc = NO_ERROR;
-    QTcpSocket *pSocket = *(mClients.end() - 1);
+    QTcpSocket *pSocket = static_cast<QTcpSocket *>(sender());
     QByteArray data;
 
     if (SUCCEED(rc)) {

@@ -1,23 +1,19 @@
 #ifndef _IPC_CLIENT_H_
 #define _IPC_CLIENT_H_
 
+#include <string>
+
 #include "common.h"
-#include "GuiCallback.h"
 
 namespace uranium {
 
 class SocketClientStateMachine;
 
-class IPCClient :
-    public GuiCallback {
+class IPCClient {
 public:
     int32_t connect();
     bool    connected();
     int32_t sendMessage(const std::string &msg);
-
-public:
-    virtual int32_t appendDebugger(const std::string &str) override;
-    virtual int32_t appendShell(const std::string &str) override;
 
 public:
     int32_t construct();
