@@ -364,7 +364,7 @@ int32_t CoreHandler::getConfig(ConfigItem key)
 int32_t CoreHandler::setConfig(ConfigItem key, std::string &value)
 {
     int32_t rc = NO_ERROR;
-    QString msg(CORE_GET_CONFIG " ");
+    QString msg(CORE_SET_CONFIG " ");
 
     if (SUCCEED(rc)) {
         if (!checkValid(key)) {

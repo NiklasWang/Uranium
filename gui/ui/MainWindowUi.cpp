@@ -656,16 +656,17 @@ int32_t MainWindowUi::setConfig(bool checked)
 int32_t MainWindowUi::setConfig(const QString &set)
 {
     int32_t rc = NO_ERROR;
-
+    std::string value = set.toLatin1().data();
     QString name = sender()->objectName();
+
     if (name == "mPasswordLineEdit") {
-        rc = mCore->setConfig(CONFIG_PASSWORD, set.toLatin1().data());
+        rc = mCore->setConfig(CONFIG_PASSWORD, value);
     } else if (name == "mUserNameLineEdit") {
-        rc = mCore->setConfig(CONFIG_USERNAME, set.toLatin1().data());
+        rc = mCore->setConfig(CONFIG_USERNAME, value);
     } else if (name == "mRemoteDirLineEdit") {
-        rc = mCore->setConfig(CONFIG_REMOTE_PATH, set.toLatin1().data());
+        rc = mCore->setConfig(CONFIG_REMOTE_PATH, value);
     } else if (name == "mLocalDirLineEdit") {
-        rc = mCore->setConfig(CONFIG_LOCAL_PATH, set.toLatin1().data());
+        rc = mCore->setConfig(CONFIG_LOCAL_PATH, value);
     }
 
     if (FAILED(rc)) {

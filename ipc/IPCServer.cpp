@@ -240,14 +240,14 @@ int32_t IPCServer::handleGetConfig(const char *msg)
             case CONFIG_DEBUG_MODE:
             case CONFIG_REMOTE_SHELL: {
                 isBool = true;
-            }
+            } break;
             case CONFIG_USERNAME:
             case CONFIG_PASSWORD:
             case CONFIG_LOCAL_PATH:
             case CONFIG_REMOTE_PATH:
             default: {
                 isBool = false;
-            }
+            } break;
         }
     }
 
@@ -293,7 +293,7 @@ int32_t IPCServer::handleSetConfig(const char *msg)
 
     if (SUCCEED(rc)) {
         stream >> key;
-        if (key != CORE_GET_CONFIG) {
+        if (key != CORE_SET_CONFIG) {
             LOGE(mModule, "Wrong format, msg = %s", msg);
             rc = BAD_PROTOCAL;
         }
