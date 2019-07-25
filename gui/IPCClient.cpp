@@ -8,6 +8,7 @@ namespace uranium {
 IPCClient::IPCClient(QString ip, uint16_t port,
     std::function<int32_t (const QByteArray &)> msgCb) :
     mModule(MODULE_IPC),
+    mConstructed(false),
     mIp(ip),
     mPort(port),
     mReady(false),

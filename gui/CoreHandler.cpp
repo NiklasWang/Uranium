@@ -43,7 +43,17 @@ int32_t CoreHandler::construct()
     }
 
     if (SUCCEED(rc)) {
-        mCoreProcess.start(PROJNAME ".exe");
+        rc = killCore();
+        if (FAILED(rc)) {
+            LOGE(mModule, "Failed to kill core, %d", rc);
+        }
+    }
+
+    if (SUCCEED(rc)) {
+        rc = launchCore();
+        if (FAILED(rc)) {
+            LOGE(mModule, "Failed to launch core, %d", rc);
+        }
     }
 
     if (SUCCEED(rc)) {
@@ -101,6 +111,37 @@ int32_t CoreHandler::onCoreLost()
     return NO_ERROR;
 }
 
+int32_t CoreHandler::launchCore()
+{
+    int32_t rc = NO_ERROR;
+
+    mCoreProcess = new QProcess();
+    if (ISNULL(mCoreProcess)) {
+        rc = NO_MEMORY;
+        LOGE(mModule, "Failed to new process.");
+    } else {
+        connect(mCoreProcess, SIGNAL(error(QProcess::ProcessError)),
+                this, SLOT(onProcessError(QProcess::ProcessError)));
+
+        mCoreProcess->start(PROJNAME ".exe");
+    }
+
+    return rc;
+}
+
+int32_t CoreHandler::killCore()
+{
+    QStringList params;
+    params << "/F" << "/IM" << PROJNAME ".exe";
+    QProcess process;
+    process.start("taskkill", params);
+    if (!process.waitForFinished()) {
+        LOGE(mModule, "Failed to force exit core process");
+    }
+
+    return NO_ERROR;
+}
+
 int32_t CoreHandler::sendCoreMessage(QString &msg)
 {
     int32_t rc = NO_ERROR;
@@ -144,7 +185,7 @@ int32_t CoreHandler::destruct()
     }
 
     if (SUCCEED(rc)) {
-        if (!mCoreProcess.waitForFinished(MAX_WAIT_CORE_EXIT_TIME)) {
+        if (!mCoreProcess->waitForFinished(MAX_WAIT_CORE_EXIT_TIME)) {
             LOGE(mModule, "Failed to exit core process, force to exit later.");
             rc = UNKNOWN_ERROR;
         }
@@ -166,14 +207,9 @@ int32_t CoreHandler::destruct()
     }
 
     if (SUCCEED(rc)) {
-        QStringList params;
-        params << "/F" << "/IM" << PROJNAME ".exe";
-        QProcess process;
-        process.start("taskkill", params);
-        if (!process.waitForFinished()) {
-            LOGE(mModule, "Failed to force exit core process");
-            rc = UNKNOWN_ERROR;
-            RESETRESULT(rc);
+        rc = killCore();
+        if (FAILED(rc)) {
+            LOGE(mModule, "Failed to kill core, %d", rc);
         }
     }
 
@@ -202,11 +238,109 @@ int32_t CoreHandler::stop()
     return rc;
 }
 
-int32_t CoreHandler::getConfig(ConfigItem key, std::string &value)
+int32_t CoreHandler::loadConfig()
 {
     int32_t rc = NO_ERROR;
-    QMutex mutex;
-    mutex.lock();
+
+    if (mConfigLoading == CONFIG_MAX_INVALID) {
+        LOGE(mModule, "Loading config finished.");
+        rc = ALREADY_INITED;
+    }
+
+    if (SUCCEED(rc)) {
+        rc = getConfig(mConfigLoading);
+        if (FAILED(rc)) {
+            LOGE(mModule, "Failed to get config %s", whoamI(mConfigLoading));
+        }
+    }
+
+    return rc;
+}
+
+int32_t CoreHandler::onConfig(const QString &value)
+{
+    int32_t rc = NO_ERROR;
+    QByteArray byte = value.toLatin1();
+    const char *str = byte.data();
+    ConfigItem item = CONFIG_MAX_INVALID;
+    std::string tmp;
+    std::istringstream ss(str);
+    std::string result;
+
+    if (SUCCEED(rc)) {
+        ss >> tmp;
+        if (tmp != CORE_GET_CONFIG) {
+            rc = INVALID_FORMAT;
+            LOGE(mModule, "Unknown msg received, %s", str);
+        }
+    }
+
+    if (SUCCEED(rc)) {
+        ss >> tmp;
+        if (tmp != whoamI(mConfigLoading)) {
+            rc = INVALID_FORMAT;
+            LOGE(mModule, "Item mismatch, %s", str);
+        } else {
+            item = getConfigItem(tmp.c_str());
+        }
+    }
+
+    if (SUCCEED(rc)) {
+        mConfigLoading = static_cast<ConfigItem>(mConfigLoading + 1);
+        if (mConfigLoading != CONFIG_MAX_INVALID) {
+            rc = exec(
+                [&]() -> int32_t {
+                    return loadConfig();
+                }
+            );
+            if (FAILED(rc)) {
+                LOGE(mModule, "Failed to continously load config, %d", rc);
+            }
+        }
+    }
+
+    if (SUCCEED(rc)) {
+        ss >> result;
+        switch (item) {
+            case CONFIG_MASTER_MODE:
+            case CONFIG_ENCRYPTION:
+            case CONFIG_DEBUG_MODE:
+            case CONFIG_REMOTE_SHELL: {
+                rc = exec(
+                    [&]() -> int32_t {
+                        return mUi->updateConfig(item, result == BOOL_TRUE);
+                    }
+                );
+                if (FAILED(rc)) {
+                    LOGE(mModule, "Failed to update config, %s", whoamI(item));
+                }
+            } break;
+            case CONFIG_USERNAME:
+            case CONFIG_PASSWORD:
+            case CONFIG_LOCAL_PATH:
+            case CONFIG_REMOTE_PATH: {
+                rc = exec(
+                    [&]() -> int32_t {
+                        return mUi->updateConfig(item, QString(result.c_str()));
+                    }
+                );
+                if (FAILED(rc)) {
+                    LOGE(mModule, "Failed to update config, %s", whoamI(item));
+                }
+            } break;
+            default: {
+                rc = INVALID_FORMAT;
+                LOGE(mModule, "Invalid item type got, %s", str);
+            }
+        }
+    }
+
+    return rc;
+}
+
+int32_t CoreHandler::getConfig(ConfigItem key)
+{
+    int32_t rc = NO_ERROR;
 
     if (SUCCEED(rc)) {
         if (!checkValid(key)) {
@@ -224,48 +358,13 @@ int32_t CoreHandler::getConfig(ConfigItem key, std::string &value)
         }
     }
 
-    if (SUCCEED(rc)) {
-        QEventLoop loop;
-        connect(mIPCServer, SIGNAL(newData(const QByteArray)), &loop, SLOT(quit()));
-        loop.exec();
-    }
-
-    if (SUCCEED(rc)) {
-        std::string tmp;
-        std::istringstream ss(mGetResult);
-        ss >> tmp;
-        if (tmp != CORE_GET_CONFIG) {
-            LOGE(mModule, "Unknown msg received, %s", mGetResult.c_str());
-        }
-        ss >> tmp;
-        if (tmp != whoamI(key)) {
-            LOGE(mModule, "Item mismatch, %s", mGetResult.c_str());
-        }
-        ss >> value;
-    }
-
-    mutex.unlock();
-    return rc;
-}
-
-int32_t CoreHandler::getConfig(ConfigItem key, bool &value)
-{
-    int32_t rc = NO_ERROR;
-    std::string str;
-
-    value = false;
-    rc = getConfig(key, str);
-    if (SUCCEED(rc) && str == BOOL_TRUE) {
-        value = true;
-    }
-
     return rc;
 }
 
 int32_t CoreHandler::setConfig(ConfigItem key, std::string &value)
 {
     int32_t rc = NO_ERROR;
-    QString msg(CORE_GET_CONFIG " ");
+    QString msg(CORE_SET_CONFIG " ");
 
     if (SUCCEED(rc)) {
         if (!checkValid(key)) {
@@ -358,8 +457,8 @@ int32_t CoreHandler::appendShell(const std::string &str)
 int32_t CoreHandler::onIPCData(const QByteArray &data)
 {
     int32_t rc = NO_ERROR;
-    QString msg(data);
-    char *str = msg.toLatin1().data();
+    QByteArray byte = data;
+    char *str = byte.data();
 
     LOGD(mModule, "Received msg: '%s'", str);
     if (COMPARE_SAME_STRING(str, GREETING_GUI)) {
@@ -384,8 +483,8 @@ int32_t CoreHandler::onIPCData(const QByteArray &data)
     } else if (COMPARE_SAME_LEN_STRING(str, GUI_SHELL, strlen(GUI_SHELL))) {
         appendShell(str);
     } else if (COMPARE_SAME_LEN_STRING(str, CORE_GET_CONFIG, strlen(CORE_GET_CONFIG))) {
-        mGetResult = str;
-    } else if (COMPARE_SAME_LEN_STRING(str, CORE_SET_CONFIG, strlen(GUI_SHELL))) {
+        onConfig(str);
+    } else if (COMPARE_SAME_LEN_STRING(str, CORE_SET_CONFIG, strlen(CORE_SET_CONFIG))) {
         // don't care set config reply
     }
 
@@ -397,6 +496,7 @@ CoreHandler::CoreHandler(MainWindowUi *ui) :
     mModule(MODULE_GUI),
     mUi(ui),
     mCoreReady(false),
+    mConfigLoading(CONFIG_MASTER_MODE),
     mIPCServer(nullptr),
     mIPCClient(nullptr)
 {
@@ -405,9 +505,6 @@ CoreHandler::CoreHandler(MainWindowUi *ui) :
     connect(this, SIGNAL(exec(std::function<int32_t ()>)),
             this, SLOT(onExec(std::function<int32_t ()>)),
             Qt::BlockingQueuedConnection);
-
-    connect(&mCoreProcess, SIGNAL(error(QProcess::ProcessError)),
-            this, SLOT(onProcessError(QProcess::ProcessError)));
 }
 
 CoreHandler::~CoreHandler()

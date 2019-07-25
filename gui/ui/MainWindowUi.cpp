@@ -145,6 +145,7 @@ int32_t MainWindowUi::setupUi(QMainWindow *MainWindow)
         mRemoteControlCheckBox->setObjectName(QStringLiteral("mRemoteControlCheckBox"));
         mRemoteControlCheckBox->setFont(checkBoxFont);
         mCheckBoxGridLayout->addWidget(mRemoteControlCheckBox, 4, 0, 1, 1);
+        connect(mRemoteControlCheckBox, SIGNAL(toggled(bool)), this, SLOT(showShellWindow(bool)));
     }
 
     if (SUCCEED(rc)) {
@@ -338,18 +339,6 @@ int32_t MainWindowUi::setupUi(QMainWindow *MainWindow)
         mMenuHelp->addAction(mActionAbout);
     }
 
-    if (SUCCEED(rc)) {
-        connect(mRemoteControlCheckBox, SIGNAL(toggled(bool)), this, SLOT(showShellWindow(bool)));
-        /*connect(mMasterCheckBox,        SIGNAL(toggled(bool)), this, SLOT(setConfig(bool)));
-        connect(mDebugCheckBox,         SIGNAL(toggled(bool)), this, SLOT(setConfig(bool)));
-        connect(mEncryptionCheckBox,    SIGNAL(toggled(bool)), this, SLOT(setConfig(bool)));
-        connect(mRemoteControlCheckBox, SIGNAL(toggled(bool)), this, SLOT(setConfig(bool)));
-        connect(mPasswordLineEdit,      SIGNAL(textChanged(const QString &)), this, SLOT(setConfig(const QString &)));
-        connect(mUserNameLineEdit,      SIGNAL(textChanged(const QString &)), this, SLOT(setConfig(const QString &)));
-        connect(mRemoteDirLineEdit,     SIGNAL(textChanged(const QString &)), this, SLOT(setConfig(const QString &)));
-        connect(mLocalDirLineEdit,      SIGNAL(textChanged(const QString &)), this, SLOT(setConfig(const QString &)));*/
-    }
-
     if (SUCCEED(rc) || !SUCCEED(rc)) {
         retranslateUi(MainWindow);
         QMetaObject::connectSlotsByName(MainWindow);
@@ -396,6 +385,10 @@ void MainWindowUi::retranslateUi(QMainWindow *MainWindow)
         "</style></head><body style=\" font-family:'Consolas'; font-size:10pt; font-weight:600; font-style:normal;\">\n"
         "<p style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\">"
             "Unknown@Remote:/home/Unknown$</p></body></html>", nullptr));
+    mPasswordLineEdit->setText(QApplication::translate("MainWindow", "Loading...", nullptr));
+    mUserNameLineEdit->setText(QApplication::translate("MainWindow", "Loading...", nullptr));
+    mRemoteDirLineEdit->setText(QApplication::translate("MainWindow", "Loading...", nullptr));
+    mLocalDirLineEdit->setText(QApplication::translate("MainWindow", "Loading...", nullptr));
     mMenuFile->setTitle(QApplication::translate("MainWindow", "File", nullptr));
     mMenuHelp->setTitle(QApplication::translate("MainWindow", "Help", nullptr));
 }
@@ -486,7 +479,7 @@ int32_t MainWindowUi::onInitialized(int32_t result)
     }
 
     if (SUCCEED(rc)) {
-        rc = loadConfig();
+        rc = mCore->loadConfig();
         if (FAILED(rc)) {
             showError("Failed to load config.");
         }
@@ -571,50 +564,68 @@ int32_t MainWindowUi::onSelectButonClicked()
     return rc;
 }
 
-int32_t MainWindowUi::loadConfig()
+int32_t MainWindowUi::updateConfig(ConfigItem item, bool value)
 {
     int32_t rc = NO_ERROR;
 
-    bool master = true;
-    bool encryption = true;
-    bool debug = true;
-    bool shell = false;
-    std::string username;
-    std::string password;
-    std::string localpath;
-    std::string remotePath;
-
-    if (SUCCEED(rc)) {
-        mPasswordLineEdit->setText(QApplication::translate("MainWindow", "Loading...", nullptr));
-        mUserNameLineEdit->setText(QApplication::translate("MainWindow", "Loading...", nullptr));
-        mRemoteDirLineEdit->setText(QApplication::translate("MainWindow", "Loading...", nullptr));
-        mLocalDirLineEdit->setText(QApplication::translate("MainWindow", "Loading...", nullptr));
+    switch (item) {
+        case CONFIG_MASTER_MODE: {
+            mMasterCheckBox->setChecked(value);
+            connect(mMasterCheckBox, SIGNAL(toggled(bool)),
+                    this, SLOT(setConfig(bool)));
+        } break;
+        case CONFIG_ENCRYPTION: {
+            mEncryptionCheckBox->setChecked(value);
+            connect(mEncryptionCheckBox, SIGNAL(toggled(bool)),
+                    this, SLOT(setConfig(bool)));
+        } break;
+        case CONFIG_DEBUG_MODE: {
+            mDebugCheckBox->setChecked(value);
+            connect(mDebugCheckBox, SIGNAL(toggled(bool)),
+                    this, SLOT(setConfig(bool)));
+        } break;
+        case CONFIG_REMOTE_SHELL: {
+            mRemoteControlCheckBox->setChecked(value);
+            connect(mRemoteControlCheckBox, SIGNAL(toggled(bool)),
+                    this, SLOT(setConfig(bool)));
+        } break;
+        default: {
+            rc = UNKNOWN_ERROR;
+        } break;
     }
 
-    /*if (SUCCEED(rc)) {
-        rc  = mCore->getConfig(CONFIG_MASTER_MODE, master);
-        rc |= mCore->getConfig(CONFIG_ENCRYPTION, encryption);
-        rc |= mCore->getConfig(CONFIG_DEBUG_MODE, debug);
-        rc |= mCore->getConfig(CONFIG_REMOTE_SHELL, shell);
-        rc |= mCore->getConfig(CONFIG_USERNAME, username);
-        rc |= mCore->getConfig(CONFIG_PASSWORD, password);
-        rc |= mCore->getConfig(CONFIG_LOCAL_PATH, localpath);
-        rc |= mCore->getConfig(CONFIG_REMOTE_PATH, remotePath);
-        if (FAILED(rc)) {
-            showError("gui load config failed.");
-        }
-    }
+    return rc;
+}
 
-    if (SUCCEED(rc)) {
-        mMasterCheckBox->setChecked(master);
-        mDebugCheckBox->setChecked(debug);
-        mEncryptionCheckBox->setChecked(encryption);
-        mRemoteControlCheckBox->setChecked(shell);
-        mPasswordLineEdit->setText(password.c_str());
-        mUserNameLineEdit->setText(username.c_str());
-        mRemoteDirLineEdit->setText(remotePath.c_str());
-        mLocalDirLineEdit->setText(localpath.c_str());
-    }*/
+int32_t MainWindowUi::updateConfig(ConfigItem item, const QString &value)
+{
+    int32_t rc = NO_ERROR;
+
+    switch (item) {
+        case CONFIG_USERNAME: {
+            mUserNameLineEdit->setText(value);
+            connect(mUserNameLineEdit, SIGNAL(textChanged(const QString &)),
+                    this, SLOT(setConfig(const QString &)));
+        } break;
+        case CONFIG_PASSWORD: {
+            mPasswordLineEdit->setText(value);
+            connect(mPasswordLineEdit, SIGNAL(textChanged(const QString &)),
+                    this, SLOT(setConfig(const QString &)));
+        } break;
+        case CONFIG_LOCAL_PATH: {
+            mLocalDirLineEdit->setText(value);
+            connect(mLocalDirLineEdit, SIGNAL(textChanged(const QString &)),
+                    this, SLOT(setConfig(const QString &)));
+        } break;
+        case CONFIG_REMOTE_PATH: {
+            mRemoteDirLineEdit->setText(value);
+            connect(mRemoteDirLineEdit, SIGNAL(textChanged(const QString &)),
+                    this, SLOT(setConfig(const QString &)));
+        } break;
+        default: {
+            rc = UNKNOWN_ERROR;
+        } break;
+    }
 
     return rc;
 }
@@ -645,16 +656,17 @@ int32_t MainWindowUi::setConfig(bool checked)
 int32_t MainWindowUi::setConfig(const QString &set)
 {
     int32_t rc = NO_ERROR;
-
+    std::string value = set.toLatin1().data();
     QString name = sender()->objectName();
+
     if (name == "mPasswordLineEdit") {
-        rc = mCore->setConfig(CONFIG_PASSWORD, set.toLatin1().data());
+        rc = mCore->setConfig(CONFIG_PASSWORD, value);
     } else if (name == "mUserNameLineEdit") {
-        rc = mCore->setConfig(CONFIG_USERNAME, set.toLatin1().data());
+        rc = mCore->setConfig(CONFIG_USERNAME, value);
     } else if (name == "mRemoteDirLineEdit") {
-        rc = mCore->setConfig(CONFIG_REMOTE_PATH, set.toLatin1().data());
+        rc = mCore->setConfig(CONFIG_REMOTE_PATH, value);
     } else if (name == "mLocalDirLineEdit") {
-        rc = mCore->setConfig(CONFIG_LOCAL_PATH, set.toLatin1().data());
+        rc = mCore->setConfig(CONFIG_LOCAL_PATH, value);
     }
 
     if (FAILED(rc)) {

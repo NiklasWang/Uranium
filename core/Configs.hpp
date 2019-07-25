@@ -41,7 +41,7 @@ int32_t Configs::set(ConfigItem item, T &value)
     std::string key = whoamI(item);
 
     if (SUCCEED(rc)) {
-        if (checkValid(item)) {
+        if (!checkValid(item)) {
             rc = PARAM_INVALID;
             LOGE(mModule, "Invalid config type %d", item);
         }

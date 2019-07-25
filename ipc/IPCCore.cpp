@@ -5,12 +5,13 @@
 #include "Config.h"
 #include "ThreadPoolEx.h"
 #include "SocketServerStateMachine.h"
-#include "IPCServer.h"
+#include "IPCCore.h"
 #include "IPCClient.h"
+#include "IPCCbs.h"
 
 namespace uranium {
 
-int32_t IPCServer::start()
+int32_t IPCCore::start()
 {
     int32_t rc = NO_ERROR;
 
@@ -42,7 +43,7 @@ int32_t IPCServer::start()
     return rc;
 }
 
-int32_t IPCServer::startIPCLoop()
+int32_t IPCCore::startIPCLoop()
 {
     int32_t rc = NO_ERROR;
 
@@ -94,7 +95,7 @@ int32_t IPCServer::startIPCLoop()
     return rc;
 }
 
-int32_t IPCServer::stopIPCLoop()
+int32_t IPCCore::stopIPCLoop()
 {
     int32_t rc = NO_ERROR;
 
@@ -115,7 +116,7 @@ int32_t IPCServer::stopIPCLoop()
     return rc;
 }
 
-int32_t IPCServer::stop()
+int32_t IPCCore::stop()
 {
     int32_t rc = NO_ERROR;
 
@@ -142,14 +143,14 @@ int32_t IPCServer::stop()
     return rc;
 }
 
-int32_t IPCServer::process()
+int32_t IPCCore::process()
 {
     mExitSem.wait();
 
     return NO_ERROR;
 }
 
-int32_t IPCServer::processIPCMessage(const char *msg)
+int32_t IPCCore::processIPCMessage(const char *msg)
 {
     int32_t rc = NO_ERROR;
     std::string base = msg;
@@ -181,7 +182,7 @@ int32_t IPCServer::processIPCMessage(const char *msg)
     return rc;
 }
 
-int32_t IPCServer::replyMessageCb(const std::string base, int32_t _rc)
+int32_t IPCCore::replyMessageCb(const std::string base, int32_t _rc)
 {
     int32_t rc = NO_ERROR;
     std::stringstream msg;
@@ -204,7 +205,7 @@ int32_t IPCServer::replyMessageCb(const std::string base, int32_t _rc)
     return rc;
 }
 
-int32_t IPCServer::handleGetConfig(const char *msg)
+int32_t IPCCore::handleGetConfig(const char *msg)
 {
     int32_t rc = NO_ERROR;
     std::istringstream stream(msg);
@@ -240,14 +241,14 @@ int32_t IPCServer::handleGetConfig(const char *msg)
             case CONFIG_DEBUG_MODE:
             case CONFIG_REMOTE_SHELL: {
                 isBool = true;
-            }
+            } break;
             case CONFIG_USERNAME:
             case CONFIG_PASSWORD:
             case CONFIG_LOCAL_PATH:
             case CONFIG_REMOTE_PATH:
             default: {
                 isBool = false;
-            }
+            } break;
         }
     }
 
@@ -282,7 +283,7 @@ int32_t IPCServer::handleGetConfig(const char *msg)
     return rc;
 }
 
-int32_t IPCServer::handleSetConfig(const char *msg)
+int32_t IPCCore::handleSetConfig(const char *msg)
 {
     int32_t rc = NO_ERROR;
     std::istringstream stream(msg);
@@ -293,7 +294,7 @@ int32_t IPCServer::handleSetConfig(const char *msg)
 
     if (SUCCEED(rc)) {
         stream >> key;
-        if (key != CORE_GET_CONFIG) {
+        if (key != CORE_SET_CONFIG) {
             LOGE(mModule, "Wrong format, msg = %s", msg);
             rc = BAD_PROTOCAL;
         }
@@ -343,24 +344,40 @@ int32_t IPCServer::handleSetConfig(const char *msg)
     return rc;
 }
 
-IPCServer::IPCServer(int32_t port) :
+IPCCore::IPCCore(int32_t port) :
     mConstructed(false),
     mModule(MODULE_IPC),
     mStarted(false),
     mPort(port),
     mCore(nullptr),
+    mCbs(nullptr),
     mThreads(nullptr),
     mIPCClient(nullptr),
     mSS(nullptr)
 {
 }
 
-int32_t IPCServer::construct()
+int32_t IPCCore::construct()
 {
     int32_t rc = NO_ERROR;
 
     if (mConstructed) {
         rc = ALREADY_INITED;
+    }
+
+    if (SUCCEED(rc)) {
+        mCbs = new IPCCbs();
+        if (ISNULL(mCbs)) {
+            rc = NO_MEMORY;
+            LOGE(mModule, "Failed to new IPCCbs");
+        }
+    }
+
+    if (SUCCEED(rc)) {
+        rc = mCbs->construct();
+        if (FAILED(rc)) {
+            LOGE(mModule, "Failed to construct IPCCbs, %d", rc);
+        }
     }
 
     if (SUCCEED(rc)) {
@@ -402,7 +419,7 @@ int32_t IPCServer::construct()
     }
 
     if (SUCCEED(rc)) {
-        mCore = new Core(mIPCClient);
+        mCore = new Core(mCbs);
         if (ISNULL(mCore)) {
             LOGE(mModule, "Failed to new Core");
             rc = NO_MEMORY;
@@ -423,7 +440,7 @@ int32_t IPCServer::construct()
     return rc;
 }
 
-int32_t IPCServer::destruct()
+int32_t IPCCore::destruct()
 {
     int32_t rc = NO_ERROR;
 
@@ -473,10 +490,47 @@ int32_t IPCServer::destruct()
         }
     }
 
+    if (SUCCEED(rc)) {
+        rc = mCbs->destruct();
+        if (FAILED(rc)) {
+            LOGE(mModule, "Failed to destruct IPCCbs, %d", rc);
+        } else {
+            SECURE_DELETE(mCbs);
+        }
+    }
+
     return RETURNIGNORE(rc, NOT_INITED);
 }
 
-IPCServer::~IPCServer()
+int32_t IPCCore::updateLog(const std::string &log)
+{
+    int32_t rc = NOTNULL(mCbs) ? NO_ERROR : NOT_READY;
+
+    if (SUCCEED(rc)) {
+        rc = mCbs->appendDebugger(log);
+        if (FAILED(rc)) {
+            LOGE(mModule, "Failed to append log, %d", rc);
+        }
+    }
+
+    return rc;
+}
+
+int32_t IPCCore::updateShell(const std::string &shell)
+{
+    int32_t rc = NOTNULL(mCbs) ? NO_ERROR : NOT_READY;
+
+    if (SUCCEED(rc)) {
+        rc = mCbs->appendShell(shell);
+        if (FAILED(rc)) {
+            LOGE(mModule, "Failed to append log, %d", rc);
+        }
+    }
+
+    return rc;
+}
+
+IPCCore::~IPCCore()
 {
     if (mConstructed) {
         destruct();

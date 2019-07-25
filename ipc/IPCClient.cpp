@@ -53,20 +53,6 @@ int32_t IPCClient::sendMessage(const std::string &msg)
     return rc;
 }
 
-int32_t IPCClient::appendDebugger(const std::string &str)
-{
-    std::string msg(GUI_DEBUG " ");
-    msg += str;
-    return sendMessage(msg);
-}
-
-int32_t IPCClient::appendShell(const std::string &str)
-{
-    std::string msg(GUI_SHELL " ");
-    msg += str;
-    return sendMessage(msg);
-}
-
 IPCClient::IPCClient(int32_t port) :
     mConstructed(false),
     mModule(MODULE_IPC),
