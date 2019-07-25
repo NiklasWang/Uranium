@@ -48,8 +48,8 @@ public:
     int32_t onStarted(int32_t rc);
     int32_t onStopped(int32_t rc);
     int32_t onInitialized(int32_t rc);
-    int32_t appendDebugger(std::string str);
-    int32_t appendShell(std::string str);
+    int32_t appendDebugger(const QString &str);
+    int32_t appendShell(const QString &str);
 
 signals:
     void quit();

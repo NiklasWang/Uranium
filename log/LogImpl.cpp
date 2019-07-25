@@ -10,8 +10,6 @@
 
 #include "LogImpl.h"
 
-#define DBG_LOG_MAX_LEN 1024
-
 #ifdef _CYGWIN_COMPILE_
 #define ENTER "\r\n"
 #else
@@ -192,6 +190,10 @@ static void print_log(const LogType logt, const char *fmt,
                       char *process, const char *module, const char *type,
                       const char *func, const int line, const char *buf);
 
+static void external_log(const LogType logt, const char *fmt,
+                         char *process, const char *module, const char *type,
+                         const char *func, const int line, const char *buf);
+
 static void save_log(const char *fmt, char *process,
                      const char *module, const char *type,
                      const char *func, const int line, const char *buf);
@@ -199,16 +201,20 @@ static void save_log(const char *fmt, char *process,
 void __debug_log(const ModuleType module, const LogType type,
                  const char *func, const int line, const char *fmt, ...)
 {
-    char    buf[DBG_LOG_MAX_LEN];
+    char    buf[LOG_MAX_LEN_PER_LINE];
     va_list args;
 
     va_start(args, fmt);
-    __log_vsnprintf(buf, DBG_LOG_MAX_LEN, fmt, args);
+    __log_vsnprintf(buf, LOG_MAX_LEN_PER_LINE, fmt, args);
     va_end(args);
 
     print_log(type, "%s %s%s: %s:+%d: %s\n",
               getProcessName(), getModuleShortName(module),
               getLogType(type), func, line, buf);
+
+    external_log(type, "%s %s%s: %s:+%d: %s",
+            getProcessName(), getModuleShortName(module),
+            getLogType(type), func, line, buf);
 
     save_log("%s %s%s: %s:+%d: %s" ENTER, getProcessName(),
              getModuleShortName(module),
@@ -218,17 +224,22 @@ void __debug_log(const ModuleType module, const LogType type,
 void __assert_log(const ModuleType module, const unsigned char cond,
                   const char *func, const int line, const char *fmt, ...)
 {
-    char    buf[DBG_LOG_MAX_LEN];
+    char    buf[LOG_MAX_LEN_PER_LINE];
     va_list args;
 
     if (cond == 0) {
         va_start(args, fmt);
-        __log_vsnprintf(buf, DBG_LOG_MAX_LEN, fmt, args);
+        __log_vsnprintf(buf, LOG_MAX_LEN_PER_LINE, fmt, args);
         va_end(args);
 
         print_log(LOG_TYPE_ERROR, "[<! ASSERT !>]%s %s%s: %s:+%d: %s\n",
                   getProcessName(), getModuleShortName(module),
                   "<ASSERT>", func, line, buf);
+
+        external_log(LOG_TYPE_ERROR, "[<! ASSERT !>]%s %s%s: %s:+%d: %s"
+                     "Process will suicide now.",
+                     getProcessName(), getModuleShortName(module),
+                     "<ASSERT>", func, line, buf);
 
         save_log("[<! ASSERT !>]%s %s%s: %s:+%d: %s" ENTER,
                  getProcessName(), getModuleShortName(module),
@@ -341,6 +352,25 @@ static void print_log(const LogType logt __attribute__((unused)),
                       const char *func, const int line, const char *buf)
 {
     printf(fmt, process, module, type, func, line, buf);
+}
+
+
+static ExternalLoggerFunc gExternalLoggerFunc = NULL;
+
+void set_external_logger(ExternalLoggerFunc logger)
+{
+    gExternalLoggerFunc = logger;
+}
+
+static void external_log(const LogType logt, const char *fmt,
+                         char *process, const char *module, const char *type,
+                         const char *func, const int line, const char *buf)
+{
+    if (gExternalLoggerFunc != NULL) {
+        char tmp[LOG_MAX_LEN_PER_LINE];
+        sprintf(tmp, fmt, process, module, type, func, line, buf);
+        gExternalLoggerFunc(tmp);
+    }
 }
 
 };

@@ -68,6 +68,11 @@ extern int8_t gDebugController[][LOG_TYPE_MAX_INVALID + 1];
 #define ASSERT_PLOG(module, cond, fmt, args...)     \
     __assert_log(module, cond, __FUNCTION__, __LINE__, fmt, ##args)
 
+
+typedef void (*ExternalLoggerFunc)(const char *log);
+
+void set_external_logger(ExternalLoggerFunc logger);
+
 };
 
 #endif

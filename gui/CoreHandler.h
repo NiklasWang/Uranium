@@ -17,8 +17,7 @@ namespace uranium {
 class MainWindowUi;
 
 class CoreHandler :
-    public QObject,
-    public GuiCallback
+    public QObject
 {
     Q_OBJECT
 
@@ -35,8 +34,8 @@ public:
     int32_t onStopped(int32_t rc);
     int32_t onInitialized(int32_t rc);
 
-    virtual int32_t appendDebugger(const std::string &str) override;
-    virtual int32_t appendShell(const std::string &str) override;
+    virtual int32_t appendDebugger(const QString &str);
+    virtual int32_t appendShell(const QString &str);
 
 signals:
     int32_t exec(std::function<int32_t ()> func);

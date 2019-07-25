@@ -206,7 +206,7 @@ int32_t CoreHandler::destruct()
         SECURE_DELETE(mIPCClient);
     }
 
-    if (SUCCEED(rc)) {
+    if (SUCCEED(rc) || FAILED(rc)) {
         rc = killCore();
         if (FAILED(rc)) {
             LOGE(mModule, "Failed to kill core, %d", rc);
@@ -434,20 +434,20 @@ int32_t CoreHandler::onInitialized(int32_t rc)
     );
 }
 
-int32_t CoreHandler::appendDebugger(const std::string &str)
+int32_t CoreHandler::appendDebugger(const QString &str)
 {
     return exec(
-        [&]() -> int32_t {
+        [=]() -> int32_t {
             mUi->appendDebugger(str);
             return NO_ERROR;
         }
     );
 }
 
-int32_t CoreHandler::appendShell(const std::string &str)
+int32_t CoreHandler::appendShell(const QString &str)
 {
     return exec(
-        [&]() -> int32_t {
+        [=]() -> int32_t {
             mUi->appendShell(str);
             return NO_ERROR;
         }
@@ -460,7 +460,19 @@ int32_t CoreHandler::onIPCData(const QByteArray &data)
     QByteArray byte = data;
     char *str = byte.data();
 
-    LOGD(mModule, "Received msg: '%s'", str);
+    if (!COMPARE_SAME_LEN_STRING(str, GUI_DEBUG, strlen(GUI_DEBUG)) &&
+        !COMPARE_SAME_LEN_STRING(str, GUI_SHELL, strlen(GUI_SHELL))) {
+        LOGD(mModule, "Received msg: '%s'", str);
+    } else {
+        bool debug = COMPARE_SAME_LEN_STRING(str, GUI_DEBUG, strlen(GUI_DEBUG));
+        QString orig = QString(data).trimmed();
+        QStringList subsList = orig.split(debug ? GUI_DEBUG : GUI_SHELL, QString::SkipEmptyParts);
+        for (int32_t i = 0; i < subsList.size(); i++) {
+            QString subStr = subsList[i].trimmed();
+            debug ? appendDebugger(subStr) : appendShell(subStr);
+        }
+    }
+
     if (COMPARE_SAME_STRING(str, GREETING_GUI)) {
         rc = exec(
             [this]() -> int32_t {
@@ -478,10 +490,6 @@ int32_t CoreHandler::onIPCData(const QByteArray &data)
     } else if (COMPARE_SAME_LEN_STRING(str, CORE_STOP, strlen(CORE_STOP))) {
         int32_t _rc = NOTNULL(strstr(str, REPLY_SUCCEED)) ? NO_ERROR : UNKNOWN_ERROR;
         onStopped(_rc);
-    } else if (COMPARE_SAME_LEN_STRING(str, GUI_DEBUG, strlen(GUI_DEBUG))) {
-        appendDebugger(str);
-    } else if (COMPARE_SAME_LEN_STRING(str, GUI_SHELL, strlen(GUI_SHELL))) {
-        appendShell(str);
     } else if (COMPARE_SAME_LEN_STRING(str, CORE_GET_CONFIG, strlen(CORE_GET_CONFIG))) {
         onConfig(str);
     } else if (COMPARE_SAME_LEN_STRING(str, CORE_SET_CONFIG, strlen(CORE_SET_CONFIG))) {

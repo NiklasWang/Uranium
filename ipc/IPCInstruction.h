@@ -12,11 +12,9 @@ namespace uranium {
 #define CORE_GET_CONFIG "CORE_GET_CONFIG"
 #define CORE_SET_CONFIG "CORE_SET_CONFIG"
 #define CORE_EXIT       "CORE_EXIT"
-#define CORE_LOG        "LOG"
-#define CORE_SHELL      "SHL"
 
-#define GUI_DEBUG       "GUI_DEBUG"
-#define GUI_SHELL       "GUI_SHELL"
+#define GUI_DEBUG       "LOG"
+#define GUI_SHELL       "SHL"
 
 #define GREETING_GUI    "Hi, GUI"
 #define BYE_GUI         "Bye, GUI"

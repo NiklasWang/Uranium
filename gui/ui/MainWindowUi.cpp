@@ -27,6 +27,8 @@
 #define DEFAULT_WINDOW_WIDTH  608
 #define WINDOW_SHELL_WIDTH    1209
 #define DEFAULT_WINDOW_HEIGHT 848
+#define MAX_DEBUG_LINE_COUNT  65535
+#define MAX_SHELL_LINE_COUNT  65535
 
 namespace uranium {
 
@@ -278,8 +280,9 @@ int32_t MainWindowUi::setupUi(QMainWindow *MainWindow)
         font6.setFamily(QStringLiteral("Consolas"));
         font6.setPointSize(10);
         mDebugTextEdit->setFont(font6);
+        mDebugTextEdit->document()->setMaximumBlockCount(MAX_DEBUG_LINE_COUNT);
+        mDebugTextEdit->setReadOnly(true);
         mSettingverticalLayout->addWidget(mDebugTextEdit);
-
         mSettingHorizontalLayout->addWidget(mSettingGroupBox);
     }
 
@@ -295,6 +298,7 @@ int32_t MainWindowUi::setupUi(QMainWindow *MainWindow)
         font7.setBold(true);
         font7.setWeight(75);
         mShellTextEditor->setFont(font7);
+        mShellTextEditor->document()->setMaximumBlockCount(MAX_SHELL_LINE_COUNT);
         mSettingHorizontalLayout->addWidget(mShellGroupBox);
     }
 
@@ -488,9 +492,9 @@ int32_t MainWindowUi::onInitialized(int32_t result)
     return NO_ERROR;
 }
 
-int32_t MainWindowUi::appendDebugger(std::string str)
+int32_t MainWindowUi::appendDebugger(const QString &str)
 {
-    mDebugTextEdit->append(str.c_str());
+    mDebugTextEdit->append(str);
     QTextCursor cursor = mDebugTextEdit->textCursor();
     cursor.movePosition(QTextCursor::End);
     mDebugTextEdit->setTextCursor(cursor);
@@ -498,9 +502,9 @@ int32_t MainWindowUi::appendDebugger(std::string str)
     return NO_ERROR;
 }
 
-int32_t MainWindowUi::appendShell(std::string str)
+int32_t MainWindowUi::appendShell(const QString &str)
 {
-    mShellTextEditor->append(str.c_str());
+    mShellTextEditor->append(str);
     QTextCursor cursor = mShellTextEditor->textCursor();
     cursor.movePosition(QTextCursor::End);
     mShellTextEditor->setTextCursor(cursor);

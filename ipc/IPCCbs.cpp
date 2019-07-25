@@ -16,7 +16,7 @@ int32_t IPCCbs::appendDebugger(const std::string &log)
     }
 
     if (SUCCEED(rc)) {
-        rc = mLogIPC->sendMessage(std::string(CORE_LOG) + " " + log);
+        rc = mLogIPC->sendMessage(std::string(GUI_DEBUG) + " " + log);
         if (FAILED(rc)) {
             LOGE(mModule, "Failed reply IPC, %s, %d", log.c_str(), rc);
         }
@@ -37,7 +37,7 @@ int32_t IPCCbs::appendShell(const std::string &shell)
     }
 
     if (SUCCEED(rc)) {
-        rc = mShellIPC->sendMessage(std::string(CORE_SHELL) + " " + shell);
+        rc = mShellIPC->sendMessage(std::string(GUI_SHELL) + " " + shell);
         if (FAILED(rc)) {
             LOGE(mModule, "Failed reply IPC, %s, %d", shell.c_str(), rc);
         }

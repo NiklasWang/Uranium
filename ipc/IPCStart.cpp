@@ -7,6 +7,8 @@ namespace uranium {
 
 IPCCore *gIpcCore = nullptr;
 
+void appendLog(const char *log);
+
 int32_t startIPC()
 {
     int32_t rc = NO_ERROR;
@@ -27,6 +29,7 @@ int32_t startIPC()
     }
 
     if (SUCCEED(rc)) {
+        set_external_logger(appendLog);
         rc = gIpcCore->start();
         if (FAILED(rc)) {
             LOGE(MODULE_IPC, "Failed to start IPCServer, %d", rc);
@@ -41,6 +44,7 @@ int32_t startIPC()
     }
 
     if (SUCCEED(rc) || FAILED(rc)) {
+        set_external_logger(NULL);
         rc = gIpcCore->destruct();
         if (FAILED(rc)) {
             LOGE(MODULE_IPC, "Failed to destruct IPCServer, %d", rc);
@@ -51,7 +55,7 @@ int32_t startIPC()
     return rc;
 }
 
-int32_t appendLog(const char *log)
+void appendLog(const char *log)
 {
     int32_t rc = NOTNULL(gIpcCore) ? NO_ERROR : NOT_READY;
 
@@ -62,10 +66,10 @@ int32_t appendLog(const char *log)
         }
     }
 
-    return rc;
+    return;
 }
 
-int32_t appendShell(const char *shell)
+void appendShell(const char *shell)
 {
     int32_t rc = NOTNULL(gIpcCore) ? NO_ERROR : NOT_READY;
 
@@ -76,7 +80,7 @@ int32_t appendShell(const char *shell)
         }
     }
 
-    return rc;
+    return;
 }
 
 }

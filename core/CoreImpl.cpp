@@ -4,24 +4,24 @@ namespace uranium {
 
 int32_t CoreImpl::start()
 {
-    sleep(1);
     LOGD(mModule, "Core start() called.");
+    sleep(1);
 
     return NO_ERROR;
 }
 
 int32_t CoreImpl::stop()
 {
+    LOGD(mModule, "Core stop() called.");
     sleep(1);
-    LOGD(mModule, "Core start() called.");
 
     return NO_ERROR;
 }
 
 int32_t CoreImpl::initialize()
 {
+    LOGD(mModule, "Core initialize() called.");
     sleep(1);
-    LOGD(mModule, "Core start() called.");
 
     return NO_ERROR;
 }
