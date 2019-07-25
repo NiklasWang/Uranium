@@ -6,4 +6,4 @@ link:
 
 clean:
 
-.PHONY: all clean
+.PHONY: all compile link clean

@@ -1,9 +1,1 @@
-all: compile link
-
-compile:
-
-link:
-
-clean:
-
-.PHONY: all clean
+include $(MAKE_RULE)/do.nothing.make.rule
