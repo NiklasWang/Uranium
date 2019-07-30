@@ -31,13 +31,11 @@ define BUILD
 endef
 
 define CYGWIN_INSTALL
-	cd fswatch-master; \
-	cp -ar ./libfswatch/src/libfswatch/.libs/$(FILENAME) $(CURRDIR)/$(TARGET)
+	cp -ar ./curl-7.50.3/lib/.libs/$(FILENAME) $(CURRDIR)/$(TARGET)
 endef 
 
 define LINUX_INSTALL
-	cd fswatch-master; \
-	cp -ar ./libfswatch/src/libfswatch/.libs/${FILENAME} $(CURRDIR)/
+	cp -ar ./curl-7.50.3/lib/.libs/${FILENAME} $(CURRDIR)/
 endef
 
 clean:
