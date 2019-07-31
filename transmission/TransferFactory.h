@@ -10,6 +10,7 @@ public:
     static TransferFactory* create();
     void destory();
     TransferManager* createTransferObject(const TRANSFER_MODE_ENUM transModes, TRANSFER_STATUS_E tranDirct);
+    TransferManager* createTransferObject(const TRANSFER_MODE_ENUM transModes, TRANSFER_STATUS_E tranDirct, std::string name, std::string passWd);
     virtual ~TransferFactory();
 
 private:

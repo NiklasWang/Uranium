@@ -22,7 +22,7 @@ public:
 public:
     int32_t construct();
     int32_t destruct();
-    TransferCore(TRANSFER_STATUS_ENUM tranStatus, EncryptCore *encrypt);
+    TransferCore(TRANSFER_STATUS_ENUM tranStatus, EncryptCore *encrypt, std::string name, std::string passwd);
     virtual ~TransferCore();
 
 private:
@@ -37,6 +37,8 @@ private:
     TransferFactory *mTranFact;
     EncryptCore     *mEncrypt;
     TRANSFER_STATUS_ENUM    mTranStatus;
+    std::string     mName;
+    std::string     mPassWd;
 };
 
 }

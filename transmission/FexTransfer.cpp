@@ -2,17 +2,33 @@
 #include <iostream>
 #include <stdio.h>
 #include <time.h>
-
+#include <unistd.h>
+#include <fstream>
 #include "common.h"
+#include "libcurl/curl/curl.h"
 #include "TransferInterface.h"
 #include "FexTransfer.h"
-
+#include <algorithm>
 namespace uranium
 {
 
-FexTransfer::FexTransfer(TRANSFER_STATUS_E tranDirct):
+size_t FexTransfer::wirte_data(void*  buffer, size_t size, size_t nmemb, void *userp)
+{
+    uint32_t length = 2048;
+    if (nmemb < length) {
+        length = nmemb;
+    }
+    memcpy(userp, buffer, length);
+    return nmemb;
+}
+
+FexTransfer::FexTransfer(TRANSFER_STATUS_E tranDirct, std::string name, std::string passWd):
     mModule(MODULE_TRANSMITION),
-    mTranDirct(tranDirct)
+    mTranDirct(tranDirct),
+    mName(name),
+    mPassWd(passWd),
+    mInitalized(false),
+    mLoginStatus(false)
 {
     pthread_mutex_init(&mTransMutex, NULL);
 }
@@ -22,17 +38,495 @@ FexTransfer::~FexTransfer()
     pthread_mutex_destroy(&mTransMutex);
 }
 
+int32_t FexTransfer::construct()
+{
+    int32_t rc = NO_ERROR;
+
+    if (mInitalized) {
+        LOGD(mModule, "This module has initalized\n");
+        rc = ALREADY_INITED;
+    }
+
+    if (SUCCEED(rc)) {
+        /* check login status */
+        uint32_t runTimes = 2;
+        do {
+            rc = fexLogin();
+            if (FAILED(rc)) {
+                LOGE(mModule, "Fex login Failed\n");
+            }
+            if (fexCheckLoginStatus() == true) {
+                mLoginStatus = true;
+                LOGD(mModule, "Login Succeed");
+                break;
+            }
+        } while (runTimes--);
+    }
+
+    if (SUCCEED(rc)) {
+        mInitalized = true;
+    }
+#if 0
+    std::string fileList;
+    fexUploadFile("/mnt/d/lenvov_wokspace/source/Uranium/transmission/tester/SERVER.bin");
+    fexFileList(fileList);
+    std::cout << "fileName=" << fileList << std::endl;
+    fexDownloadFile(fileList, "LHB.bin");
+#endif
+    return rc;
+}
+
+int32_t FexTransfer::destruct()
+{
+    int32_t rc = NO_ERROR;
+
+    if (!mInitalized) {
+        LOGE(mModule, "Thid moudle has not initalized\n");
+        rc = NOT_INITED;
+    }
+
+    mInitalized = false;
+
+    return rc;
+}
+
+int32_t FexTransfer::fexUploadFile(const std::string &filePath)
+{
+    int32_t rc = NO_ERROR;
+    CURL *curl = NULL;
+    CURLcode res = CURLE_OK;
+    struct curl_slist *headers = NULL;
+    struct curl_httppost *post = NULL;
+    struct curl_httppost *last = NULL;
+    char *buffer = NULL;
+    uint32_t length = 0;
+    FILE *fp = fopen("/dev/null", "w");
+
+    if (!mLoginStatus) {
+        rc = NOT_READY;
+    }
+
+    if (SUCCEED(rc)) {
+        curl = curl_easy_init();
+        if (res != CURLE_OK) {
+            LOGE(mModule, "Curl perform failed: %s\n", curl_easy_strerror(res));
+            rc = UNKNOWN_ERROR;
+        }
+    }
+
+    if (SUCCEED(rc)) {
+        curl_easy_setopt(curl, CURLOPT_CUSTOMREQUEST, "POST");
+        curl_easy_setopt(curl, CURLOPT_URL, "http://fex.lenovo.com");
+        curl_easy_setopt(curl, CURLOPT_COOKIEFILE, COKIES_FILE); // 指定cookie文件
+    }
+
+    if (SUCCEED(rc)) {
+        headers = curl_slist_append(headers, "Cache-Control: max-age=0");
+        headers = curl_slist_append(headers, "Content-Type: multipart/form-data");
+        headers = curl_slist_append(headers, "Host: fex.lenovo.com");
+        headers = curl_slist_append(headers, "Origin: http://fex.lenovo.com");
+        headers = curl_slist_append(headers, "Referer: http://fex.lenovo.com/");
+        curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
+        if (NOTNULL(fp)) {
+            curl_easy_setopt(curl, CURLOPT_WRITEDATA, fp);
+        }
+    }
+
+    if (SUCCEED(rc)) {
+        std::ifstream inStream(filePath, std::ios::binary | std::ios::ate);
+        if (!inStream.is_open()) {
+            LOGE(mModule, "File %s not exit\n", filePath.c_str());
+            rc = NOT_FOUND;
+        }
+
+        if (SUCCEED(rc)) {
+            length = inStream.tellg();
+            if (length == 0) {
+                LOGE(mModule, "file is empty\n");
+                rc = NOT_EXIST;
+            }
+        }
+
+        if (SUCCEED(rc)) {
+            buffer = new char[length];
+            if (ISNULL(buffer)) {
+                LOGE(mModule, "Out of memory");
+                rc = NO_MEMORY;
+            } else {
+                memset(buffer, 0, length);
+            }
+        }
+
+        if (SUCCEED(rc)) {
+            inStream.seekg(0);
+            inStream.read(buffer, length);
+        }
+
+    }
+
+    if (SUCCEED(rc)) {
+        auto const pos = filePath.find_last_of('/');
+        auto const pathTemp = filePath.substr(pos + 1);
+        curl_formadd(&post, &last, CURLFORM_COPYNAME, "uploadfile",
+                     CURLFORM_BUFFER, pathTemp.c_str(),
+                     CURLFORM_BUFFERPTR, buffer,
+                     CURLFORM_BUFFERLENGTH, length,
+                     CURLFORM_END);
+        curl_easy_setopt(curl, CURLOPT_HTTPPOST, post);
+    }
+
+    if (SUCCEED(rc)) {
+        res = curl_easy_perform(curl);
+        if (res != CURLE_OK) {
+            printf("Curl perform failed: %s\n", curl_easy_strerror(res));
+            rc = UNKNOWN_ERROR;
+        }
+    }
+
+    if (NOTNULL(curl)) {
+        curl_easy_cleanup(curl);
+    }
+
+    if (NOTNULL(headers)) {
+        curl_slist_free_all(headers);
+    }
+
+    SECURE_DELETE(buffer);
+
+    if (NOTNULL(fp)) {
+        fclose(fp);
+    }
+    return rc;
+}
+
+int32_t FexTransfer::fexDownloadFile(std::string& filelist, std::string storageFiles)
+{
+    int32_t rc = NO_ERROR;
+    CURL *curl = NULL;
+    CURLcode res = CURLE_OK;
+    FILE *fp = NULL;
+
+
+    if (!mLoginStatus) {
+        rc = NOT_READY;
+    }
+
+    if (SUCCEED(rc)) {
+        fp = fopen(storageFiles.c_str(), "w");
+        if (ISNULL(fp)) {
+            rc = NOT_READY;
+        }
+    }
+
+    if (SUCCEED(rc)) {
+        curl = curl_easy_init();
+        if (res != CURLE_OK) {
+            LOGE(mModule, "Curl perform failed: %s\n", curl_easy_strerror(res));
+            rc = UNKNOWN_ERROR;
+        }
+    }
+
+    if (SUCCEED(rc)) {
+        std::string httpPath = "http://fex.lenovo.com/uploads/";
+        httpPath += "lihb13";
+        httpPath += "/";
+        httpPath += filelist;
+        curl_easy_setopt(curl, CURLOPT_URL, httpPath.c_str());
+        curl_easy_setopt(curl, CURLOPT_COOKIEFILE, COKIES_FILE); // 指定cookie文件
+        // curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, wirte_data);
+        curl_easy_setopt(curl, CURLOPT_WRITEDATA, fp);
+    }
+
+    if (SUCCEED(rc)) {
+        res = curl_easy_perform(curl);
+        if (res != CURLE_OK) {
+            printf("Curl perform failed: %s\n", curl_easy_strerror(res));
+            rc = UNKNOWN_ERROR;
+        }
+    }
+
+    if (NOTNULL(fp)) {
+        fclose(fp);
+        fp = NULL;
+    }
+
+    if (NOTNULL(curl)) {
+        curl_easy_cleanup(curl);
+    }
+    return rc;
+}
+
+int32_t FexTransfer::fexFileList(std::string& filePath)
+{
+    int32_t rc = NO_ERROR;
+    CURL *curl = NULL;
+    CURLcode res = CURLE_OK;
+    char *retBuf = NULL;
+
+    if (!mLoginStatus) {
+        rc = NOT_READY;
+    }
+
+    if (SUCCEED(rc)) {
+        curl = curl_easy_init();
+        if (res != CURLE_OK) {
+            LOGE(mModule, "Curl perform failed: %s\n", curl_easy_strerror(res));
+            rc = UNKNOWN_ERROR;
+        }
+    }
+
+    if (SUCCEED(rc)) {
+        retBuf = new char[2048];
+        if (ISNULL(retBuf)) {
+            rc  = NO_MEMORY;
+        } else {
+            memset(retBuf, 0, 2048);
+        }
+    }
+
+    if (SUCCEED(rc)) {
+        curl_easy_setopt(curl, CURLOPT_URL, "http://fex.lenovo.com/filelist/1");
+        curl_easy_setopt(curl, CURLOPT_COOKIEFILE, COKIES_FILE); // 指定cookie文件
+        curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, wirte_data);
+        curl_easy_setopt(curl, CURLOPT_WRITEDATA, retBuf);
+    }
+
+    if (SUCCEED(rc)) {
+        res = curl_easy_perform(curl);
+        if (res != CURLE_OK) {
+            printf("Curl perform failed: %s\n", curl_easy_strerror(res));
+            rc = UNKNOWN_ERROR;
+        }
+    }
+
+    if (SUCCEED(rc)) {
+        printf("LHB:retBuf = %s\n", retBuf);
+        std::string tmpStr = retBuf;
+        std::string::size_type position;
+        std::string fileName;
+        std::string date;
+        position = tmpStr.find("date");
+        if (position == tmpStr.npos) {
+            LOGE(mModule, "Not found data");
+            rc = NOT_FOUND;
+        } else {
+            date = tmpStr.substr(position + 9);
+            std::string::size_type pos1 = date.find('.');
+            //std::string::size_type pos2 = date.find("-");
+            if (pos1 != date.npos) {
+                date.erase(pos1);
+                // std::cout<<"LHB"<<date.substr(pos1)<<std::endl;
+                // date = date.substr(pos2+1,(pos1-pos2-1));
+                date.erase(std::find(date.begin(), date.end(), '-'));
+                date.erase(std::find(date.begin(), date.end(), '-'));
+                date.erase(std::find(date.begin(), date.end(), ' '));
+                date.erase(std::find(date.begin(), date.end(), ':'));
+                date.erase(std::find(date.begin(), date.end(), ':'));
+                // date.erase(std::find(date.begin(),date.end(),'.'));
+
+            }
+            filePath = date;
+            filePath += '_';
+        }
+
+        position = tmpStr.find("filename");
+        if (position == tmpStr.npos) {
+            LOGE(mModule, "Not found data");
+            rc = NOT_FOUND;
+        } else {
+            fileName = tmpStr.substr(position + 11);
+            std::string::size_type pos1 = fileName.find("\"");
+            if (pos1 != fileName.npos) {
+                fileName.erase(pos1);
+                // std::cout<<"LHB放大放大"<<tmpStr.substr(position+11,pos1-position)<<std::endl;
+                // fileName = tmpStr.substr(position+11,pos1-position -3);
+
+            }
+            filePath += fileName;
+        }
+    }
+
+    if (NOTNULL(curl)) {
+        curl_easy_cleanup(curl);
+    }
+
+    return rc;
+}
+
+bool FexTransfer::fexCheckLoginStatus()
+{
+    int32_t rc = NO_ERROR;
+    CURL *curl = NULL;
+    CURLcode res = CURLE_OK;
+    char *retBuf = NULL;
+    bool retBl = false;
+
+    if (SUCCEED(rc)) {
+        curl = curl_easy_init();
+        if (res != CURLE_OK) {
+            LOGE(mModule, "Curl perform failed: %s\n", curl_easy_strerror(res));
+            rc = UNKNOWN_ERROR;
+        }
+    }
+
+    if (SUCCEED(rc)) {
+        retBuf = new char[2048];
+        if (ISNULL(retBuf)) {
+            rc  = NO_MEMORY;
+        } else {
+            memset(retBuf, 0, 2048);
+        }
+    }
+
+    if (SUCCEED(rc)) {
+        curl_easy_setopt(curl, CURLOPT_URL, "http://fex.lenovo.com/islogin");
+        curl_easy_setopt(curl, CURLOPT_COOKIEFILE, COKIES_FILE); // 指定cookie文件
+        curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, wirte_data);
+        curl_easy_setopt(curl, CURLOPT_WRITEDATA, retBuf);
+    }
+
+    if (SUCCEED(rc)) {
+        res = curl_easy_perform(curl);
+        if (res != CURLE_OK) {
+            printf("Curl perform failed: %s\n", curl_easy_strerror(res));
+            rc = UNKNOWN_ERROR;
+        }
+    }
+
+    if (SUCCEED(rc)) {
+        printf("LJKJL: %s\n", (char*)retBuf);
+        if (NOTNULL(strstr((char*)retBuf, "true"))) {
+            retBl = true;
+        } else {
+            retBl = false;
+        }
+    }
+
+    SECURE_DELETE(retBuf);
+
+    if (NOTNULL(curl)) {
+        curl_easy_cleanup(curl);
+    }
+
+    return retBl;
+}
+
+int32_t FexTransfer::fexLogin()
+{
+    int32_t rc = NO_ERROR;
+    CURL *curl = NULL;
+    CURLcode res = CURLE_OK;
+    struct curl_slist *headers = NULL;
+    struct curl_httppost *post = NULL;
+    struct curl_httppost *last = NULL;
+    FILE *fp = fopen("post.html", "w");
+
+    if (SUCCEED(rc)) {
+        curl = curl_easy_init();
+        if (res != CURLE_OK) {
+            LOGE(mModule, "Curl perform failed: %s\n", curl_easy_strerror(res));
+            rc = UNKNOWN_ERROR;
+        }
+    }
+
+    if (SUCCEED(rc)) {
+        headers = curl_slist_append(headers, "Host:fex.lenovo.com");
+        headers = curl_slist_append(headers, "Referer:http://fex.lenovo.com/login");
+        headers = curl_slist_append(headers, "User-Agent:Mozilla/5.0");
+        headers = curl_slist_append(headers, "Accept:*/*");
+        headers = curl_slist_append(headers, "Cache-Control:no-cache");
+        //headers = curl_slist_append(headers,"accept-encoding:gzip, deflate");
+        headers = curl_slist_append(headers, "Connection:keep-alive");
+        curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);// 改协议头
+        curl_easy_setopt(curl, CURLOPT_URL, "http://fex.lenovo.com/login");
+        curl_easy_setopt(curl, CURLOPT_WRITEDATA, fp);
+    }
+
+    if (SUCCEED(rc)) {
+        res = curl_easy_setopt(curl, CURLOPT_COOKIEFILE, COKIES_FILE); // 指定cookie文件
+        if (res != CURLE_OK) {
+            std::cout << "read cookies failed\n";
+            curl_easy_setopt(curl, CURLOPT_COOKIEFILE, ""); /* start cookie engine */
+        }
+    }
+
+    if (SUCCEED(rc)) {
+        curl_formadd(&post, &last, CURLFORM_COPYNAME, "username",
+                     CURLFORM_COPYCONTENTS, "lihb13",
+                     CURLFORM_END);
+        curl_formadd(&post, &last, CURLFORM_COPYNAME, "password",
+                     CURLFORM_COPYCONTENTS, "Lhbzyy8629",
+                     CURLFORM_END);
+        curl_formadd(&post, &last, CURLFORM_COPYNAME, "next",
+                     CURLFORM_COPYCONTENTS, "/",
+                     CURLFORM_END);
+        curl_easy_setopt(curl, CURLOPT_HTTPPOST, post);
+    }
+
+    if (SUCCEED(rc)) {
+        res = curl_easy_perform(curl);
+        if (res != CURLE_OK) {
+            printf("Curl perform failed: %s\n", curl_easy_strerror(res));
+            rc = UNKNOWN_ERROR;
+        }
+    }
+
+    if (SUCCEED(rc)) {
+        // export cookies
+        curl_easy_setopt(curl, CURLOPT_COOKIEJAR, COKIES_FILE);
+    }
+
+    if (NOTNULL(curl)) {
+        curl_easy_cleanup(curl);
+    }
+#if 0
+    if (NOTNULL(post)) {
+        curl_formfree(post);
+    }
+
+    if (NOTNULL(last)) {
+        curl_formfree(last);
+    }
+#endif
+    if (NOTNULL(headers)) {
+        curl_slist_free_all(headers);
+    }
+    return rc;
+}
+
+int32_t FexTransfer::folder_mkdirs(const char *folder_path)
+{
+    int i, len;
+    char str[512];
+    strncpy(str, folder_path, 512);
+    len = strlen(str);
+    for (i = 0; i < len; i++) {
+        if (str[i] == '/') {
+            str[i] = '\0';
+            if (access(str, 0) != 0) {
+                mkdir(str, 0777);
+            }
+            str[i] = '/';
+        }
+    }
+    if (len > 0 && access(str, 0) != 0) {
+        mkdir(str, 0777);
+    }
+
+    return NO_ERROR;
+}
+
 uint32_t FexTransfer::pushData(TRANSFER_BUFFER_T &cmd)
 {
     int32_t rc = 0;
     std::string filePath = WORK_DIRPATH;
-    std::string cmdStr = "fex -u ";
 
     if (mTranDirct == TRAN_CLINET) {
         filePath += CLINET_PATH;
     } else {
         filePath += SERVER_PATH;
     }
+    printf("LHB 1111 = %s\n", filePath.c_str());
 
     if (SUCCEED(rc)) {
         if (cmd.mode != TRAN_MODE_FEX) {
@@ -40,16 +534,17 @@ uint32_t FexTransfer::pushData(TRANSFER_BUFFER_T &cmd)
             LOGE(mModule, "Mode mismatching!");
         }
     }
+
     if (SUCCEED(rc)) {
-        cmdStr = "mkdir -p ";
-        cmdStr += filePath;
-        system(cmdStr.c_str());
+        folder_mkdirs(filePath.c_str());
     }
 
     if (SUCCEED(rc)) {
+#if 0
         cmdStr = "cp -ar ";
         cmdStr += (char *)cmd.buffer;
         cmdStr += " ";
+#endif
         switch (mTranDirct) {
             case TRAN_CLINET:
                 filePath += CLINETFILE;
@@ -62,21 +557,34 @@ uint32_t FexTransfer::pushData(TRANSFER_BUFFER_T &cmd)
                 LOGE(mModule, "Not support!");
                 break;
         }
+        printf("LHB filePath =%s\n", filePath.c_str());
+        // rc = rename((char*)cmd.buffer, filePath.c_str());
+        if (FAILED(rc)) {
+            LOGE(mModule, "Renaming file Error");
+        }
     }
-
+#if 0
     if (SUCCEED(rc)) {
         cmdStr += filePath;
         /* copy orig file to fex used files */
         rc = system((const char *) cmdStr.c_str());
     }
+#endif
 
     if (SUCCEED(rc)) {
-
+#if 0
         cmdStr = ("fex -u ");
         cmdStr += filePath;
         pthread_mutex_lock(&mTransMutex);
         rc = system((const char *) cmdStr.c_str());
         pthread_mutex_unlock(&mTransMutex);
+#else
+        printf("LHB ringkk\n");
+        rc = fexUploadFile(filePath);
+        if (FAILED(rc)) {
+            LOGE(mModule, "Failed to fex upload files");
+        }
+#endif
     }
 
     return rc;
@@ -85,12 +593,8 @@ uint32_t FexTransfer::pushData(TRANSFER_BUFFER_T &cmd)
 uint32_t FexTransfer::pullData(TRANSFER_BUFFER_T &cmd)
 {
     int32_t rc = 0;
-    uint8_t fileBuf[128];
-    uint32_t fileBufSize = 128;
-    std::string fexStr;
-    std::string cmdStr = "fex -l 1 > ";
     std::string filePath = WORK_DIRPATH;
-    std::string recFileName;
+    std::string fileList;
 
     if (mTranDirct == TRAN_CLINET) {
         filePath += CLINET_PATH;
@@ -98,82 +602,30 @@ uint32_t FexTransfer::pullData(TRANSFER_BUFFER_T &cmd)
         filePath += SERVER_PATH;
     }
 
-    cmdStr += filePath;
-    cmdStr += "cli.bin";
-    std::string timeTemp;
+    if (SUCCEED(rc)) {
+        folder_mkdirs(filePath.c_str());
+    }
 
     if (SUCCEED(rc)) {
-        pthread_mutex_lock(&mTransMutex);
-        rc = system((const char *) cmdStr.c_str());
-        pthread_mutex_unlock(&mTransMutex);
+        rc = fexFileList(fileList);
         if (FAILED(rc)) {
-            LOGE(mModule, "Runing system failed\n");
+            LOGE(mModule, "Get file list failed\n");
         }
-
     }
 
     if (SUCCEED(rc)) {
-        cmdStr = filePath;
-        cmdStr += "cli.bin";
-        memset(fileBuf, 0, sizeof(fileBuf));
-        rc = readFile(cmdStr, fileBuf, fileBufSize);
-    }
-
-
-    if (SUCCEED(rc)) {
-        fexStr = (char *) fileBuf;
-
-        if (mTranDirct == TRAN_CLINET) {
-            recFileName = SERVERFILE;
+        if (0 == fileList.compare(mLastFilelist)) {
+            rc  = NOT_READY;
         } else {
-            recFileName = CLINETFILE;
-        }
-
-        int32_t pos = fexStr.find(recFileName.c_str());
-        if (-1 != pos) {
-            std::string cliStr = fexStr.substr(pos);
-            pos = cliStr.find("| ");
-            if (-1 != pos) {
-                pos += 2;
-                timeTemp = cliStr.substr(pos);
-            } else {
-                rc = -1;
-            }
-        } else {
-            rc = -1;
+            mLastFilelist = fileList;
         }
     }
 
     if (SUCCEED(rc)) {
-        /* judge  frist runing */
-        if (mFileLastTime.empty()) {
-            mFileLastTime = timeTemp;
-            rc = 0;
-        } else {
-            time_t newTime = str_to_time_t(timeTemp);
-            time_t lastTime = str_to_time_t(mFileLastTime);
-            mFileLastTime = timeTemp;
-            if (newTime <= lastTime) {
-                rc = -1;
-            }
+        rc = fexDownloadFile(fileList, filePath);
+        if (FAILED(rc)) {
+            LOGE(mModule, "Failed fexDownloadFiles");
         }
-    }
-
-    if (SUCCEED(rc)) {
-
-        cmdStr = "fex -d ";
-        cmdStr += filePath;
-        pthread_mutex_lock(&mTransMutex);
-        rc = system(cmdStr.c_str());
-        pthread_mutex_unlock(&mTransMutex);
-
-    }
-
-    if (SUCCEED(rc)) {
-        cmdStr = filePath;
-        cmdStr += recFileName;
-        memset(cmd.buffer, 0, cmd.length);
-        strcpy((char *)cmd.buffer, cmdStr.c_str());
     }
 
     return rc;

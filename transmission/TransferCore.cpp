@@ -16,10 +16,20 @@ int32_t TransferCore::send(const std::string path)
         TRANSFER_BUFFER_T *pTranBuffer = mTransMang->createTransferBuffer();
         pTranBuffer->mode = TRAN_MODE_FEX;
         std::string encryPath = path + ".encry";
-        /* ecry path */
-        mEncrypt->encryptStream(path, encryPath, defaultPublicKeys);
+        std::string sendPath;
 
-        pTranBuffer->buffer = (void*) encryPath.c_str();
+        /* ecry path */
+        if (NOTNULL(mEncrypt))
+        {
+            mEncrypt->encryptStream(path, encryPath, defaultPublicKeys);
+            sendPath = encryPath;
+        } else
+        {
+            sendPath = path;
+            LOGD(mModule, "Encrypt manager not support\n");
+        }
+
+        pTranBuffer->buffer = (void*) sendPath.c_str();
         mTransMang->pushData(*pTranBuffer);
         mTransMang->destoryTransferBuffer(pTranBuffer);
         return NO_ERROR;
@@ -43,8 +53,12 @@ int32_t TransferCore::receive(std::function<int32_t (std::string &filePath)> cb)
             __rc = mTransMang->pullData(*pTranBuffer);
             if (SUCCEED(__rc)) {
                 mPath = buffer;
-                destPath = mPath + ".decry";
-                mEncrypt->decryptStream(mPath, destPath, defaultPublicKeys);
+                destPath = mPath;
+                if (NOTNULL(mEncrypt)) {
+                    destPath += ".decry";
+                    mEncrypt->decryptStream(mPath, destPath, defaultPublicKeys);
+                }
+
                 cb(destPath);
             }
         } while (true);
@@ -59,7 +73,14 @@ int32_t TransferCore::construct()
     int32_t rc = NO_ERROR;
 
     if (SUCCEED(rc)) {
-        mTransMang = mTranFact->createTransferObject(TRAN_MODE_FEX, mTranStatus);
+        mTransMang = mTranFact->createTransferObject(TRAN_MODE_FEX, mTranStatus, mName, mPassWd);
+        if (NOTNULL(mTransMang)) {
+            rc = mTransMang->construct();
+            LOGE(mModule, "construct  return = %d\n", rc);
+        } else {
+            LOGE(mModule, "create object failed\n");
+            rc = NOT_FOUND;
+        }
     }
 
     if (SUCCEED(rc)) {
@@ -89,12 +110,14 @@ int32_t TransferCore::destruct()
     return rc;
 }
 
-TransferCore::TransferCore(TRANSFER_STATUS_ENUM tranStatus, EncryptCore *encrypt):
+TransferCore::TransferCore(TRANSFER_STATUS_ENUM tranStatus, EncryptCore *encrypt, std::string name, std::string passwd):
     mModule(MODULE_TRANSMITION),
     mTransMang(NULL),
     mThreads(NULL),
     mEncrypt(encrypt),
-    mTranStatus(tranStatus)
+    mTranStatus(tranStatus),
+    mName(name),
+    mPassWd(passwd)
 {
     mTranFact = TransferFactory::create();
 }

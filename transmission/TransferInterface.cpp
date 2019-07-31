@@ -1,4 +1,3 @@
-#include "common.h"
 #include "TransferInterface.h"
 
 namespace uranium
@@ -20,7 +19,7 @@ TRANSFER_BUFFER_T* TransferManager::createTransferBuffer(void)
     TRANSFER_BUFFER_T *pTransBuf = new TRANSFER_BUFFER_T;
 
     if (ISNULL(pTransBuf)) {
-        LOGE(mModule, "create transfer buffer failed! <out of memory> \n");
+        printf("create transfer buffer failed! <out of memory> \n");
     }
     return pTransBuf;
 }

@@ -1,6 +1,8 @@
 #ifndef __TRANSFERINTERFACE_H__
 #define __TRANSFERINTERFACE_H__
 
+#include "common.h"
+
 namespace uranium
 {
 typedef enum TRANSFER_MODE_ENUM {
@@ -25,6 +27,8 @@ class TransferManager
 public:
     TransferManager();
     virtual ~TransferManager();
+    virtual int32_t construct() = 0;
+    virtual int32_t destruct() = 0;
     virtual uint32_t pushData(TRANSFER_BUFFER_T &cmd) = 0;
     virtual uint32_t pullData(TRANSFER_BUFFER_T &cmd) = 0;
     TRANSFER_BUFFER_T* createTransferBuffer(void);
