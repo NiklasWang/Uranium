@@ -365,7 +365,8 @@ int32_t ServiceCore::construct()
     }
 
     if (SUCCEED(rc)) {
-        mTransCore = new TransferCore(mTranStatus, mEncryptCore);
+        /* --TODO-- */
+        // mTransCore = new TransferCore(mTranStatus, mEncryptCore);
         if (NOTNULL(mTransCore)) {
             rc = mTransCore->construct();
             if (FAILED(rc)) {
