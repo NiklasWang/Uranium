@@ -1,6 +1,6 @@
 include $(MAKE_RULE)/color.print.make.rule
 
-TARGET  = librchive$(strip $(DYLIB_EXT))
+TARGET  = libarchive$(strip $(DYLIB_EXT))
 CURRDIR = $(shell pwd)
 
 ifeq ($(strip $(ISCYGWIN)), y)
@@ -24,9 +24,12 @@ else
 endif
 
 define BUILD
-	cd ;barchive-3.3.3   \
+	cd libarchive-3.3.3;   \
+	cd build;\
+	./autogen.sh;\
+	cd ../; \
 	chmod +x configure; \
-	./configure CFLAGS=-fPIC -O3  CXXFLAGS=-fPIC -O3; \
+	./configure;\
 	make -j8 V=1;       
 endef
 
