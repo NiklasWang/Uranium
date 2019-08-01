@@ -400,6 +400,30 @@ bool ServiceCore::isEmpty(const std::string dirPath)
 
     return rc;
 }
+
+uint32_t ServiceCore::folder_mkdirs(const char *folder_path)
+{
+    int i, len;
+    char str[512];
+    strncpy(str, folder_path, 512);
+    len = strlen(str);
+    for (i = 0; i < len; i++) {
+        if (str[i] == '/') {
+            str[i] = '\0';
+            if (access(str, 0) != 0) {
+                mkdir(str, 0777);
+            }
+            str[i] = '/';
+        }
+    }
+    if (len > 0 && access(str, 0) != 0) {
+        mkdir(str, 0777);
+    }
+
+    return NO_ERROR;
+}
+
+
 }
 
 

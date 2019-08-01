@@ -83,6 +83,7 @@ private:
     int32_t serverInitialize();
     int32_t clientInitialize();
     std::string getUserName();
+    uint32_t folder_mkdirs(const char *folder_path);
 
 public:
     ServiceCore(TRANSFER_STATUS_ENUM  tranStatus, const std::string localPath);

@@ -449,13 +449,11 @@ int32_t ServiceCore::tarnsferServer2Clinet(void)
     if (SUCCEED(rc)) {
         /*  Package all files in the monitoring directory */
         /* delete old files */
-        std::string cmd = "mkdir -p ";
-        cmd += tarFileName;
-        rc = system(cmd.c_str());
+        std::string cmd;
+        cmd = tarFileName;
+        rc = folder_mkdirs(cmd.c_str());
         tarFileName += TAR_MODIR_NAME;
-        cmd = "rm -rf ";
-        cmd += tarFileName;
-        rc = system(cmd.c_str());
+        rc = remove(tarFileName.c_str());
 
         rc = mMonitorCore->monitorTarExec(tarFileName,
         [ = ](void)-> int32_t{
@@ -801,20 +799,27 @@ ServiceCore::ServiceCore(TRANSFER_STATUS_ENUM  tranStatus, const std::string loc
     mMonitorCore = NULL,
     mTransCore = NULL;
 #endif
+    int32_t rc = NO_ERROR;
 
     if ('/' != mLocalPath[mLocalPath.size() - 1]) {
         mLocalPath += "/";
     }
 
     std::string cmdStr;
-    cmdStr = "mkdir -p ";
-    cmdStr += WORK_DIRPATH;
+    cmdStr = WORK_DIRPATH;
     cmdStr += SERVER_PATH;
-    system(cmdStr.c_str());
-    cmdStr = "mkdir -p ";
-    cmdStr += WORK_DIRPATH;
+    rc = folder_mkdirs(cmdStr.c_str());
+    if (FAILED(rc)) {
+        LOGE(mModule, "Create dictions failed\n");
+    }
+
+    cmdStr = WORK_DIRPATH;
     cmdStr += CLINET_PATH;
-    system(cmdStr.c_str());
+    rc = folder_mkdirs(cmdStr.c_str());
+    if (FAILED(rc)) {
+        LOGE(mModule, "Create dictions failed\n");
+    }
+
 }
 
 ServiceCore::~ServiceCore()
