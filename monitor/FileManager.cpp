@@ -7,13 +7,16 @@
 #include <fstream>
 #include <thread>
 
+#include <libfswatch/archive.h>
+#include <libfswatch/archive_entry.h>
 #include "common.h"
 #include "FileManager.h"
 #include "md5.h"
 #include "sha.h"
+#include <stdarg.h>
 namespace uranium
 {
-
+#define DEFAULT_BYTES_PER_BLOCK             (20*512)
 int32_t FileManager::construct()
 {
     int32_t rc = NO_ERROR;
@@ -29,6 +32,526 @@ int32_t FileManager::destruct()
     return rc;
 }
 
+int32_t FileManager::unmatched_inclusions_warn(struct archive *matching, const char *msg)
+{
+    const char *p = NULL;
+    int32_t r = 0;
+    int32_t ret = NO_ERROR;
+    // ITE_CHECK_ERROR(NULL == matching, 0, return_err, "Invalid argument!");
+    while ((r = archive_match_path_unmatched_inclusions_next(
+                    matching, &p)) == ARCHIVE_OK) {
+        LOGE(mModule, "%s: %s", p, msg);
+    }
+    if (r == ARCHIVE_FATAL) {
+        ret = UNKNOWN_ERROR;
+        LOGE(mModule, "Out of memory!");
+    }
+    // ITE_CHECK_ERROR((r == ARCHIVE_FATAL), 1, return_err, " Out of memory!\n");
+    return (archive_match_path_unmatched_inclusions(matching));
+}
+
+int32_t FileManager::Compress_write_hierarchy(struct archive *disk, struct archive *writer, struct archive_entry_linkresolver *resolver,
+        const char *path, const char *buff, size_t buff_size)
+{
+    int32_t rc = NO_ERROR;
+    struct archive_entry *entry = NULL, *spare_entry = NULL;
+
+    if (ISNULL(disk) || ISNULL(writer) || ISNULL(resolver) || ISNULL(path) || ISNULL(buff)) {
+        rc = PARAM_INVALID;
+        LOGE(mModule, "param invilid\n");
+    }
+
+    if (SUCCEED(rc)) {
+        rc = archive_read_disk_open(disk, path);
+        if (FAILED(rc)) {
+            rc = NOT_READY;
+            LOGE(mModule, "Archive_read_disk_open file error: %s!", archive_error_string(disk));
+        }
+    }
+
+    if (SUCCEED(rc)) {
+        for (;;) {
+            archive_entry_free(entry);
+            entry = archive_entry_new();
+            if (ISNULL(entry)) {
+                rc = NO_MEMORY;
+                LOGE(mModule, "archive_entry_new() failed\n");
+                break;
+            }
+            rc =  archive_read_next_header2(disk, entry);
+            if (rc == ARCHIVE_EOF) {
+                break;
+            } else if (rc != ARCHIVE_OK) {
+                if (rc == ARCHIVE_FATAL || rc == ARCHIVE_FAILED) {
+                    rc = UNKNOWN_ERROR;
+                    LOGE(mModule, "Archive_read_next_header2 %s\n", archive_error_string(disk));
+                    break;
+                }
+
+                if (rc < ARCHIVE_WARN) {
+                    continue;
+                }
+            }
+
+            if (geteuid() >= 0) {
+                archive_entry_set_uid(entry, geteuid());
+                archive_entry_set_uname(entry, archive_read_disk_uname(disk, geteuid()));
+            }
+
+            /* Non-regular files get archived with zero size. */
+            if (archive_entry_filetype(entry) != AE_IFREG) {
+                archive_entry_set_size(entry, 0);
+            }
+
+            archive_entry_linkify(resolver, &entry, &spare_entry);
+
+            while (entry != NULL) {
+                rc =   compressWriteEntry(disk, writer, entry, buff, buff_size);
+                if (FAILED(rc)) {
+                    rc = UNKNOWN_ERROR;
+                    LOGE(mModule, "Compress_write_entry failed!");
+                }
+                archive_entry_free(entry);
+                entry = spare_entry;
+                spare_entry = NULL;
+            } // end while entry != NULL
+        }
+    }
+
+    if (NOTNULL(entry)) {
+        archive_entry_free(entry);
+    }
+
+    archive_read_close(disk);
+
+    return rc;
+
+}
+
+int32_t FileManager::compressWriteEntry(struct archive *disk, struct archive *writer, struct archive_entry *entry, const char *buff, size_t buff_size)
+{
+    int32_t rc = NO_ERROR;
+    size_t   bytes_read = 0;
+    ssize_t bytes_written = 0;
+    int64_t offset = 0, progress = 0;
+    const char *null_buff = NULL;
+    const void *buff_tmp;
+
+    if (SUCCEED(rc)) {
+        rc =  archive_write_header(writer, entry);
+        if ((rc >= ARCHIVE_OK) && (archive_entry_size(entry) > 0)) {
+            while ((rc = archive_read_data_block(disk, &buff_tmp, &bytes_read, &offset)) == ARCHIVE_OK) {
+                if (offset > progress) {
+                    int64_t sparse = offset - progress;
+                    size_t ns;
+                    if (null_buff == NULL) {
+                        null_buff = buff;
+                        memset((void*) null_buff, 0, buff_size);
+                    }
+                    while (sparse > 0) {
+                        if (sparse > (int64_t)buff_size) {
+                            ns = buff_size;
+                        } else {
+                            ns = (size_t)sparse;
+                        }
+                        bytes_written = archive_write_data(writer, null_buff, ns);
+                        // ITE_CHECK_ERROR(ret < 0, 3, return_err, "Archive_write_data %s \n", archive_error_string(writer));
+                        if ((size_t)bytes_written < ns) {
+                            /* Write was truncated; warn but continue */
+                            LOGD(mModule, "%s Truncated write; file may "
+                                 "have grown while being archived.",
+                                 archive_entry_pathname(entry));
+                            return 0;
+                        }
+                        progress += bytes_written;
+                        sparse -= bytes_written;
+                    } // end while sparse>0
+                } //end if offset > progress
+                bytes_written = archive_write_data(writer, buff_tmp, bytes_read);
+                // ITE_CHECK_ERROR(bytes_written < 0, 3, return_err, "Archive_write_data %s\n", archive_error_string(writer));
+                if ((size_t)bytes_written < bytes_read) {
+                    /* Write was truncated; warn but continue */
+                    LOGD(mModule, "%s Truncated write; file may "
+                         "have grown while being archived.",
+                         archive_entry_pathname(entry));
+                    return 0;
+                }
+                progress += bytes_written;
+            }
+        }
+    }
+
+    return rc;
+}
+
+int32_t FileManager::uncompressFil2Disk(const char *file, const char *to_path)
+{
+    int32_t rc = NO_ERROR;
+    int32_t extract_flags = 0;
+    struct archive *matching = NULL;
+    struct archive *writer = NULL;
+    struct archive *reader = NULL;
+    const char *p = NULL;
+    struct archive_entry *entry = NULL;
+    uint32_t file_size = 0;
+    int32_t fd = 0;
+
+    if (SUCCEED(rc)) {
+        /* root 用户使用*/
+        if (0 == geteuid()) {
+            /* --same-owner */
+            extract_flags |= ARCHIVE_EXTRACT_OWNER;
+            /* -p */
+            extract_flags |= ARCHIVE_EXTRACT_PERM;
+            extract_flags |= ARCHIVE_EXTRACT_ACL;
+            extract_flags |= ARCHIVE_EXTRACT_XATTR;
+            extract_flags |= ARCHIVE_EXTRACT_FFLAGS;
+            extract_flags |= ARCHIVE_EXTRACT_MAC_METADATA;
+        }
+    }
+
+    if (SUCCEED(rc)) {
+        matching = archive_match_new();
+        if (ISNULL(matching)) {
+            rc = NO_MEMORY;
+            LOGE(mModule, "Runing archive_match_new() failed out of memory\n");
+        }
+    }
+
+    if (SUCCEED(rc)) {
+        /* 创建writer */
+        writer = archive_write_disk_new();
+        if (ISNULL(writer)) {
+            rc = NO_MEMORY;
+            LOGE(mModule, "Create disk writer failed");
+        } else {
+            archive_write_disk_set_standard_lookup(writer);
+            archive_write_disk_set_options(writer, extract_flags);
+        }
+    }
+
+    if (SUCCEED(rc)) {
+        /* 创举reader */
+        reader = archive_read_new();
+        if (ISNULL(reader)) {
+            rc = NO_MEMORY;
+            LOGE(mModule, "Create reader failed!");
+        } else {
+            /* 支持所有解压缩模式 */
+            archive_read_support_filter_all(reader);
+            archive_read_support_format_all(reader);
+        }
+    }
+
+    if (SUCCEED(rc)) {
+        /* 读取文件总长度 */
+        fd = open(file, O_RDONLY);
+        if (fd < 0) {
+            rc = NOT_READY;
+            LOGE(mModule, "Open %s failed with %s\n", file, strerror(errno));
+        } else {
+            file_size = lseek(fd, 0, SEEK_END);
+            lseek(fd, 0, SEEK_SET);
+            close(fd);
+        }
+    }
+
+    if (SUCCEED(rc)) {
+        /* 打开文件 */
+        rc = archive_read_open_filename(reader, file, DEFAULT_BYTES_PER_BLOCK);
+        if (FAILED(rc)) {
+            rc = UNKNOWN_ERROR;
+            LOGE(mModule, "Archive read open file failed!\n");
+        }
+    }
+
+    if (SUCCEED(rc)) {
+        /* 设置解压路径 */
+        if (to_path) {
+            rc = chdir(to_path);
+            if (FAILED(rc)) {
+                rc = UNKNOWN_ERROR;
+                LOGE(mModule, "Set direction failed!\n");
+            }
+        }
+    }
+#if 0
+    if (SUCCEED(rc)) {
+        /* 设置解压进行回调函数 */
+        g_progress_data = malloc(sizeof(ITE_TAR_COMPRESS_DATA_T));
+
+        ITE_CHECK_ERROR(NULL == g_progress_data, 7, return_err, "Memeory is not enough!\n");
+        memset(g_progress_data, 0, sizeof(ITE_TAR_COMPRESS_DATA_T));
+        g_progress_data->archive = reader;
+        g_progress_data->file_size = file_size;
+        /* 文件操作加锁 */
+        archive_read_extract_set_progress_callback(reader, progress_func, g_progress_data);
+    }
+#endif
+    if (SUCCEED(rc)) {
+        /* 解压流程 */
+        for (;;) {
+            rc = archive_match_path_unmatched_inclusions(matching);
+
+            rc = archive_read_next_header(reader, &entry);
+            /* 检查返回结果 */
+            if (rc == ARCHIVE_EOF || rc == ARCHIVE_FATAL) {
+                break;
+            }
+            if (rc < ARCHIVE_OK) {
+                LOGE(mModule, "%s\n", archive_error_string(reader));
+            }
+            /*  Retryable error: try again  */
+            if (rc == ARCHIVE_RETRY) {
+                continue;
+            }
+
+            p = archive_entry_pathname(entry);
+            if (p == NULL || p[0] == '\0') {
+                LOGE(mModule, "Archvie entry has empty or unreadable filename ....skipping.\n");
+                continue;
+            }
+            /* 设置用户ID*/
+            archive_entry_set_uid(entry, 0);
+            archive_entry_set_uname(entry, NULL);
+
+            if (archive_match_excluded(matching, entry)) {
+                continue; /* Excluded by a pattern test. */
+            }
+
+            /* 写入disk */
+            rc =  archive_read_extract2(reader, entry, writer);
+            if (rc != ARCHIVE_OK) {
+                rc = UNKNOWN_ERROR;
+                break;
+                LOGE(mModule, "Read To extract2 failed %s:%s\n", archive_entry_pathname(entry), archive_error_string(reader));
+            }
+        }
+    }
+
+    if (NOTNULL(reader)) {
+        archive_read_close(reader);
+        archive_write_close(reader);
+        archive_read_free(reader);
+    }
+
+    if (NOTNULL(writer)) {
+        archive_write_free(writer);
+    }
+
+    if (NOTNULL(matching)) {
+        unmatched_inclusions_warn(matching, "Not found in archive!\n");
+        archive_match_free(matching);
+    }
+    return rc;
+}
+
+int32_t FileManager::compressFile2Disk(const char *tar_file, const char *file1, ...)
+{
+    int32_t rc = NO_ERROR;
+
+    int32_t extract_flags = 0;
+    int32_t readdisk_flags = 0;
+    struct archive *matching = NULL;
+    struct archive *diskreader = NULL;
+    struct archive *writer = NULL;
+    struct archive_entry_linkresolver *resolver = NULL;
+    struct archive_entry *entry = NULL, *sparse_entry = NULL;
+    size_t buffer_size = 64 * 1024;
+    char * buff = NULL;
+
+    if (ISNULL(tar_file)) {
+        rc = PARAM_INVALID;
+    }
+
+    if (SUCCEED(rc)) {
+        /* root 用户使用*/
+        if (0 == geteuid()) {
+            /* --same-owner */
+            extract_flags |= ARCHIVE_EXTRACT_OWNER;
+            /* -p */
+            extract_flags |= ARCHIVE_EXTRACT_PERM;
+            extract_flags |= ARCHIVE_EXTRACT_ACL;
+            extract_flags |= ARCHIVE_EXTRACT_XATTR;
+            extract_flags |= ARCHIVE_EXTRACT_FFLAGS;
+            extract_flags |= ARCHIVE_EXTRACT_MAC_METADATA;
+        }
+        /* Enable Mac OS "copyfile()" extension by default. */
+        /* This has no effect on other platforms. */
+        readdisk_flags = ARCHIVE_READDISK_MAC_COPYFILE;
+
+        matching = archive_match_new();
+        if (ISNULL(matching)) {
+            rc = NO_MEMORY;
+            LOGE(mModule, "Out of memory match new failed");
+        }
+    }
+
+    if (SUCCEED(rc)) {
+        /* create writer */
+        writer = archive_write_new();
+        if (ISNULL(writer)) {
+            rc = NO_MEMORY;
+            LOGE(mModule, "create archive writer failed\n");
+        } else {
+            archive_write_set_format_pax_restricted(writer);
+        }
+    }
+
+    if (SUCCEED(rc)) {
+        /* set block sizes */
+        archive_write_set_bytes_per_block(writer, DEFAULT_BYTES_PER_BLOCK);
+        archive_write_set_bytes_in_last_block(writer, -1);
+        /* 设置xz 压缩 */
+        rc = archive_write_add_filter_by_name(writer, "xz");
+        if (rc < ARCHIVE_WARN) {
+            rc = UNKNOWN_ERROR;
+            LOGE(mModule, "Set compression option as 'xz' failed!");
+        }
+    }
+
+    if (SUCCEED(rc)) {
+        rc = archive_write_open_filename(writer, tar_file);
+        if (FAILED(rc)) {
+            rc = UNKNOWN_ERROR;
+            LOGE(mModule, "Writer open file[%s] failed\n", tar_file);
+        }
+    }
+
+    if (SUCCEED(rc)) {
+        while (buffer_size < (size_t) DEFAULT_BYTES_PER_BLOCK) {
+            buffer_size *= 2;
+        }
+        /* Try to compensate for space we'll lose to alignment. */
+        buffer_size += 16 * 1024;
+        buff = (char*)malloc(buffer_size);
+        if (ISNULL(buff)) {
+            rc  = NO_MEMORY;
+            LOGE(mModule, "Out of memory ");
+        }
+    }
+
+    if (SUCCEED(rc)) {
+        resolver = archive_entry_linkresolver_new();
+        if (ISNULL(resolver)) {
+            rc = NO_MEMORY;
+            LOGE(mModule, "archive_entry_linkresolver_new() failed");
+        } else {
+            archive_entry_linkresolver_set_strategy(resolver, archive_format(writer));
+        }
+    }
+
+    if (SUCCEED(rc)) {
+        /* set reader point */
+        diskreader = archive_read_disk_new();
+        if (ISNULL(diskreader)) {
+            rc = NO_MEMORY;
+            LOGE(mModule, "archive_read_disk_new() failed");
+        }
+    }
+
+    if (SUCCEED(rc)) {
+        /* 设置软连接压缩属性 */
+        archive_read_disk_set_symlink_physical(diskreader);
+        /* Register entry filters. */
+        /* TODO 添加excluded回调函数*/
+        archive_read_disk_set_matching(diskreader, matching, NULL, NULL);
+        /* TODO 设置元数据回调函数 */
+        archive_read_disk_set_metadata_filter_callback(diskreader, NULL, NULL);
+        /* 设置readerdisk 的行为*/
+        archive_read_disk_set_behavior(diskreader, readdisk_flags);
+        archive_read_disk_set_standard_lookup(diskreader);
+    }
+
+    if (SUCCEED(rc)) {
+        /* 将文件或路径写入到diskreader 中*/
+        rc = Compress_write_hierarchy(diskreader, writer, resolver, file1, buff, buffer_size);
+        if (rc != ARCHIVE_OK) {
+            rc = UNKNOWN_ERROR;
+            LOGE(mModule, "Archive_read_disk_open file is %s error:%s!\n", file1,
+                 archive_error_string(diskreader));
+        }
+    }
+
+    if (SUCCEED(rc)) {
+        va_list argp;
+        char *para = NULL;
+        va_start(argp, file1);
+        while (1) {
+            para = va_arg(argp, char *);
+            if (strcmp(para, "") == 0) { break; }
+            rc = Compress_write_hierarchy(diskreader, writer, resolver, para, buff, buffer_size);
+            if (rc != ARCHIVE_OK) {
+                rc = UNKNOWN_ERROR;
+                LOGE(mModule, "Archive_read_disk_open file is %s error:%s!\n", file1,
+                     archive_error_string(diskreader));
+                break;
+            }
+        }
+        va_end(argp);
+
+        archive_read_disk_set_matching(diskreader, NULL, NULL, NULL);
+        archive_read_disk_set_metadata_filter_callback(diskreader, NULL, NULL);
+    }
+
+
+    if (SUCCEED(rc)) {
+        entry = NULL;
+        archive_entry_linkify(resolver, &entry, &sparse_entry);
+        while (entry != NULL) {
+            struct archive_entry *entry2;
+            struct archive *disk = diskreader;
+            rc = archive_read_disk_open(disk, archive_entry_sourcepath(entry));
+            if (rc != ARCHIVE_OK) {
+                rc = UNKNOWN_ERROR;
+                printf("%s\n", archive_error_string(disk));
+                archive_entry_free(entry);
+                continue;
+            }
+
+            entry2 = archive_entry_new();
+            rc = archive_read_next_header2(disk, entry2);
+            archive_entry_free(entry2);
+            if (rc != ARCHIVE_OK) {
+                rc = UNKNOWN_ERROR;
+                printf("%s\n", archive_error_string(disk));
+                if (rc != ARCHIVE_FATAL) {
+                    archive_read_close(disk);
+                }
+                archive_entry_free(entry);
+                continue;
+            }
+
+            compressWriteEntry(diskreader, writer, entry, buff, buffer_size);
+            archive_entry_free(entry);
+            archive_read_close(disk);
+            entry = NULL;
+            archive_entry_linkify(resolver, &entry, &sparse_entry);
+        }
+    }
+
+    if (NOTNULL(writer)) {
+        archive_write_close(writer);
+        archive_write_free(writer);
+    }
+
+    if (NOTNULL(diskreader)) {
+        archive_read_free(diskreader);
+    }
+
+    if (NOTNULL(resolver)) {
+        archive_entry_linkresolver_free(resolver);
+    }
+
+    if (NOTNULL(buff)) {
+        free(buff);
+    }
+
+    if (NOTNULL(matching)) {
+        archive_match_free(matching);
+    }
+    return rc;
+}
 int32_t FileManager::fileTarFromPath(const std::string compreFile)
 {
     int32_t rc = 0;
@@ -43,6 +566,8 @@ int32_t FileManager::fileTarFromPath(const std::string compreFile)
     }
 
     if (SUCCEED(rc)) {
+        rc = compressFile2Disk(compreFile.c_str(), tmpStr.c_str());
+#if 0
         std::string cmd = ("cd ");
         cmd += tmpStr;
         cmd += ";tar -jcf ";
@@ -50,8 +575,9 @@ int32_t FileManager::fileTarFromPath(const std::string compreFile)
         cmd += " *";
 
         rc = system(cmd.c_str());
+#endif
         if (FAILED(rc)) {
-            LOGE(mModule, "system %s failed!\n", cmd.c_str());
+            LOGE(mModule, "compressFile2Disk() failed!\n");
         }
     }
 
@@ -71,11 +597,14 @@ int32_t FileManager::fileUntarToPath(const std::string compreFile)
     }
 
     if (SUCCEED(rc)) {
+        rc = uncompressFil2Disk(compreFile.c_str(), tmpStr.c_str());
+#if 0
         std::string cmd = "tar -axf ";
         cmd += compreFile + " -C " + tmpStr;
         rc = system(cmd.c_str());
+#endif
         if (FAILED(rc)) {
-            LOGE(mModule, "Runing system(%s) failed!\n", cmd.c_str());
+            LOGE(mModule, "Runing uncompressFil2Disk failed!\n");
         }
 
     }

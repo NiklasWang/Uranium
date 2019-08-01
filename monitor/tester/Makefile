@@ -8,7 +8,7 @@ sources     = $(wildcard *.cpp)
 objects     = $(sources:.cpp=.o)
 dependence := $(sources:.cpp=.d)
 
-SHARED_LIBS = $(GLOBAL_SHARED_LIBS) libfswatch
+SHARED_LIBS = $(GLOBAL_SHARED_LIBS) libfswatch libarchive
 STATIC_LIBS = $(GLOBAL_STATIC_LIBS) libmonitor libmd5sum_sha1sum libuuid
 
 include $(MAKE_RULE)/find.library.make.rule
