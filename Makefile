@@ -84,6 +84,8 @@ release:
 
 linux_release:
 	find -path "./linux_release" -prune -o  -path "./release" -prune -o -name "*.so" -exec cp -ar {} linux_release/ \;
+	cp -ar external/libcurl/lib* linux_release/
+	cp -ar external/libarchive/lib* linux_release/
 	cp -ar external/fswatch/lib* linux_release/
 	cp -ar core/tester/server_tester linux_release/
 
