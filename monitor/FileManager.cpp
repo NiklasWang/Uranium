@@ -14,9 +14,15 @@
 #include "md5.h"
 #include "sha.h"
 #include <stdarg.h>
+#include <Exbsdtar.h>
+
 namespace uranium
 {
 #define DEFAULT_BYTES_PER_BLOCK             (20*512)
+#define SECURITY                    \
+    (ARCHIVE_EXTRACT_SECURE_SYMLINKS        \
+     | ARCHIVE_EXTRACT_SECURE_NODOTDOT)
+
 int32_t FileManager::construct()
 {
     int32_t rc = NO_ERROR;
@@ -32,38 +38,71 @@ int32_t FileManager::destruct()
     return rc;
 }
 
+int32_t FileManager::bsdTar(bool compress, std::string filePath)
+{
+    char *argvp[4];
+    char *pwdPath = NULL;
+    int32_t argc = 0;
+
+    char *buf0 = (char*) "./test";
+    char *buf1 = (char*) "-cf";
+    char *buf2 = (char*) filePath.c_str();
+    char *buf3 = (char*) "./";
+    pwdPath = (char*) malloc(64);
+    memset(pwdPath, 0, sizeof(pwdPath));
+    getcwd(pwdPath, 1024);
+    printf("Get pwdPath=%s\n", pwdPath);
+    chdir(mDirPath.c_str());
+
+    argvp[0] = buf0;
+    argvp[1] = buf1;
+    argvp[2] = buf2;
+    argvp[3] = buf3;
+    Exbsdtar(4, argvp);
+    printf("LHB %s \n", pwdPath);
+    chdir(pwdPath);
+    free(pwdPath);
+
+    return NO_ERROR;
+}
 int32_t FileManager::unmatched_inclusions_warn(struct archive *matching, const char *msg)
 {
     const char *p = NULL;
     int32_t r = 0;
-    int32_t ret = NO_ERROR;
+
     // ITE_CHECK_ERROR(NULL == matching, 0, return_err, "Invalid argument!");
     while ((r = archive_match_path_unmatched_inclusions_next(
                     matching, &p)) == ARCHIVE_OK) {
         LOGE(mModule, "%s: %s", p, msg);
     }
+
     if (r == ARCHIVE_FATAL) {
-        ret = UNKNOWN_ERROR;
         LOGE(mModule, "Out of memory!");
     }
     // ITE_CHECK_ERROR((r == ARCHIVE_FATAL), 1, return_err, " Out of memory!\n");
-    return (archive_match_path_unmatched_inclusions(matching));
+    if (r == ARCHIVE_FATAL) {
+        LOGE(mModule, "Out of memory\n");
+        return NO_MEMORY;
+    } else {
+        return (archive_match_path_unmatched_inclusions(matching));
+    }
+
 }
 
 int32_t FileManager::Compress_write_hierarchy(struct archive *disk, struct archive *writer, struct archive_entry_linkresolver *resolver,
-        const char *path, const char *buff, size_t buff_size)
+        const char *path, char *buff, size_t buff_size)
 {
     int32_t rc = NO_ERROR;
     struct archive_entry *entry = NULL, *spare_entry = NULL;
-
+    int32_t ret = 0;
     if (ISNULL(disk) || ISNULL(writer) || ISNULL(resolver) || ISNULL(path) || ISNULL(buff)) {
         rc = PARAM_INVALID;
         LOGE(mModule, "param invilid\n");
     }
 
     if (SUCCEED(rc)) {
-        rc = archive_read_disk_open(disk, path);
-        if (FAILED(rc)) {
+        ret = archive_read_disk_open(disk, path);
+        if (ret != ARCHIVE_OK) {
             rc = NOT_READY;
             LOGE(mModule, "Archive_read_disk_open file error: %s!", archive_error_string(disk));
         }
@@ -71,24 +110,20 @@ int32_t FileManager::Compress_write_hierarchy(struct archive *disk, struct archi
 
     if (SUCCEED(rc)) {
         for (;;) {
+            printf("LHB.....\n");
             archive_entry_free(entry);
             entry = archive_entry_new();
-            if (ISNULL(entry)) {
-                rc = NO_MEMORY;
-                LOGE(mModule, "archive_entry_new() failed\n");
+            ret =  archive_read_next_header2(disk, entry);
+            if (ret == ARCHIVE_EOF) {
                 break;
-            }
-            rc =  archive_read_next_header2(disk, entry);
-            if (rc == ARCHIVE_EOF) {
-                break;
-            } else if (rc != ARCHIVE_OK) {
-                if (rc == ARCHIVE_FATAL || rc == ARCHIVE_FAILED) {
+            } else if (ret != ARCHIVE_OK) {
+                if (ret == ARCHIVE_FATAL || ret == ARCHIVE_FAILED) {
                     rc = UNKNOWN_ERROR;
+                    archive_entry_free(entry);
+                    archive_read_close(disk);
                     LOGE(mModule, "Archive_read_next_header2 %s\n", archive_error_string(disk));
-                    break;
-                }
-
-                if (rc < ARCHIVE_WARN) {
+                    return UNKNOWN_ERROR;
+                } else if (ret < ARCHIVE_WARN) {
                     continue;
                 }
             }
@@ -106,10 +141,11 @@ int32_t FileManager::Compress_write_hierarchy(struct archive *disk, struct archi
             archive_entry_linkify(resolver, &entry, &spare_entry);
 
             while (entry != NULL) {
-                rc =   compressWriteEntry(disk, writer, entry, buff, buff_size);
-                if (FAILED(rc)) {
+                ret =  compressWriteEntry(disk, writer, entry, buff, buff_size);
+                if (FAILED(ret)) {
                     rc = UNKNOWN_ERROR;
                     LOGE(mModule, "Compress_write_entry failed!");
+                    goto return_err;
                 }
                 archive_entry_free(entry);
                 entry = spare_entry;
@@ -118,70 +154,73 @@ int32_t FileManager::Compress_write_hierarchy(struct archive *disk, struct archi
         }
     }
 
+return_err:
     if (NOTNULL(entry)) {
         archive_entry_free(entry);
     }
 
     archive_read_close(disk);
-
+    LOGD(mModule, "rc runing\n");
     return rc;
 
 }
 
-int32_t FileManager::compressWriteEntry(struct archive *disk, struct archive *writer, struct archive_entry *entry, const char *buff, size_t buff_size)
+int32_t FileManager::compressWriteEntry(struct archive *disk, struct archive *writer, struct archive_entry *entry, char *buff, size_t buff_size)
 {
-    int32_t rc = NO_ERROR;
     size_t   bytes_read = 0;
     ssize_t bytes_written = 0;
     int64_t offset = 0, progress = 0;
-    const char *null_buff = NULL;
+    char *null_buff = NULL;
     const void *buff_tmp;
+    int32_t ret = 0;
 
-    if (SUCCEED(rc)) {
-        rc =  archive_write_header(writer, entry);
-        if ((rc >= ARCHIVE_OK) && (archive_entry_size(entry) > 0)) {
-            while ((rc = archive_read_data_block(disk, &buff_tmp, &bytes_read, &offset)) == ARCHIVE_OK) {
-                if (offset > progress) {
-                    int64_t sparse = offset - progress;
-                    size_t ns;
-                    if (null_buff == NULL) {
-                        null_buff = buff;
-                        memset((void*) null_buff, 0, buff_size);
-                    }
-                    while (sparse > 0) {
-                        if (sparse > (int64_t)buff_size) {
-                            ns = buff_size;
-                        } else {
-                            ns = (size_t)sparse;
-                        }
-                        bytes_written = archive_write_data(writer, null_buff, ns);
-                        // ITE_CHECK_ERROR(ret < 0, 3, return_err, "Archive_write_data %s \n", archive_error_string(writer));
-                        if ((size_t)bytes_written < ns) {
-                            /* Write was truncated; warn but continue */
-                            LOGD(mModule, "%s Truncated write; file may "
-                                 "have grown while being archived.",
-                                 archive_entry_pathname(entry));
-                            return 0;
-                        }
-                        progress += bytes_written;
-                        sparse -= bytes_written;
-                    } // end while sparse>0
-                } //end if offset > progress
-                bytes_written = archive_write_data(writer, buff_tmp, bytes_read);
-                // ITE_CHECK_ERROR(bytes_written < 0, 3, return_err, "Archive_write_data %s\n", archive_error_string(writer));
-                if ((size_t)bytes_written < bytes_read) {
-                    /* Write was truncated; warn but continue */
-                    LOGD(mModule, "%s Truncated write; file may "
-                         "have grown while being archived.",
-                         archive_entry_pathname(entry));
-                    return 0;
+    ret  =  archive_write_header(writer, entry);
+    if ((ret >= ARCHIVE_OK) && (archive_entry_size(entry) > 0)) {
+        while ((ret = archive_read_data_block(disk, &buff_tmp, &bytes_read, &offset)) == ARCHIVE_OK) {
+            if (offset > progress) {
+                int64_t sparse = offset - progress;
+                size_t ns;
+                if (null_buff == NULL) {
+                    null_buff = buff;
+                    memset((void*) null_buff, 0, buff_size);
                 }
-                progress += bytes_written;
+                while (sparse > 0) {
+                    if (sparse > (int64_t)buff_size) {
+                        ns = buff_size;
+                    } else {
+                        ns = (size_t)sparse;
+                    }
+                    bytes_written = archive_write_data(writer, null_buff, ns);
+                    // ITE_CHECK_ERROR(ret < 0, 3, return_err, "Archive_write_data %s \n", archive_error_string(writer));
+                    if ((size_t)bytes_written < ns) {
+                        /* Write was truncated; warn but continue */
+                        LOGD(mModule, "%s Truncated write; file may "
+                             "have grown while being archived.",
+                             archive_entry_pathname(entry));
+                        return 0;
+                    }
+                    progress += bytes_written;
+                    sparse -= bytes_written;
+                } // end while sparse>0
+            } //end if offset > progress
+            bytes_written = archive_write_data(writer, buff_tmp, bytes_read);
+            // ITE_CHECK_ERROR(bytes_written < 0, 3, return_err, "Archive_write_data %s\n", archive_error_string(writer));
+            if ((size_t)bytes_written < bytes_read) {
+                /* Write was truncated; warn but continue */
+                LOGD(mModule, "%s Truncated write; file may "
+                     "have grown while being archived.",
+                     archive_entry_pathname(entry));
+                return 0;
             }
+            progress += bytes_written;
+        }
+        if (ret < ARCHIVE_WARN) {
+            LOGE(mModule,  "Archive_read_data failed Error:%s\n", archive_error_string(writer));
+            return UNKNOWN_ERROR;
         }
     }
 
-    return rc;
+    return NO_ERROR;
 }
 
 int32_t FileManager::uncompressFil2Disk(const char *file, const char *to_path)
@@ -193,8 +232,7 @@ int32_t FileManager::uncompressFil2Disk(const char *file, const char *to_path)
     struct archive *reader = NULL;
     const char *p = NULL;
     struct archive_entry *entry = NULL;
-    uint32_t file_size = 0;
-    int32_t fd = 0;
+    // uint32_t file_size = 0;
 
     if (SUCCEED(rc)) {
         /* root 用户使用*/
@@ -242,7 +280,7 @@ int32_t FileManager::uncompressFil2Disk(const char *file, const char *to_path)
             archive_read_support_format_all(reader);
         }
     }
-
+#if 0
     if (SUCCEED(rc)) {
         /* 读取文件总长度 */
         fd = open(file, O_RDONLY);
@@ -255,7 +293,7 @@ int32_t FileManager::uncompressFil2Disk(const char *file, const char *to_path)
             close(fd);
         }
     }
-
+#endif
     if (SUCCEED(rc)) {
         /* 打开文件 */
         rc = archive_read_open_filename(reader, file, DEFAULT_BYTES_PER_BLOCK);
@@ -295,15 +333,22 @@ int32_t FileManager::uncompressFil2Disk(const char *file, const char *to_path)
 
             rc = archive_read_next_header(reader, &entry);
             /* 检查返回结果 */
-            if (rc == ARCHIVE_EOF || rc == ARCHIVE_FATAL) {
+            if (rc == ARCHIVE_EOF) {
+                rc = NO_ERROR;
                 break;
             }
+
             if (rc < ARCHIVE_OK) {
                 LOGE(mModule, "%s\n", archive_error_string(reader));
             }
             /*  Retryable error: try again  */
             if (rc == ARCHIVE_RETRY) {
                 continue;
+            }
+
+            if (rc == ARCHIVE_FATAL) {
+                rc = UNKNOWN_ERROR;
+                break;
             }
 
             p = archive_entry_pathname(entry);
@@ -349,7 +394,7 @@ int32_t FileManager::uncompressFil2Disk(const char *file, const char *to_path)
 int32_t FileManager::compressFile2Disk(const char *tar_file, const char *file1, ...)
 {
     int32_t rc = NO_ERROR;
-
+    int32_t ret = 0;
     int32_t extract_flags = 0;
     int32_t readdisk_flags = 0;
     struct archive *matching = NULL;
@@ -403,16 +448,16 @@ int32_t FileManager::compressFile2Disk(const char *tar_file, const char *file1, 
         archive_write_set_bytes_per_block(writer, DEFAULT_BYTES_PER_BLOCK);
         archive_write_set_bytes_in_last_block(writer, -1);
         /* 设置xz 压缩 */
-        rc = archive_write_add_filter_by_name(writer, "xz");
-        if (rc < ARCHIVE_WARN) {
+        ret = archive_write_add_filter_by_name(writer, "bzip2");
+        if (ret  < ARCHIVE_WARN) {
             rc = UNKNOWN_ERROR;
             LOGE(mModule, "Set compression option as 'xz' failed!");
         }
     }
 
     if (SUCCEED(rc)) {
-        rc = archive_write_open_filename(writer, tar_file);
-        if (FAILED(rc)) {
+        ret  = archive_write_open_filename(writer, tar_file);
+        if (FAILED(ret)) {
             rc = UNKNOWN_ERROR;
             LOGE(mModule, "Writer open file[%s] failed\n", tar_file);
         }
@@ -465,8 +510,8 @@ int32_t FileManager::compressFile2Disk(const char *tar_file, const char *file1, 
 
     if (SUCCEED(rc)) {
         /* 将文件或路径写入到diskreader 中*/
-        rc = Compress_write_hierarchy(diskreader, writer, resolver, file1, buff, buffer_size);
-        if (rc != ARCHIVE_OK) {
+        ret = Compress_write_hierarchy(diskreader, writer, resolver, file1, buff, buffer_size);
+        if (ret != ARCHIVE_OK) {
             rc = UNKNOWN_ERROR;
             LOGE(mModule, "Archive_read_disk_open file is %s error:%s!\n", file1,
                  archive_error_string(diskreader));
@@ -474,6 +519,7 @@ int32_t FileManager::compressFile2Disk(const char *tar_file, const char *file1, 
     }
 
     if (SUCCEED(rc)) {
+#if 0
         va_list argp;
         char *para = NULL;
         va_start(argp, file1);
@@ -481,7 +527,7 @@ int32_t FileManager::compressFile2Disk(const char *tar_file, const char *file1, 
             para = va_arg(argp, char *);
             if (strcmp(para, "") == 0) { break; }
             rc = Compress_write_hierarchy(diskreader, writer, resolver, para, buff, buffer_size);
-            if (rc != ARCHIVE_OK) {
+            if (FAILED(rc)) {
                 rc = UNKNOWN_ERROR;
                 LOGE(mModule, "Archive_read_disk_open file is %s error:%s!\n", file1,
                      archive_error_string(diskreader));
@@ -489,7 +535,7 @@ int32_t FileManager::compressFile2Disk(const char *tar_file, const char *file1, 
             }
         }
         va_end(argp);
-
+#endif
         archive_read_disk_set_matching(diskreader, NULL, NULL, NULL);
         archive_read_disk_set_metadata_filter_callback(diskreader, NULL, NULL);
     }
@@ -501,21 +547,19 @@ int32_t FileManager::compressFile2Disk(const char *tar_file, const char *file1, 
         while (entry != NULL) {
             struct archive_entry *entry2;
             struct archive *disk = diskreader;
-            rc = archive_read_disk_open(disk, archive_entry_sourcepath(entry));
-            if (rc != ARCHIVE_OK) {
-                rc = UNKNOWN_ERROR;
+            ret = archive_read_disk_open(disk, archive_entry_sourcepath(entry));
+            if (ret != ARCHIVE_OK) {
                 printf("%s\n", archive_error_string(disk));
                 archive_entry_free(entry);
                 continue;
             }
 
             entry2 = archive_entry_new();
-            rc = archive_read_next_header2(disk, entry2);
+            ret = archive_read_next_header2(disk, entry2);
             archive_entry_free(entry2);
-            if (rc != ARCHIVE_OK) {
-                rc = UNKNOWN_ERROR;
+            if (ret != ARCHIVE_OK) {
                 printf("%s\n", archive_error_string(disk));
-                if (rc != ARCHIVE_FATAL) {
+                if (ret != ARCHIVE_FATAL) {
                     archive_read_close(disk);
                 }
                 archive_entry_free(entry);
@@ -534,11 +578,11 @@ int32_t FileManager::compressFile2Disk(const char *tar_file, const char *file1, 
         archive_write_close(writer);
         archive_write_free(writer);
     }
-
+#if 0
     if (NOTNULL(diskreader)) {
         archive_read_free(diskreader);
     }
-
+#endif
     if (NOTNULL(resolver)) {
         archive_entry_linkresolver_free(resolver);
     }
@@ -566,7 +610,8 @@ int32_t FileManager::fileTarFromPath(const std::string compreFile)
     }
 
     if (SUCCEED(rc)) {
-        rc = compressFile2Disk(compreFile.c_str(), tmpStr.c_str());
+        bsdTar(true, compreFile);
+        // rc = compressFile2Disk(compreFile.c_str(), "/home/binson/libarchive");
 #if 0
         std::string cmd = ("cd ");
         cmd += tmpStr;

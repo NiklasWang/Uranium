@@ -5,6 +5,11 @@
 int main(int argc, char **argv)
 {
     int32_t rc = 0;
+    uranium::FileManager fileManager("/home/binson/libarchive/");
+    fileManager.construct();
+    fileManager.fileTarFromPath("/tmp/test.tar.bz2");
+    fileManager.fileUntarToPath("/tmp/test.tar.bz2");
+
 #if 0
     uranium::MonitorCore monitCore("/mnt/d/lenvov_wokspace/source/Uranium");
 
