@@ -7,7 +7,7 @@ sources     = $(wildcard *.cpp)
 objects     = $(sources:.cpp=.o)
 dependence := $(sources:.cpp=.d)
 
-SHARED_LIBS = $(GLOBAL_SHARED_LIBS) libthreads 
+SHARED_LIBS = $(GLOBAL_SHARED_LIBS) libthreads libcurl
 STATIC_LIBS = $(GLOBAL_STATIC_LIBS) libencrypt libmd5sum_sha1sum libuuid libutils libaes
 
 include $(MAKE_RULE)/find.library.make.rule
