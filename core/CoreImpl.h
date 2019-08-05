@@ -5,11 +5,15 @@
 #include "GuiInterface.h"
 #include "GuiCallback.h"
 #include "Configs.h"
+#include "ThreadPoolEx.h"
+#include "ServiceCore.h"
 
-namespace uranium {
+namespace uranium
+{
 
 class CoreImpl :
-    public GuiCallback {
+    public GuiCallback
+{
 public:
     int32_t start();
     int32_t stop();
@@ -38,6 +42,8 @@ private:
     GuiCallback *mGui;
     ModuleType   mModule;
     Configs     *mConfig;
+    ThreadPoolEx *mThreads;
+    ServiceCore  *serCore;
 };
 
 }

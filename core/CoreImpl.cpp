@@ -1,19 +1,44 @@
 #include "CoreImpl.h"
+#include "ThreadPoolEx.h"
 
-namespace uranium {
+namespace uranium
+{
 
 int32_t CoreImpl::start()
 {
-    LOGD(mModule, "Core start() called.");
-    sleep(1);
-
+    // LOGD(mModule, "Core start() called.");
+    // sleep(1);
+    mThreads->run(
+    [this]()->int32_t {
+        std::string name;
+        std::string passwd;
+        std::string path;
+        get(CONFIG_LOCAL_PATH, path);
+        get(CONFIG_USERNAME, name);
+        get(CONFIG_PASSWORD, passwd);
+        LOGI(mModule, "LocalPath = %s", path.c_str());
+        LOGI(mModule, "Username  = %s", name.c_str());
+        LOGI(mModule, "Password  = %s", passwd.c_str());
+        serCore = new ServiceCore(TRAN_CLINET, path, name, passwd);
+        serCore->construct();
+        serCore->initialize();
+        serCore->start();
+        return NO_ERROR;
+    });
     return NO_ERROR;
 }
 
 int32_t CoreImpl::stop()
 {
-    LOGD(mModule, "Core stop() called.");
-    sleep(1);
+
+    mThreads->run(
+    [this]()->int32_t {
+        serCore->stop();
+        serCore->destruct();
+        delete serCore;
+        serCore = nullptr;
+        return NO_ERROR;
+    });
 
     return NO_ERROR;
 }
@@ -72,6 +97,14 @@ int32_t CoreImpl::construct()
     }
 
     if (SUCCEED(rc)) {
+        mThreads = ThreadPoolEx::getInstance();
+        if (ISNULL(mThreads)) {
+            LOGE(mModule, "Failed to get thread pool");
+            rc = UNKNOWN_ERROR;
+        }
+    }
+
+    if (SUCCEED(rc)) {
         mConstructed = true;
     }
 
@@ -102,6 +135,10 @@ int32_t CoreImpl::destruct()
         }
     }
 
+    if (SUCCEED(rc)) {
+        mThreads->removeInstance();
+    }
+
     return RETURNIGNORE(rc, NOT_INITED);
 }
 
@@ -109,7 +146,10 @@ CoreImpl::CoreImpl(GuiCallback *gui) :
     mConstructed(false),
     mGui(gui),
     mModule(MODULE_CORE_IMPL),
-    mConfig(nullptr) {
+    mConfig(nullptr),
+    mThreads(nullptr)
+{
+
 }
 
 CoreImpl::~CoreImpl()
