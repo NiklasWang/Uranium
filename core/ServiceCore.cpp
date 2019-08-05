@@ -366,7 +366,7 @@ int32_t ServiceCore::construct()
 
     if (SUCCEED(rc)) {
         /* --TODO-- */
-        // mTransCore = new TransferCore(mTranStatus, mEncryptCore);
+        mTransCore = new TransferCore(mTranStatus, mEncryptCore, mName, mPasswd);
         if (NOTNULL(mTransCore)) {
             rc = mTransCore->construct();
             if (FAILED(rc)) {
@@ -775,7 +775,7 @@ int32_t ServiceCore::doHandleConAck(const TRAN_HEADE_T& traHead)
     return rc;
 }
 
-ServiceCore::ServiceCore(TRANSFER_STATUS_ENUM  tranStatus, const std::string localPath):
+ServiceCore::ServiceCore(TRANSFER_STATUS_ENUM  tranStatus, const std::string localPath, const std::string name, const std::string passwd):
     mConstructed(false),
     mSemEnable(false),
     mCodesSync(false),
@@ -788,7 +788,9 @@ ServiceCore::ServiceCore(TRANSFER_STATUS_ENUM  tranStatus, const std::string loc
     mTransCore(NULL),
     mMonitorCore(NULL),
     mEncryptCore(NULL),
-    mLocalPath(localPath)
+    mLocalPath(localPath),
+    mName(name),
+    mPasswd(passwd)
 {
 #if 0
     mSemEnable = false;

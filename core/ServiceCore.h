@@ -86,7 +86,7 @@ private:
     uint32_t folder_mkdirs(const char *folder_path);
 
 public:
-    ServiceCore(TRANSFER_STATUS_ENUM  tranStatus, const std::string localPath);
+    ServiceCore(TRANSFER_STATUS_ENUM  tranStatus, const std::string localPath, const std::string name, const std::string passwd);
     virtual~ServiceCore();
     int32_t construct();
     int32_t destruct();
@@ -143,6 +143,8 @@ private:
     EncryptCore             *mEncryptCore;
     std::string             mLocalPath;
     std::string             mRemotePath;
+    std::string             mName;
+    std::string             mPasswd;
     // std::map<std::string, uint32_t> &diffFile
 
 };

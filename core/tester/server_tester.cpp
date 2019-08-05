@@ -5,7 +5,7 @@
 using namespace uranium;
 int main(int argc, char **argv)
 {
-    ServiceCore serCore(TRANS_SERVER, " ");
+    ServiceCore serCore(TRANS_SERVER, " ", "lihb13", "Lhbzyy8629");
     serCore.construct();
     serCore.initialize();
     serCore.start();
