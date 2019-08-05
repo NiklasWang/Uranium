@@ -228,7 +228,7 @@ int32_t FexTransfer::fexDownloadFile(std::string& filelist, std::string storageF
 
     if (SUCCEED(rc)) {
         std::string httpPath = "http://fex.lenovo.com/uploads/";
-        httpPath += "lihb13";
+        httpPath += mName.c_str();
         httpPath += "/";
         httpPath += filelist;
         curl_easy_setopt(curl, CURLOPT_URL, httpPath.c_str());
@@ -452,10 +452,10 @@ int32_t FexTransfer::fexLogin()
 
     if (SUCCEED(rc)) {
         curl_formadd(&post, &last, CURLFORM_COPYNAME, "username",
-                     CURLFORM_COPYCONTENTS, "lihb13",
+                     CURLFORM_COPYCONTENTS, mName.c_str(),
                      CURLFORM_END);
         curl_formadd(&post, &last, CURLFORM_COPYNAME, "password",
-                     CURLFORM_COPYCONTENTS, "Lhbzyy8629",
+                     CURLFORM_COPYCONTENTS, mPassWd.c_str(),
                      CURLFORM_END);
         curl_formadd(&post, &last, CURLFORM_COPYNAME, "next",
                      CURLFORM_COPYCONTENTS, "/",
