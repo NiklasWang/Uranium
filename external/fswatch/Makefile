@@ -16,11 +16,11 @@ all compile link:
 	@echo -e $(NOTICE_COLOR)" - automake, autopoint, libtool, gettext, etc."$(RESTORE_COLOR)
 ifneq ($(TARGET), $(notdir $(wildcard $(CURRDIR)/$(TARGET))))
 	$(call BUILD)
-endif
 ifeq ($(strip $(ISCYGWIN)), y)
 	$(call CYGWIN_INSTALL)
 else
 	$(call LINUX_INSTALL)
+endif
 endif
 
 define BUILD
@@ -45,6 +45,7 @@ clean:
 	cd fswatch-master; \
 	make clean;        \
 	make distclean;    \
-	rm -rf $(CURRDIR)/$(TARGET)*
+	rm -rf $(CURRDIR)/$(TARGET)*; \
+	rm -rf $(CURRDIR)/*.dll
 
 .PHONY: clean

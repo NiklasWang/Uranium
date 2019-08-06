@@ -4,7 +4,7 @@ TARGET  = libarchive$(strip $(DYLIB_EXT))
 CURRDIR = $(shell pwd)
 
 ifeq ($(strip $(ISCYGWIN)), y)
-  FILENAME = cygfswatch-11.dll
+  FILENAME = cygarchive-13.dll
 else
   FILENAME = libarchive.so*
 endif
@@ -16,11 +16,11 @@ all compile link:
 	@echo -e $(NOTICE_COLOR)" - automake, autopoint, libtool, gettext, etc."$(RESTORE_COLOR)
 ifneq ($(TARGET), $(notdir $(wildcard $(CURRDIR)/$(TARGET))))
 	$(call BUILD)
-endif
 ifeq ($(strip $(ISCYGWIN)), y)
 	$(call CYGWIN_INSTALL)
 else
 	$(call LINUX_INSTALL)
+endif
 endif
 
 define BUILD
@@ -45,6 +45,7 @@ clean:
 	cd libarchive-3.3.3; \
 	make clean;        \
 	make distclean;    \
-	rm -rf $(CURRDIR)/$(TARGET)*
+	rm -rf $(CURRDIR)/$(TARGET)*; \
+	rm -rf $(CURRDIR)/*.dll
 
 .PHONY: clean
