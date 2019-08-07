@@ -4,7 +4,7 @@ TARGET  = libcurl$(strip $(DYLIB_EXT))
 CURRDIR = $(shell pwd)
 
 ifeq ($(strip $(ISCYGWIN)), y)
-  FILENAME = cygfswatch-11.dll
+  FILENAME = cygcurl-4.dll
 else
   FILENAME = libcurl.so*
 endif
@@ -42,6 +42,7 @@ clean:
 	cd curl-7.50.3; \
 	make clean;        \
 	make distclean;    \
-	rm -rf $(CURRDIR)/$(TARGET)*
+	rm -rf $(CURRDIR)/$(TARGET)* \
+	rm -rf $(CURRDIR)/*.dll
 
 .PHONY: clean
