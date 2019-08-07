@@ -16,6 +16,7 @@ int32_t CoreImpl::start()
         get(CONFIG_LOCAL_PATH, path);
         get(CONFIG_USERNAME, name);
         get(CONFIG_PASSWORD, passwd);
+        path = "test";
         LOGI(mModule, "LocalPath = %s", path.c_str());
         LOGI(mModule, "Username  = %s", name.c_str());
         LOGI(mModule, "Password  = %s", passwd.c_str());
