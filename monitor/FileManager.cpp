@@ -18,7 +18,7 @@
 
 namespace uranium
 {
-#define DEFAULT_BYTES_PER_BLOCK             (20*512)
+#define DEFAULT_BYTES_PER_BLOCK             (10240)
 #define SECURITY                    \
     (ARCHIVE_EXTRACT_SECURE_SYMLINKS        \
      | ARCHIVE_EXTRACT_SECURE_NODOTDOT)
@@ -47,7 +47,7 @@ int32_t FileManager::bsdTar(bool compress, std::string filePath)
     char *buf0 = (char*) "./test";
     char *buf1 = (char*) "-cf";
     char *buf2 = (char*) filePath.c_str();
-    char *buf3 = (char*) "./";
+    char *buf3 = (char*) "./test";
     pwdPath = (char*) malloc(64);
     memset(pwdPath, 0, sizeof(pwdPath));
     getcwd(pwdPath, 1024);
@@ -65,6 +65,32 @@ int32_t FileManager::bsdTar(bool compress, std::string filePath)
 
     return NO_ERROR;
 }
+
+int32_t FileManager::bsdUnTar(bool compress, std::string filePath)
+{
+    char *argvp[6];
+    // char *pwdPath = NULL;
+    int32_t argc = 0;
+
+    char *buf0 = (char*) "./test";
+    char *buf1 = (char*) "-jxf ";
+    // char *buf2 = (char*) filePath.c_str();
+    char *buf3 = (char*) " -C ";
+    // char *buf4 =  mDirPath.c_str();
+
+
+    argvp[0] = buf0;
+    argvp[1] = buf1;
+    argvp[2] = (char *) filePath.c_str();
+    argvp[3] = buf3;
+    argvp[4] = (char *) mDirPath.c_str();
+    LOGE(mModule, "start rungint path=%s pwd=%s\n", argvp[2], argvp[4]);
+    Exbsdtar(3, argvp);
+    LOGE(mModule, "start run end\n");
+
+    return NO_ERROR;
+}
+
 int32_t FileManager::unmatched_inclusions_warn(struct archive *matching, const char *msg)
 {
     const char *p = NULL;
@@ -226,12 +252,14 @@ int32_t FileManager::compressWriteEntry(struct archive *disk, struct archive *wr
 int32_t FileManager::uncompressFil2Disk(const char *file, const char *to_path)
 {
     int32_t rc = NO_ERROR;
+    int32_t ret = 0;
     int32_t extract_flags = 0;
     struct archive *matching = NULL;
     struct archive *writer = NULL;
     struct archive *reader = NULL;
     const char *p = NULL;
     struct archive_entry *entry = NULL;
+    int fd = 0;
     // uint32_t file_size = 0;
 
     if (SUCCEED(rc)) {
@@ -280,34 +308,33 @@ int32_t FileManager::uncompressFil2Disk(const char *file, const char *to_path)
             archive_read_support_format_all(reader);
         }
     }
-#if 0
+#if 1
     if (SUCCEED(rc)) {
         /* 读取文件总长度 */
-        fd = open(file, O_RDONLY);
+        fd = open(file, O_RDWR);
         if (fd < 0) {
             rc = NOT_READY;
             LOGE(mModule, "Open %s failed with %s\n", file, strerror(errno));
         } else {
-            file_size = lseek(fd, 0, SEEK_END);
-            lseek(fd, 0, SEEK_SET);
-            close(fd);
+            // close(fd);
         }
     }
 #endif
     if (SUCCEED(rc)) {
         /* 打开文件 */
-        rc = archive_read_open_filename(reader, file, DEFAULT_BYTES_PER_BLOCK);
-        if (FAILED(rc)) {
+        ret = archive_read_open_fd(reader, fd, DEFAULT_BYTES_PER_BLOCK);
+        // ret = archive_read_open_filename(reader, file, DEFAULT_BYTES_PER_BLOCK);
+        if (FAILED(ret)) {
             rc = UNKNOWN_ERROR;
-            LOGE(mModule, "Archive read open file failed!\n");
+            LOGE(mModule, "Archive read open file = %s fd=%d %s failed!\n", file, fd, archive_error_string(reader));
         }
     }
 
     if (SUCCEED(rc)) {
         /* 设置解压路径 */
         if (to_path) {
-            rc = chdir(to_path);
-            if (FAILED(rc)) {
+            ret = chdir(to_path);
+            if (FAILED(ret)) {
                 rc = UNKNOWN_ERROR;
                 LOGE(mModule, "Set direction failed!\n");
             }
@@ -329,25 +356,25 @@ int32_t FileManager::uncompressFil2Disk(const char *file, const char *to_path)
     if (SUCCEED(rc)) {
         /* 解压流程 */
         for (;;) {
-            rc = archive_match_path_unmatched_inclusions(matching);
+            ret = archive_match_path_unmatched_inclusions(matching);
 
-            rc = archive_read_next_header(reader, &entry);
+            ret = archive_read_next_header(reader, &entry);
             /* 检查返回结果 */
-            if (rc == ARCHIVE_EOF) {
+            if (ret == ARCHIVE_EOF) {
                 rc = NO_ERROR;
                 break;
             }
 
-            if (rc < ARCHIVE_OK) {
+            if (ret < ARCHIVE_OK) {
                 LOGE(mModule, "%s\n", archive_error_string(reader));
             }
             /*  Retryable error: try again  */
-            if (rc == ARCHIVE_RETRY) {
+            if (ret == ARCHIVE_RETRY) {
                 continue;
             }
 
-            if (rc == ARCHIVE_FATAL) {
-                rc = UNKNOWN_ERROR;
+            if (ret == ARCHIVE_FATAL) {
+                ret = UNKNOWN_ERROR;
                 break;
             }
 
@@ -365,8 +392,8 @@ int32_t FileManager::uncompressFil2Disk(const char *file, const char *to_path)
             }
 
             /* 写入disk */
-            rc =  archive_read_extract2(reader, entry, writer);
-            if (rc != ARCHIVE_OK) {
+            ret =  archive_read_extract2(reader, entry, writer);
+            if (ret != ARCHIVE_OK) {
                 rc = UNKNOWN_ERROR;
                 break;
                 LOGE(mModule, "Read To extract2 failed %s:%s\n", archive_entry_pathname(entry), archive_error_string(reader));
@@ -642,6 +669,7 @@ int32_t FileManager::fileUntarToPath(const std::string compreFile)
     }
 
     if (SUCCEED(rc)) {
+        // rc = bsdUnTar(true, compreFile);
         rc = uncompressFil2Disk(compreFile.c_str(), tmpStr.c_str());
 #if 0
         std::string cmd = "tar -axf ";

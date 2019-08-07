@@ -38,6 +38,7 @@ public:
 
 private:
     int32_t bsdTar(bool compress, std::string filePath);
+    int32_t bsdUnTar(bool compress, std::string filePath);
     int32_t unmatched_inclusions_warn(struct archive *matching, const char *msg);
     int32_t compressWriteEntry(struct archive *disk, struct archive *writer, struct archive_entry *entry, char *buff, size_t buff_size);
     int32_t Compress_write_hierarchy(struct archive *disk, struct archive *writer, struct archive_entry_linkresolver *resolver,
