@@ -208,12 +208,14 @@ int32_t FexTransfer::fexDownloadFile(std::string& filelist, std::string storageF
 
 
     if (!mLoginStatus) {
+        LOGE(mModule, "Not ready!");
         rc = NOT_READY;
     }
 
     if (SUCCEED(rc)) {
         fp = fopen(storageFiles.c_str(), "w");
         if (ISNULL(fp)) {
+            LOGE(mModule, "fopen %s failed", storageFiles.c_str());
             rc = NOT_READY;
         }
     }
@@ -240,7 +242,7 @@ int32_t FexTransfer::fexDownloadFile(std::string& filelist, std::string storageF
     if (SUCCEED(rc)) {
         res = curl_easy_perform(curl);
         if (res != CURLE_OK) {
-            printf("Curl perform failed: %s\n", curl_easy_strerror(res));
+            LOGE(mModule, "Curl perform failed: %s\n", curl_easy_strerror(res));
             rc = UNKNOWN_ERROR;
         }
     }
@@ -278,6 +280,7 @@ int32_t FexTransfer::fexFileList(std::string& filePath)
     if (SUCCEED(rc)) {
         retBuf = new char[2048];
         if (ISNULL(retBuf)) {
+            LOGE(mModule, "Out of memory");
             rc  = NO_MEMORY;
         } else {
             memset(retBuf, 0, 2048);
@@ -294,13 +297,12 @@ int32_t FexTransfer::fexFileList(std::string& filePath)
     if (SUCCEED(rc)) {
         res = curl_easy_perform(curl);
         if (res != CURLE_OK) {
-            printf("Curl perform failed: %s\n", curl_easy_strerror(res));
+            LOGE(mModule, "Curl perform failed: %s\n", curl_easy_strerror(res));
             rc = UNKNOWN_ERROR;
         }
     }
-
+    LOGD(mModule, "LHB:retBuf = %s\n", retBuf);
     if (SUCCEED(rc)) {
-        printf("LHB:retBuf = %s\n", retBuf);
         std::string tmpStr = retBuf;
         std::string::size_type position;
         std::string fileName;
@@ -345,6 +347,8 @@ int32_t FexTransfer::fexFileList(std::string& filePath)
             filePath += fileName;
         }
     }
+
+    SECURE_DELETE(retBuf);
 
     if (NOTNULL(curl)) {
         curl_easy_cleanup(curl);
@@ -557,8 +561,8 @@ uint32_t FexTransfer::pushData(TRANSFER_BUFFER_T &cmd)
                 LOGE(mModule, "Not support!");
                 break;
         }
-        printf("LHB filePath =%s\n", filePath.c_str());
-        // rc = rename((char*)cmd.buffer, filePath.c_str());
+        LOGD(mModule, "LHB filePath =%s\n", filePath.c_str());
+        rc = rename((char*)cmd.buffer, filePath.c_str());
         if (FAILED(rc)) {
             LOGE(mModule, "Renaming file Error");
         }
@@ -595,7 +599,7 @@ uint32_t FexTransfer::pullData(TRANSFER_BUFFER_T &cmd)
     int32_t rc = 0;
     std::string filePath = WORK_DIRPATH;
     std::string fileList;
-
+    std::string receiveData;
     if (mTranDirct == TRAN_CLINET) {
         filePath += CLINET_PATH;
     } else {
@@ -622,12 +626,43 @@ uint32_t FexTransfer::pullData(TRANSFER_BUFFER_T &cmd)
     }
 
     if (SUCCEED(rc)) {
+        std::string::size_type position;
+        switch (mTranDirct) {
+            case TRAN_CLINET:
+                position = fileList.find(SERVERFILE);
+                if (position == fileList.npos) {
+                    LOGD(mModule, "Not found data %s ", SERVERFILE);
+                    rc = NOT_FOUND;
+                }
+                filePath += SERVERFILE;
+                break;
+            case TRANS_SERVER:
+                position = fileList.find(CLINETFILE);
+                if (position == fileList.npos) {
+                    LOGD(mModule, "Not found data %s ", CLINETFILE);
+                    rc = NOT_FOUND;
+                }
+                filePath += CLINETFILE;
+                break;
+            default:
+                rc = -1;
+                LOGE(mModule, "Not support!");
+                break;
+        }
+    }
+
+    if (SUCCEED(rc)) {
+        LOGD(mModule, "fileList = %s filePath=%s", fileList.c_str(), filePath.c_str());
         rc = fexDownloadFile(fileList, filePath);
         if (FAILED(rc)) {
             LOGE(mModule, "Failed fexDownloadFiles");
         }
     }
 
+    if (SUCCEED(rc)) {
+        memset(cmd.buffer, 0, cmd.length);
+        strcpy((char*) cmd.buffer, filePath.c_str());
+    }
     return rc;
 }
 
