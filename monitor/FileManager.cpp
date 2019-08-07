@@ -1,4 +1,5 @@
 #include <sys/types.h>
+#include<sys/stat.h>
 #include <dirent.h>
 #include <unistd.h>
 #include <stdio.h>
@@ -6,6 +7,9 @@
 #include <sstream>
 #include <fstream>
 #include <thread>
+#include <zlib.h>
+#include<string.h>
+
 
 #include <libfswatch/archive.h>
 #include <libfswatch/archive_entry.h>
@@ -22,6 +26,286 @@ namespace uranium
 #define SECURITY                    \
     (ARCHIVE_EXTRACT_SECURE_SYMLINKS        \
      | ARCHIVE_EXTRACT_SECURE_NODOTDOT)
+
+#if 0
+struct file_info {
+    //用于保存文件名和对应的inode,用于判断是否为硬链接文件
+    char filename[100];
+    ino_t inode;
+} filesave[1024];
+#endif
+int32_t FileManager::folder_mkdirs(const char *folder_path)
+{
+    int i, len;
+    char str[512];
+    strncpy(str, folder_path, 512);
+    len = strlen(str);
+    for (i = 0; i < len; i++) {
+        if (str[i] == '/') {
+            str[i] = '\0';
+            if (access(str, 0) != 0) {
+                mkdir(str, 0777);
+            }
+            str[i] = '/';
+        }
+    }
+    if (len > 0 && access(str, 0) != 0) {
+        mkdir(str, 0777);
+    }
+
+    return NO_ERROR;
+}
+
+int32_t FileManager::owner_fileHeadErase(void)
+{
+    std::map<std::string, ino_t>::iterator it;
+    for (it = mFileHead.begin(); it != mFileHead.end();) {
+        it = mFileHead.erase(it);
+    }
+
+    return 0;
+}
+
+int32_t FileManager::owner_tarFile(const std::string& filename, FILE* fpOut)
+{
+    struct stat stat_buf;
+    stat(filename.c_str(), &stat_buf);
+#if 0
+    filesave[1024];
+    int i;
+    static int n = 0; //记录写入文件的真实数量，不包括硬链接文件
+#endif
+#if 0
+    for (i = 0; i <= n; i++) { //判断文件是否已写入
+        if (filesave[i].inode == stat_buf.st_ino) { //判断是硬链接文件
+            fprintf(fpOut, "h\n%s\n%s\n", filename, filesave[i].filename); //写入标记h->newname->oldname
+            return 0;
+        }
+    }
+
+    for (iter = mFileInfos.begin(); iter != mFileInfos.end(); iter++) {
+        ostream << iter->first << "=" << mFileInfos[iter->first] << std::endl;
+    }
+#else
+    std::map<std::string, ino_t>::iterator it;
+    for (it = mFileHead.begin(); it != mFileHead.end(); it++) {
+        if (mFileHead[it->first] == stat_buf.st_ino) {
+            fprintf(fpOut, "h\n%s\n%s\n", filename, it->first.c_str()); //写入标记h->newname->oldname
+            return NO_ERROR;
+        }
+    }
+
+#endif
+
+    std::string::size_type pos = filename.find(mDirPath);
+    pos += mDirPath.length();
+    std::string relaPath = filename.substr(pos);
+    LOGD(mModule, "PWD = %s", filename.c_str());
+    fprintf(fpOut, "f\n%s\n%d\n", relaPath.c_str(), (int)stat_buf.st_size);
+    FILE *fpIn = fopen(filename.c_str(), "r");
+    char buf[4096];
+    while (1) {
+        int ret = fread(buf, 1, sizeof(buf), fpIn);
+        if (ret <= 0) {
+            break;
+        }
+        fwrite(buf, ret, 1, fpOut);
+    }
+
+#if 0
+    strcpy(filesave[n].filename, filename); //将新打包的文件写入结构体记录
+    filesave[n].inode = stat_buf.st_ino;
+#else
+    mFileHead[filename] = stat_buf.st_ino;
+#endif
+    mFileCount++;
+    fclose(fpIn);
+    return 0;
+}
+
+int32_t FileManager::owner_tarDIr(const std::string& dirname, FILE* fpOut)
+{
+    // char filepath[1024];
+    std::string filePath = dirname;
+#if 1
+
+    std::string::size_type pos = filePath.find(mDirPath);
+    pos += mDirPath.length();
+    std::string relaPath = filePath.substr(pos);
+    if (relaPath.size()) {
+        fprintf(fpOut, "d\n"); //d目录标记
+        fprintf(fpOut, "%s\n", relaPath.c_str()); //打包的根目录
+    }
+
+#endif
+
+    DIR* dir = opendir(dirname.c_str()); //打开文件目录项
+    struct dirent* entry = readdir(dir);
+    while (entry) {
+        //./test/file
+        // sprintf(filepath, "%s/%s", dirname.c_str(), entry->d_name); //拼凑每个目录项的路径
+        filePath = dirname;
+        if (filePath[filePath.size() - 1] != '/') {
+            filePath += '/';
+        }
+        filePath += entry->d_name;
+        LOGD(mModule, "PWD = %s", filePath.c_str());
+        if (entry->d_type == DT_REG) { //判断是否为文件
+            owner_tarFile(filePath, fpOut); //打包文件
+        } else if (entry->d_type == DT_DIR) { //判断是否为目录,若是就继续递归
+            if ((strcmp(entry->d_name, ".") == 0) ||
+                (strcmp(entry->d_name, "..") == 0)) { //. ..忽略
+                entry = readdir(dir);
+                continue;
+            }
+            owner_tarDIr(filePath, fpOut);
+        }
+        entry = readdir(dir);
+    }
+    closedir(dir);
+    return 0;
+}
+
+int32_t FileManager::owner_tar(const char *outfile)
+{
+    owner_fileHeadErase();
+    mFileCount = 0;
+    LOGE(mModule, "Out file is %s\n", outfile);
+    FILE* fpOut = fopen(outfile, "w");
+    if (ISNULL(fpOut)) {
+        LOGE(mModule, "fopen file failed");
+        return NOT_READY;
+    }
+    fprintf(fpOut, "xgltar\n"); //标记打包文件类型
+    fprintf(fpOut, "1.0\n"); //版本
+    int ret = owner_tarDIr(mDirPath, fpOut); //打包目录
+    fclose(fpOut);
+    mFileCount = 0;
+    owner_fileHeadErase();
+    return NO_ERROR;
+}
+
+int32_t FileManager::owner_unTarFile(FILE *fin)
+{
+    std::string pathTemp = mDirPath;
+    char buf[1024];
+    if (fgets(buf, sizeof(buf), fin) == NULL) {
+        return -1;
+    }
+    printf("now utar type=%s", buf);
+    if (strcmp(buf, "d\n") == 0) { //目录标记
+        fgets(buf, sizeof(buf), fin);
+        buf[strlen(buf) - 1] = 0;
+        pathTemp = mDirPath + buf;
+        folder_mkdirs(pathTemp.c_str());
+        printf("mkdir %s\n", buf);
+    } else if (strcmp(buf, "f\n") == 0) { //文件标记
+        fgets(buf, sizeof(buf), fin);
+        buf[strlen(buf) - 1] = 0;
+        pathTemp = mDirPath + buf;
+        FILE *out = fopen(pathTemp.c_str(), "w");
+        printf("create file %s\n", buf);
+        fgets(buf, sizeof(buf), fin);
+        int len = atol(buf);
+        printf("filelen %s\n", buf);
+        while (len > 0) {
+            int readlen = len < (int) sizeof(buf) ? len : sizeof(buf);
+            int ret = fread(buf, 1, readlen, fin);
+            fwrite(buf, 1, ret, out);
+            len -= ret;
+        }
+        fclose(out);
+    } else if (strcmp(buf, "h\n") == 0) { //硬链接文件标记
+        /* --FIXME-- NEED TO DO */
+        fgets(buf, sizeof(buf), fin); //读取链接文件名
+        buf[strlen(buf) - 1] = 0;
+        char oldbuf[1024];//被链接的文件名
+        fgets(oldbuf, sizeof(oldbuf), fin);
+        oldbuf[strlen(oldbuf) - 1] = 0;
+        link(oldbuf, buf);
+    }
+    return NO_ERROR;
+}
+
+int32_t FileManager::owner_unTar(const char* tarfile)
+{
+    char buf[1024];
+    FILE *fin = fopen(tarfile, "r");
+    fgets(buf, sizeof(buf), fin);
+    if (strcmp(buf, "xgltar\n") != 0) { //判断是否为打包文件类型
+        LOGE(mModule, "unknown file format\n");
+        return NOT_READY;
+    }
+    fgets(buf, sizeof(buf), fin);
+    if (strcmp(buf, "1.0\n") == 0) { //判断版本是否正确
+        while (1) {
+            int ret = owner_unTarFile(fin); //解包
+            if (ret != NO_ERROR) {
+                break;
+            }
+        }
+    } else {
+        LOGE(mModule, "unknown version\n");
+        return UNKNOWN_ERROR;
+    }
+    return NO_ERROR;
+}
+
+size_t FileManager::owner_fileSize(const char *filename)
+{
+    FILE *pFile = fopen(filename, "rb");
+    fseek(pFile, 0, SEEK_END);
+    size_t size = ftell(pFile);
+    fclose(pFile);
+    return size;
+}
+
+int32_t FileManager::owner_decompressFile(const char *infilename, const  char *outfilename)
+{
+    int num_read = 0;
+    char buffer[128] = {0};
+
+    gzFile infile = gzopen(infilename, "rb");
+    FILE *outfile = fopen(outfilename, "wb");
+
+    if (!infile || !outfile) {
+        return NOT_READY;
+    }
+
+    while ((num_read = gzread(infile, buffer, sizeof(buffer))) > 0) {
+        fwrite(buffer, 1, num_read, outfile);
+        memset(buffer, 0, 128);
+    }
+    gzclose(infile);
+    fclose(outfile);
+    return NO_ERROR;
+}
+
+int32_t FileManager::owner_compressFile(const char *infilename, const char *outfilename)
+{
+    int num_read = 0;
+    char inbuffer[128] = {0};
+    size_t total_read = 0;
+    FILE *infile = fopen(infilename, "rb");
+    gzFile outfile = gzopen(outfilename, "wb");
+    if (!infile || !outfile) {
+        return -1;
+    }
+
+    while ((num_read = fread(inbuffer, 1, sizeof(inbuffer), infile)) > 0) {
+        total_read += num_read;
+        gzwrite(outfile, inbuffer, num_read);
+        memset(inbuffer, 0, 128);
+    }
+    fclose(infile);
+    gzclose(outfile);
+    LOGD(mModule, "Read %ld bytes, Wrote %ld bytes,"
+         "Compression factor %4.2f%%\n",
+         total_read, owner_fileSize(outfilename),
+         (1.0 - owner_fileSize(outfilename) * 1.0 / total_read) * 100.0);
+
+    return NO_ERROR;
+}
 
 int32_t FileManager::construct()
 {
@@ -49,7 +333,7 @@ int32_t FileManager::bsdTar(bool compress, std::string filePath)
     char *buf2 = (char*) filePath.c_str();
     char *buf3 = (char*) "./test";
     pwdPath = (char*) malloc(64);
-    memset(pwdPath, 0, sizeof(pwdPath));
+    memset(pwdPath, 0, (size_t) sizeof(pwdPath));
     getcwd(pwdPath, 1024);
     printf("Get pwdPath=%s\n", pwdPath);
     chdir(mDirPath.c_str());
@@ -637,7 +921,12 @@ int32_t FileManager::fileTarFromPath(const std::string compreFile)
     }
 
     if (SUCCEED(rc)) {
-        bsdTar(true, compreFile);
+        LOGE(mModule, "Runing....");
+        std::string encryFilename = compreFile + ".owner_tar";
+
+        rc = owner_tar(encryFilename.c_str());
+        rc = owner_compressFile(encryFilename.c_str(), compreFile.c_str());
+        // bsdTar(true, compreFile);
         // rc = compressFile2Disk(compreFile.c_str(), "/home/binson/libarchive");
 #if 0
         std::string cmd = ("cd ");
@@ -669,8 +958,12 @@ int32_t FileManager::fileUntarToPath(const std::string compreFile)
     }
 
     if (SUCCEED(rc)) {
+        std::string encryFilename = compreFile + ".owner_untar";
+        owner_decompressFile(compreFile.c_str(), encryFilename.c_str());
+        // owner_compressFile
+        rc = owner_unTar(encryFilename.c_str());
         // rc = bsdUnTar(true, compreFile);
-        rc = uncompressFil2Disk(compreFile.c_str(), tmpStr.c_str());
+        // rc = uncompressFil2Disk(compreFile.c_str(), tmpStr.c_str());
 #if 0
         std::string cmd = "tar -axf ";
         cmd += compreFile + " -C " + tmpStr;
@@ -884,7 +1177,8 @@ int32_t FileManager::fileInfoErase(void)
 }
 
 FileManager::FileManager(const std::string &monitPath):
-    mModule(MODULE_MONITOR)
+    mModule(MODULE_MONITOR),
+    mFileCount(0)
 {
     std::string thisPath = monitPath;
     if ('/' != thisPath[thisPath.size() - 1]) {

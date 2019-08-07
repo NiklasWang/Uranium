@@ -18,6 +18,7 @@ typedef struct FILEINFOS_TAG {
     uint32_t    checksum[4];
 } FILEINFOS_T;
 
+
 class FileManager
 {
 public:
@@ -35,6 +36,20 @@ public:
     int32_t destruct();
     FileManager(const std::string &monitPath);
     virtual ~FileManager();
+
+private:
+    int32_t folder_mkdirs(const char *folder_path);
+    int32_t owner_tarFile(const std::string& filename, FILE* fpOut);
+    int32_t owner_tarDIr(const std::string& dirname, FILE* fpOut);
+    int32_t owner_unTarFile(FILE *fin);
+    size_t owner_fileSize(const char *filename);
+    int32_t owner_fileHeadErase(void);
+
+private:
+    int32_t owner_tar(const char *outfile);
+    int32_t owner_unTar(const char* tarfile);
+    int32_t owner_decompressFile(const char *infilename, const  char *outfilename);
+    int32_t owner_compressFile(const char *infilename, const char *outfilename);
 
 private:
     int32_t bsdTar(bool compress, std::string filePath);
@@ -59,6 +74,8 @@ private:
     ModuleType      mModule;
     std::string     mDirPath;
     std::map<std::string, std::string> mFileInfos;
+    std::map<std::string, ino_t> mFileHead;
+    uint32_t        mFileCount;
 
 };
 
