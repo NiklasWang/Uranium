@@ -3,7 +3,7 @@
 
 #define CLINETFILE          ("CLI_FILE")
 #define SERVERFILE          ("SER_FILE")
-#define WORK_DIRPATH        ("./Uranium/")
+#define WORK_DIRPATH        ("URI_TMP/")
 #define CLINET_PATH         ("Clinet/")
 #define SERVER_PATH         ("Server/")
 #define DICTIONARY_NAME     ("direction.bin")
