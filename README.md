@@ -7,11 +7,11 @@ Transfer Files or Directories Between Linux and Windows Without SSH Support
 ## Requirements
 ### Running
 - linux(ubuntu)  linux_release
-    make clean; make clean-cache;
-    make -j8; make linux_release
+    * make clean; make clean-cache;
+    * make -j8; make linux_release
 - windows        release
-    make clean; make clean-cache
-    make -j8
+    * make clean; make clean-cache
+    * make -j8
 ### Building
 - cygwin
 - linux(ubuntu)
