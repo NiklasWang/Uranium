@@ -4,6 +4,7 @@ Current version is 1.0.1-pre
 
 Transfer Files or Directories Between Linux and Windows Without SSH Support
 
+## Requirements
 ### Running
 - linux(ubuntu)  linux_release
 - windows        release
