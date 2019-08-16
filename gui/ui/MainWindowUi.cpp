@@ -282,6 +282,9 @@ int32_t MainWindowUi::setupUi(QMainWindow *MainWindow)
         mDebugTextEdit->setFont(font6);
         mDebugTextEdit->document()->setMaximumBlockCount(MAX_DEBUG_LINE_COUNT);
         mDebugTextEdit->setReadOnly(true);
+        mDebugTextEditorMenu = nullptr;
+        mDebugTextEdit->setContextMenuPolicy(Qt::CustomContextMenu);
+        connect(mDebugTextEdit, SIGNAL(customContextMenuRequested(QPoint)), this, SLOT(ShowDebugTextEditMenu(QPoint)));
         mSettingverticalLayout->addWidget(mDebugTextEdit);
         mSettingHorizontalLayout->addWidget(mSettingGroupBox);
     }
@@ -349,6 +352,27 @@ int32_t MainWindowUi::setupUi(QMainWindow *MainWindow)
     }
 
     return NO_ERROR;
+}
+
+void MainWindowUi::ShowDebugTextEditMenu(QPoint)
+{
+    if (ISNULL(mDebugTextEditorMenu)) {
+        mDebugTextEditorMenu = mDebugTextEdit->createStandardContextMenu();
+        mDebugTextEditorActionClear = new QAction("Clear", mDebugTextEdit);
+        connect(mDebugTextEditorActionClear, SIGNAL(triggered()), mDebugTextEdit, SLOT(clear()));
+        mDebugTextEditorActionSetting = new QAction("Setting...", mDebugTextEdit);
+        connect(mDebugTextEditorActionSetting, SIGNAL(triggered()), this, SIGNAL(debuggerSetting()));
+        mDebugTextEditorMenu->addAction(mDebugTextEditorActionClear);
+        mDebugTextEditorMenu->addAction(mDebugTextEditorActionSetting);
+    }
+    mDebugTextEditorMenu->move(QCursor::pos());
+    mDebugTextEditorMenu->show();
+}
+
+void MainWindowUi::onDebugTextEditorNewSetting(const QFont font, const QString style)
+{
+    mDebugTextEdit->setFont(font);
+    mDebugTextEdit->setStyleSheet(style);
 }
 
 void MainWindowUi::retranslateUi(QMainWindow *MainWindow)

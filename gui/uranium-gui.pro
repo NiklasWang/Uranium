@@ -26,55 +26,59 @@ CONFIG += c++11
 
 PROJECT_ROOT = $$PWD/..
 
-SOURCES +=                       \
-        main.cpp                 \
-        CoreHandler.cpp          \
-        MainWindow.cpp           \
-        Dialogs.cpp              \
-        AboutDialog.cpp          \
-        IPCClient.cpp            \
-        IPCServer.cpp            \
-        ui/MainWindowUi.cpp      \
-        ui/AboutUi.cpp           \
-        log/LogImpl.cpp          \
-        utils/modules.cpp        \
-        utils/CQueue.cpp         \
-        utils/Semaphore.cpp      \
-        utils/SyncType.cpp       \
-        utils/TimedSemaphore.cpp \
-        utils/Timer.cpp          \
-        utils/Times.cpp          \
+SOURCES +=                        \
+        main.cpp                  \
+        CoreHandler.cpp           \
+        MainWindow.cpp            \
+        Dialogs.cpp               \
+        AboutDialog.cpp           \
+        DebuggerSettingDialog.cpp \
+        IPCClient.cpp             \
+        IPCServer.cpp             \
+        ui/MainWindowUi.cpp       \
+        ui/AboutUi.cpp            \
+        ui/DebuggerSettingUi.cpp  \
+        log/LogImpl.cpp           \
+        utils/modules.cpp         \
+        utils/CQueue.cpp          \
+        utils/Semaphore.cpp       \
+        utils/SyncType.cpp        \
+        utils/TimedSemaphore.cpp  \
+        utils/Timer.cpp           \
+        utils/Times.cpp           \
         ../core/Config.cpp
 
-HEADERS +=                       \
-        MainWindow.h             \
-        CoreHandler.h            \
-        Dialogs.h                \
-        AboutDialog.h            \
-        IPCClient.h              \
-        IPCServer.h              \
-        log/LogImpl.h            \
-        log/logs.h               \
-        ui/MainWindowUi.h        \
-        ui/AboutUi.h             \
-        utils/modules.h          \
-        utils/CQueue.h           \
-        utils/RWLock.h           \
-        utils/Semaphore.h        \
-        utils/SyncType.h         \
-        utils/TimedSemaphore.h   \
-        utils/Timer.h            \
-        utils/Times.h            \
-        utils/clist.h            \
-        utils/common.h           \
+HEADERS +=                        \
+        MainWindow.h              \
+        CoreHandler.h             \
+        Dialogs.h                 \
+        AboutDialog.h             \
+        DebuggerSettingDialog.h   \
+        IPCClient.h               \
+        IPCServer.h               \
+        log/LogImpl.h             \
+        log/logs.h                \
+        ui/MainWindowUi.h         \
+        ui/AboutUi.h              \
+        ui/DebuggerSettingUi.h    \
+        utils/modules.h           \
+        utils/CQueue.h            \
+        utils/RWLock.h            \
+        utils/Semaphore.h         \
+        utils/SyncType.h          \
+        utils/TimedSemaphore.h    \
+        utils/Timer.h             \
+        utils/Times.h             \
+        utils/clist.h             \
+        utils/common.h            \
         ../core/Config.h
 
-INCLUDEPATH +=                   \
-        $$PWD                    \
-        $$PWD/log                \
-        $$PWD/utils              \
-        $$PROJECT_ROOT           \
-        $$PROJECT_ROOT/ipc       \
+INCLUDEPATH +=                    \
+        $$PWD                     \
+        $$PWD/log                 \
+        $$PWD/utils               \
+        $$PROJECT_ROOT            \
+        $$PROJECT_ROOT/ipc        \
         $$PROJECT_ROOT/core
 
 RC_ICONS   = "logo.ico"
@@ -82,7 +86,8 @@ RC_ICONS   = "logo.ico"
 RESOURCES += resources/pictures.qrc
 
 FORMS += \
-        designer/MainWindow.ui  \
+        designer/DebuggerSetting.ui \
+        designer/MainWindow.ui      \
         designer/AboutDialog.ui
 
 # Default rules for deployment.

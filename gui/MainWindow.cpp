@@ -4,6 +4,8 @@
 #include "Dialogs.h"
 #include "MainWindow.h"
 #include "ui\MainWindowUi.h"
+#include "AboutDialog.h"
+#include "DebuggerSettingDialog.h"
 
 namespace uranium {
 
@@ -24,6 +26,7 @@ MainWindow::MainWindow(QApplication *app, QWidget *parent) :
 
     connect(mUi, SIGNAL(quit()),  this, SLOT(close()));
     connect(mUi, SIGNAL(about()), this, SLOT(showAbout()));
+    connect(mUi, SIGNAL(debuggerSetting()), this, SLOT(showDebuggerSetting()));
 }
 
 MainWindow::~MainWindow()
@@ -155,7 +158,47 @@ int32_t MainWindow::showAbout()
     return rc;
 }
 
+int32_t MainWindow::showDebuggerSetting()
+{
+    int32_t rc = NO_ERROR;
+
+    if (SUCCEED(rc)) {
+        mDebuggerSettingDialog = new DebuggerSettingDialog();
+        if (ISNULL(mDebuggerSettingDialog)) {
+            showError("Failed to create debugger setting dialog.");
+            rc = NO_MEMORY;
+        } else {
+            connect(mDebuggerSettingDialog, SIGNAL(destroyed(QObject*)),
+                    this,                   SLOT(closeDebuggerSetting()));
+        }
+    }
+
+    if (SUCCEED(rc)) {
+        rc = mDebuggerSettingDialog->setup();
+        if (!SUCCEED(rc)) {
+            showError("Failed to setup debugger setting dialog.");
+        } else {
+            connect(mDebuggerSettingDialog, &DebuggerSettingDialog::newSetting,
+                    mUi, &Ui::MainWindow::onDebugTextEditorNewSetting);
+        }
+    }
+
+    if (SUCCEED(rc)) {
+        mDebuggerSettingDialog->show();
+    }
+
+    return rc;
+}
+
 void MainWindow::closeAbout()
+{
+    if (NOTNULL(mAbout)) {
+        mAbout->deleteLater();
+        mAbout = nullptr;
+    }
+}
+
+void MainWindow::closeDebuggerSetting()
 {
     if (NOTNULL(mAbout)) {
         mAbout->deleteLater();

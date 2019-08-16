@@ -51,16 +51,21 @@ public:
     int32_t appendDebugger(const QString &str);
     int32_t appendShell(const QString &str);
 
-signals:
+Q_SIGNALS:
     void quit();
     void about();
+    void debuggerSetting();
 
-private slots:
+private Q_SLOTS:
     int32_t onStartButtonClicked();
     int32_t onSelectButonClicked();
+    void ShowDebugTextEditMenu(QPoint);
     int32_t setConfig(bool checked);
     int32_t setConfig(const QString &setting);
     void showShellWindow(bool checked);
+
+public Q_SLOTS:
+    void onDebugTextEditorNewSetting(const QFont, const QString);
 
 private:
     bool         mStarted;
@@ -103,6 +108,9 @@ private:
     QMenu       *mMenuFile;
     QMenu       *mMenuHelp;
     QStatusBar  *mStatusBar;
+    QMenu       *mDebugTextEditorMenu;
+    QAction     *mDebugTextEditorActionClear;
+    QAction     *mDebugTextEditorActionSetting;
     QMainWindow *mMainWindow;
 };
 
@@ -110,7 +118,7 @@ private:
 
 namespace Ui {
     class MainWindow: public uranium::MainWindowUi {};
-} // namespace Ui
+}
 
 
 #endif

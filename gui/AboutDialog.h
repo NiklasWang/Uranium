@@ -3,7 +3,7 @@
 
 #include <QDialog>
 
-#include <ui/AboutUi.h>
+#include "ui/AboutUi.h"
 
 namespace uranium {
 
