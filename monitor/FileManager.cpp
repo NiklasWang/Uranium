@@ -90,7 +90,7 @@ int32_t FileManager::owner_tarFile(const std::string& filename, FILE* fpOut)
     std::map<std::string, ino_t>::iterator it;
     for (it = mFileHead.begin(); it != mFileHead.end(); it++) {
         if (mFileHead[it->first] == stat_buf.st_ino) {
-            fprintf(fpOut, "h\n%s\n%s\n", filename, it->first.c_str()); //写入标记h->newname->oldname
+            fprintf(fpOut, "h\n%s\n%s\n", filename.c_str(), it->first.c_str()); //写入标记h->newname->oldname
             return NO_ERROR;
         }
     }
@@ -100,7 +100,6 @@ int32_t FileManager::owner_tarFile(const std::string& filename, FILE* fpOut)
     std::string::size_type pos = filename.find(mDirPath);
     pos += mDirPath.length();
     std::string relaPath = filename.substr(pos);
-    LOGD(mModule, "PWD = %s", filename.c_str());
     fprintf(fpOut, "f\n%s\n%d\n", relaPath.c_str(), (int)stat_buf.st_size);
     FILE *fpIn = fopen(filename.c_str(), "r");
     char buf[4096];
@@ -149,7 +148,6 @@ int32_t FileManager::owner_tarDIr(const std::string& dirname, FILE* fpOut)
             filePath += '/';
         }
         filePath += entry->d_name;
-        LOGD(mModule, "PWD = %s", filePath.c_str());
         if (entry->d_type == DT_REG) { //判断是否为文件
             owner_tarFile(filePath, fpOut); //打包文件
         } else if (entry->d_type == DT_DIR) { //判断是否为目录,若是就继续递归
@@ -198,16 +196,13 @@ int32_t FileManager::owner_unTarFile(FILE *fin)
         buf[strlen(buf) - 1] = 0;
         pathTemp = mDirPath + buf;
         folder_mkdirs(pathTemp.c_str());
-        printf("mkdir %s\n", buf);
     } else if (strcmp(buf, "f\n") == 0) { //文件标记
         fgets(buf, sizeof(buf), fin);
         buf[strlen(buf) - 1] = 0;
         pathTemp = mDirPath + buf;
         FILE *out = fopen(pathTemp.c_str(), "w");
-        printf("create file %s\n", buf);
         fgets(buf, sizeof(buf), fin);
         int len = atol(buf);
-        printf("filelen %s\n", buf);
         while (len > 0) {
             int readlen = len < (int) sizeof(buf) ? len : sizeof(buf);
             int ret = fread(buf, 1, readlen, fin);
@@ -1104,11 +1099,11 @@ int32_t FileManager::fileScanToInis(const std::string path)
     }
     /*  */
     if (SUCCEED(rc)) {
-#ifdef __linux
+
         if ('/' != thisPath[thisPath.size() - 1]) {
             thisPath += "/";
         }
-#endif  // __linux
+
         dir = opendir(thisPath.c_str());
         if (ISNULL(dir)) {
             rc = -1;
@@ -1119,7 +1114,7 @@ int32_t FileManager::fileScanToInis(const std::string path)
     if (SUCCEED(rc)) {
         struct    dirent    *ptr;
         while ((ptr = readdir(dir)) != NULL) { ///read the list of this dir
-#ifdef __linux
+
             if (ptr->d_name == strchr(ptr->d_name, '.')) {
                 continue;
             }
@@ -1150,12 +1145,13 @@ int32_t FileManager::fileScanToInis(const std::string path)
                     std::string relaPath = filePath.substr(pos);
                     mFileInfos[relaPath] = sst.str();
 #if 0
+                    LOGE(mModule, "%s = %s", filePath.c_str(), mFileInfos[filePath].c_str());
                     std::cout << filePath << "=" << mFileInfos[filePath] << std::endl;
 #endif
                     fclose(pFile);
                 }
             }
-#endif  //__linux
+
         }
     }
 
