@@ -656,7 +656,7 @@ uint32_t FexTransfer::pullData(TRANSFER_BUFFER_T &cmd)
             case TRAN_CLINET:
                 position = fileList.find(SERVERFILE);
                 if (position == fileList.npos) {
-                    LOGD(mModule, "Not found data %s ", SERVERFILE);
+                    // LOGD(mModule, "Not found data %s ", SERVERFILE);
                     rc = NOT_FOUND;
                 }
                 filePath += SERVERFILE;
@@ -664,7 +664,7 @@ uint32_t FexTransfer::pullData(TRANSFER_BUFFER_T &cmd)
             case TRANS_SERVER:
                 position = fileList.find(CLINETFILE);
                 if (position == fileList.npos) {
-                    LOGD(mModule, "Not found data %s ", CLINETFILE);
+                    // LOGD(mModule, "Not found data %s ", CLINETFILE);
                     rc = NOT_FOUND;
                 }
                 filePath += CLINETFILE;
