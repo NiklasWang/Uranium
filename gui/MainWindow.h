@@ -43,7 +43,7 @@ private:
     QApplication   *mApp;
     QWidget        *mParent;
     Ui::MainWindow *mUi;
-    AboutDialog    *mAbout;
+    AboutDialog    *mAboutDialog;
     DebuggerSettingDialog *mDebuggerSettingDialog;
 };
 

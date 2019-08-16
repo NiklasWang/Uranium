@@ -17,7 +17,7 @@ MainWindow::MainWindow(QApplication *app, QWidget *parent) :
     mApp(app),
     mParent(parent),
     mUi(new Ui::MainWindow()),
-    mAbout(nullptr)
+    mAboutDialog(nullptr)
 {
     gMW = this;
 
@@ -134,25 +134,25 @@ int32_t MainWindow::showAbout()
     int32_t rc = NO_ERROR;
 
     if (SUCCEED(rc)) {
-        mAbout = new AboutDialog();
-        if (ISNULL(mAbout)) {
+        mAboutDialog = new AboutDialog();
+        if (ISNULL(mAboutDialog)) {
             showError("Failed to create about dialog.");
             rc = NO_MEMORY;
         } else {
-            connect(mAbout, SIGNAL(destroyed(QObject*)),
+            connect(mAboutDialog, SIGNAL(destroyed(QObject*)),
                     this,   SLOT(closeAbout()));
         }
     }
 
     if (SUCCEED(rc)) {
-        rc = mAbout->setup();
+        rc = mAboutDialog->setup();
         if (!SUCCEED(rc)) {
             showError("Failed to setup about dialog.");
         }
     }
 
     if (SUCCEED(rc)) {
-        mAbout->show();
+        mAboutDialog->show();
     }
 
     return rc;
@@ -161,6 +161,8 @@ int32_t MainWindow::showAbout()
 int32_t MainWindow::showDebuggerSetting()
 {
     int32_t rc = NO_ERROR;
+    QFont font;
+    QString style;
 
     if (SUCCEED(rc)) {
         mDebuggerSettingDialog = new DebuggerSettingDialog();
@@ -174,7 +176,8 @@ int32_t MainWindow::showDebuggerSetting()
     }
 
     if (SUCCEED(rc)) {
-        rc = mDebuggerSettingDialog->setup();
+        mUi->getDebuggerSetting(font, style);
+        rc = mDebuggerSettingDialog->setup(font, style);
         if (!SUCCEED(rc)) {
             showError("Failed to setup debugger setting dialog.");
         } else {
@@ -192,17 +195,17 @@ int32_t MainWindow::showDebuggerSetting()
 
 void MainWindow::closeAbout()
 {
-    if (NOTNULL(mAbout)) {
-        mAbout->deleteLater();
-        mAbout = nullptr;
+    if (NOTNULL(mAboutDialog)) {
+        mAboutDialog->deleteLater();
+        mAboutDialog = nullptr;
     }
 }
 
 void MainWindow::closeDebuggerSetting()
 {
-    if (NOTNULL(mAbout)) {
-        mAbout->deleteLater();
-        mAbout = nullptr;
+    if (NOTNULL(mDebuggerSettingDialog)) {
+        mDebuggerSettingDialog->deleteLater();
+        mDebuggerSettingDialog = nullptr;
     }
 }
 

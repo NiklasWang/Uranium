@@ -51,6 +51,13 @@ public:
     int32_t appendDebugger(const QString &str);
     int32_t appendShell(const QString &str);
 
+public:
+    void getDebuggerSetting(QFont &, QString &);
+    void getRemoteControlSetting(QFont &, QString &);
+
+private:
+    bool eventFilter(QObject *obj, QEvent *event) override;
+
 Q_SIGNALS:
     void quit();
     void about();
@@ -66,6 +73,7 @@ private Q_SLOTS:
 
 public Q_SLOTS:
     void onDebugTextEditorNewSetting(const QFont, const QString);
+    void onRemoteControlEditorNewSetting(const QFont, const QString);
 
 private:
     bool         mStarted;

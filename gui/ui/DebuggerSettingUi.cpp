@@ -33,6 +33,12 @@ void DebuggerSettingUi::onBgColorChanged(QColor c)
     newSetting(mExampleLabel->font(), mColorString + mBgColorString);
 }
 
+void DebuggerSettingUi::onRestoreSettings()
+{
+    newSetting(mOrigFont, mOrigColorString);
+    mDialog->reject();
+}
+
 DebuggerSettingUi::DebuggerSettingUi(QDialog *dialog) :
     mDialog(dialog),
     mButtonBox(nullptr),
@@ -52,7 +58,7 @@ DebuggerSettingUi::~DebuggerSettingUi()
     }
 }
 
-int32_t DebuggerSettingUi::setupUi()
+int32_t DebuggerSettingUi::setupUi(const QFont &curFont, const QString &curStyle)
 {
     if (mDialog->objectName().isEmpty())
         mDialog->setObjectName(QString::fromUtf8("Dialog"));
@@ -88,7 +94,11 @@ int32_t DebuggerSettingUi::setupUi()
     mColorChangeBtn = new QPushButton(gridLayoutWidget);
     mColorChangeBtn->setObjectName(QString::fromUtf8("mColorChangeBtn"));
 
-    mColorDialog = new QColorDialog();
+    QByteArray byte = curStyle.toLatin1();
+    char *str = byte.data();
+    int r1 = 0, g1 = 0, b1 = 0, r2 = 255, g2 = 255, b2 = 255;
+    sscanf(str, "color:rgb(%d,%d,%d);background-color:rgb(%d,%d,%d);", &r1, &g1, &b1, &r2, &g2, &b2);
+    mColorDialog = new QColorDialog(QColor(r1, g1, b1));
     connect(mColorDialog, SIGNAL(colorSelected(QColor)), this, SLOT(onColorChanged(QColor)));
 
     connect(mColorChangeBtn, SIGNAL(clicked(bool)), mColorDialog, SLOT(show()));
@@ -97,12 +107,14 @@ int32_t DebuggerSettingUi::setupUi()
 
     mFontComboBox = new QFontComboBox(gridLayoutWidget);
     mFontComboBox->setObjectName(QString::fromUtf8("mFontComboBox"));
+    mFontComboBox->setCurrentFont(curFont);
     connect(mFontComboBox, SIGNAL(currentFontChanged(const QFont &)), this, SLOT(onFontChanged(const QFont &)));
 
     mGridLayout->addWidget(mFontComboBox, 1, 1, 1, 2);
 
     mSpinBox = new QSpinBox(gridLayoutWidget);
     mSpinBox->setObjectName(QString::fromUtf8("mSpinBox"));
+    mSpinBox->setValue(curFont.pointSize());
     connect(mSpinBox, SIGNAL(valueChanged(int)), this, SLOT(onSizeChanged(int)));
 
     mGridLayout->addWidget(mSpinBox, 0, 1, 1, 2);
@@ -122,7 +134,7 @@ int32_t DebuggerSettingUi::setupUi()
     mBgChangeBtn = new QPushButton(gridLayoutWidget);
     mBgChangeBtn->setObjectName(QString::fromUtf8("mBgChangeBtn"));
 
-    mBgColorDialog = new QColorDialog();
+    mBgColorDialog = new QColorDialog(QColor(r2, g2, b2));
     connect(mBgColorDialog, SIGNAL(colorSelected(QColor)), this, SLOT(onBgColorChanged(QColor)));
 
     connect(mBgChangeBtn, SIGNAL(clicked(bool)), mBgColorDialog, SLOT(show()));
@@ -139,8 +151,17 @@ int32_t DebuggerSettingUi::setupUi()
     mGridLayout->addWidget(mExampleLabel, 2, 1, 2, 1);
 
     retranslateUi();
-    QObject::connect(mButtonBox, SIGNAL(accepted()), mDialog, SLOT(accept()));
-    QObject::connect(mButtonBox, SIGNAL(rejected()), mDialog, SLOT(reject()));
+    connect(mButtonBox, SIGNAL(accepted()), mDialog, SLOT(accept()));
+
+    onSizeChanged(mSpinBox->value());
+    onFontChanged(mFontComboBox->currentFont());
+    onColorChanged(QColor(r1, g1, b1));
+    onBgColorChanged(QColor(r2, g2, b2));
+
+    mOrigFont.setPointSize(mSpinBox->value());
+    mOrigFont.setFamily(mFontComboBox->currentFont().family());
+    mOrigColorString = mColorString + mBgColorString;
+    connect(mButtonBox, SIGNAL(rejected()), this, SLOT(onRestoreSettings()));
 
     return NO_ERROR;
 }

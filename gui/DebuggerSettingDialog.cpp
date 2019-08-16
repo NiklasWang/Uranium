@@ -4,7 +4,7 @@
 
 namespace uranium {
 
-int32_t DebuggerSettingDialog::setup()
+int32_t DebuggerSettingDialog::setup(const QFont &font, const QString &style)
 {
     int32_t rc = NO_ERROR;
 
@@ -19,7 +19,7 @@ int32_t DebuggerSettingDialog::setup()
     }
 
     if (SUCCEED(rc)) {
-        rc = mUi->setupUi();
+        rc = mUi->setupUi(font, style);
         if (!SUCCEED(rc)) {
             showError("Failed to setup about ui");
         } else {

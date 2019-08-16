@@ -285,6 +285,7 @@ int32_t MainWindowUi::setupUi(QMainWindow *MainWindow)
         mDebugTextEditorMenu = nullptr;
         mDebugTextEdit->setContextMenuPolicy(Qt::CustomContextMenu);
         connect(mDebugTextEdit, SIGNAL(customContextMenuRequested(QPoint)), this, SLOT(ShowDebugTextEditMenu(QPoint)));
+        mDebugTextEdit->viewport()->installEventFilter(this);
         mSettingverticalLayout->addWidget(mDebugTextEdit);
         mSettingHorizontalLayout->addWidget(mSettingGroupBox);
     }
@@ -354,6 +355,16 @@ int32_t MainWindowUi::setupUi(QMainWindow *MainWindow)
     return NO_ERROR;
 }
 
+bool MainWindowUi::eventFilter(QObject *obj, QEvent *event)
+{
+    if ((obj == mDebugTextEdit || obj == mDebugTextEdit->viewport()) &&
+        event->type() == QEvent::MouseButtonDblClick) {
+        debuggerSetting();
+    }
+
+    return mDebugTextEdit->viewport()->eventFilter(obj, event);
+}
+
 void MainWindowUi::ShowDebugTextEditMenu(QPoint)
 {
     if (ISNULL(mDebugTextEditorMenu)) {
@@ -373,6 +384,24 @@ void MainWindowUi::onDebugTextEditorNewSetting(const QFont font, const QString s
 {
     mDebugTextEdit->setFont(font);
     mDebugTextEdit->setStyleSheet(style);
+}
+
+void MainWindowUi::onRemoteControlEditorNewSetting(const QFont font, const QString style)
+{
+    mShellTextEditor->setFont(font);
+    mShellTextEditor->setStyleSheet(style);
+}
+
+void MainWindowUi::getDebuggerSetting(QFont &font, QString &style)
+{
+    font = mDebugTextEdit->font();
+    style = mDebugTextEdit->styleSheet();
+}
+
+void MainWindowUi::getRemoteControlSetting(QFont &font, QString &style)
+{
+    font = mShellTextEditor->font();
+    style = mShellTextEditor->styleSheet();
 }
 
 void MainWindowUi::retranslateUi(QMainWindow *MainWindow)
@@ -575,10 +604,17 @@ int32_t MainWindowUi::onSelectButonClicked()
     if (SUCCEED(rc)) {
         QString old = mLocalDirLineEdit->text();
         path = QFileDialog::getExistingDirectory(mCentralWidget,
-            "Choose Path Directory", old.toLocal8Bit().data(),
+            "Choose Path Directory", old,
             QFileDialog::ShowDirsOnly | QFileDialog::DontResolveSymlinks);
-        mLocalDirLineEdit->setText(QApplication::translate("MainWindow",
-            path.toLocal8Bit().data(), nullptr));
+    }
+
+    if (SUCCEED(rc)) {
+        if (path.length() <= 0) {
+            rc = NOT_READY;
+        } else {
+            mLocalDirLineEdit->setText(QApplication::translate("MainWindow",
+                path.toLocal8Bit().data(), nullptr));
+        }
     }
 
     if (SUCCEED(rc)) {

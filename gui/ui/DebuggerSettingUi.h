@@ -22,7 +22,7 @@ class DebuggerSettingUi :
     Q_OBJECT
 
 public:
-    int32_t setupUi();
+    int32_t setupUi(const QFont &, const QString &);
     void retranslateUi();
 
 public:
@@ -37,6 +37,7 @@ private slots:
     void onSizeChanged(int size);
     void onColorChanged(QColor);
     void onBgColorChanged(QColor);
+    void onRestoreSettings();
 
 private:
     QDialog          *mDialog;
@@ -57,6 +58,8 @@ private:
     QString           mColorString;
     QColorDialog     *mBgColorDialog;
     QString           mBgColorString;
+    QFont             mOrigFont;
+    QString           mOrigColorString;
 };
 
 }

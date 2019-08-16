@@ -13,7 +13,7 @@ class DebuggerSettingDialog :
     Q_OBJECT
 
 public:
-    int32_t setup();
+    int32_t setup(const QFont &, const QString &);
 
 Q_SIGNALS:
     void newSetting(const QFont, const QString);
