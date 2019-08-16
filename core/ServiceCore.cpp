@@ -90,12 +90,17 @@ int32_t ServiceCore::clientInitialize()
                 }
             } else {
                 /* ask for remote source codes infors */
+                LOGD(mModule, "start scan dir infos");
                 rc = mMonitorCore->monitorDirInfosScan();
                 if (FAILED(rc)) {
                     rc = NOT_INITED;
                     LOGE(mModule, "Runing monitorDirInfosScan failed!\n");
                 }
-
+#if 0
+                mMonitorCore->monitorDirInfosSave("localInofs.bin", [this]()->int32_t {
+                    return 0;
+                });
+#endif
                 rc = transferDictionaryCMD(DIR_MO_EVT, DIR_MO_EVT_LOAD_MD5INFOS, true);
                 if (FAILED(rc)) {
                     LOGE(mModule, "Failed to load code infors from remote transferDictionaryCMD\n");
@@ -580,7 +585,7 @@ int32_t ServiceCore::transferStoraFilelInfos(const std::string &filePath)
                 /* do create files */
                 createEntryFile(it->first, it->second, fisrFlage);
                 fisrFlage = false;
-                // printf("Key=%s value=0x%x\n",it->first.c_str(), it->second);
+
             }
             rc = transferAppendData(appendBasePath(TRA_SYNC_FILE_NAME));
         }
@@ -806,6 +811,8 @@ ServiceCore::ServiceCore(TRANSFER_STATUS_ENUM  tranStatus, const std::string loc
     if ('/' != mLocalPath[mLocalPath.size() - 1]) {
         mLocalPath += "/";
     }
+
+    folder_mkdirs(mLocalPath.c_str());
 
     std::string cmdStr;
     cmdStr = WORK_DIRPATH;
