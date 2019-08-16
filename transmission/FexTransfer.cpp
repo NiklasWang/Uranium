@@ -178,7 +178,7 @@ int32_t FexTransfer::fexUploadFile(const std::string &filePath)
     if (SUCCEED(rc)) {
         res = curl_easy_perform(curl);
         if (res != CURLE_OK) {
-            printf("Curl perform failed: %s\n", curl_easy_strerror(res));
+            LOGE(mModule, "Curl perform failed: %s\n", curl_easy_strerror(res));
             rc = UNKNOWN_ERROR;
         }
     }
@@ -266,6 +266,7 @@ int32_t FexTransfer::fexFileList(std::string& filePath)
     char *retBuf = NULL;
 
     if (!mLoginStatus) {
+        LOGE(mModule, "fex server not logined");
         rc = NOT_READY;
     }
 
@@ -301,7 +302,9 @@ int32_t FexTransfer::fexFileList(std::string& filePath)
             rc = UNKNOWN_ERROR;
         }
     }
-    LOGD(mModule, "LHB:retBuf = %s\n", retBuf);
+
+    // LOGD(mModule, "LHB:retBuf = %s\n", retBuf);
+
     if (SUCCEED(rc)) {
         std::string tmpStr = retBuf;
         std::string::size_type position;
@@ -309,8 +312,13 @@ int32_t FexTransfer::fexFileList(std::string& filePath)
         std::string date;
         position = tmpStr.find("date");
         if (position == tmpStr.npos) {
-            LOGE(mModule, "Not found data");
+            LOGE(mModule, "Not found date");
+            position = tmpStr.find("login?next");
             rc = NOT_FOUND;
+            if (position != tmpStr.npos) {
+                LOGE(mModule, "Find 'login?next' OK ");
+                rc = NOT_READY;
+            }
         } else {
             date = tmpStr.substr(position + 9);
             std::string::size_type pos1 = date.find('.');
@@ -331,20 +339,22 @@ int32_t FexTransfer::fexFileList(std::string& filePath)
             filePath += '_';
         }
 
-        position = tmpStr.find("filename");
-        if (position == tmpStr.npos) {
-            LOGE(mModule, "Not found data");
-            rc = NOT_FOUND;
-        } else {
-            fileName = tmpStr.substr(position + 11);
-            std::string::size_type pos1 = fileName.find("\"");
-            if (pos1 != fileName.npos) {
-                fileName.erase(pos1);
-                // std::cout<<"LHB放大放大"<<tmpStr.substr(position+11,pos1-position)<<std::endl;
-                // fileName = tmpStr.substr(position+11,pos1-position -3);
+        if (SUCCEED(rc)) {
+            position = tmpStr.find("filename");
+            if (position == tmpStr.npos) {
+                LOGE(mModule, "Not found filename");
+                rc = NOT_FOUND;
+            } else {
+                fileName = tmpStr.substr(position + 11);
+                std::string::size_type pos1 = fileName.find("\"");
+                if (pos1 != fileName.npos) {
+                    fileName.erase(pos1);
+                    // std::cout<<"LHB放大放大"<<tmpStr.substr(position+11,pos1-position)<<std::endl;
+                    // fileName = tmpStr.substr(position+11,pos1-position -3);
 
+                }
+                filePath += fileName;
             }
-            filePath += fileName;
         }
     }
 
@@ -392,17 +402,20 @@ bool FexTransfer::fexCheckLoginStatus()
     if (SUCCEED(rc)) {
         res = curl_easy_perform(curl);
         if (res != CURLE_OK) {
-            printf("Curl perform failed: %s\n", curl_easy_strerror(res));
+            LOGE(mModule, "Curl perform failed: %s\n", curl_easy_strerror(res));
             rc = UNKNOWN_ERROR;
         }
     }
 
     if (SUCCEED(rc)) {
-        printf("LJKJL: %s\n", (char*)retBuf);
         if (NOTNULL(strstr((char*)retBuf, "true"))) {
             retBl = true;
+            LOGD(mModule, "check login status is TRUE");
+            mLoginStatus = true;
         } else {
+            LOGD(mModule, "check login status is FALSE");
             retBl = false;
+            mLoginStatus = false;
         }
     }
 
@@ -449,7 +462,7 @@ int32_t FexTransfer::fexLogin()
     if (SUCCEED(rc)) {
         res = curl_easy_setopt(curl, CURLOPT_COOKIEFILE, COKIES_FILE); // 指定cookie文件
         if (res != CURLE_OK) {
-            std::cout << "read cookies failed\n";
+            LOGE(mModule, "read cookies failed\n");
             curl_easy_setopt(curl, CURLOPT_COOKIEFILE, ""); /* start cookie engine */
         }
     }
@@ -470,7 +483,7 @@ int32_t FexTransfer::fexLogin()
     if (SUCCEED(rc)) {
         res = curl_easy_perform(curl);
         if (res != CURLE_OK) {
-            printf("Curl perform failed: %s\n", curl_easy_strerror(res));
+            LOGE(mModule, "Curl perform failed: %s\n", curl_easy_strerror(res));
             rc = UNKNOWN_ERROR;
         }
     }
@@ -530,7 +543,7 @@ uint32_t FexTransfer::pushData(TRANSFER_BUFFER_T &cmd)
     } else {
         filePath += SERVER_PATH;
     }
-    printf("LHB 1111 = %s\n", filePath.c_str());
+
 
     if (SUCCEED(rc)) {
         if (cmd.mode != TRAN_MODE_FEX) {
@@ -561,7 +574,7 @@ uint32_t FexTransfer::pushData(TRANSFER_BUFFER_T &cmd)
                 LOGE(mModule, "Not support!");
                 break;
         }
-        LOGD(mModule, "LHB filePath =%s\n", filePath.c_str());
+        // LOGD(mModule, "LHB filePath =%s\n", filePath.c_str());
         rc = rename((char*)cmd.buffer, filePath.c_str());
         if (FAILED(rc)) {
             LOGE(mModule, "Renaming file Error");
@@ -583,8 +596,10 @@ uint32_t FexTransfer::pushData(TRANSFER_BUFFER_T &cmd)
         rc = system((const char *) cmdStr.c_str());
         pthread_mutex_unlock(&mTransMutex);
 #else
-        printf("LHB ringkk\n");
+
+        pthread_mutex_lock(&mTransMutex);
         rc = fexUploadFile(filePath);
+        pthread_mutex_unlock(&mTransMutex);
         if (FAILED(rc)) {
             LOGE(mModule, "Failed to fex upload files");
         }
@@ -611,8 +626,18 @@ uint32_t FexTransfer::pullData(TRANSFER_BUFFER_T &cmd)
     }
 
     if (SUCCEED(rc)) {
+        pthread_mutex_lock(&mTransMutex);
         rc = fexFileList(fileList);
+        pthread_mutex_unlock(&mTransMutex);
         if (FAILED(rc)) {
+            if (rc == NOT_READY) {
+                LOGD(mModule, "Need Reloging ========================");
+                /* --TODO-- need to login again*/
+                pthread_mutex_lock(&mTransMutex);
+                fexLogin();
+                fexCheckLoginStatus();
+                pthread_mutex_unlock(&mTransMutex);
+            }
             LOGE(mModule, "Get file list failed\n");
         }
     }
@@ -653,7 +678,9 @@ uint32_t FexTransfer::pullData(TRANSFER_BUFFER_T &cmd)
 
     if (SUCCEED(rc)) {
         LOGD(mModule, "fileList = %s filePath=%s", fileList.c_str(), filePath.c_str());
+        pthread_mutex_lock(&mTransMutex);
         rc = fexDownloadFile(fileList, filePath);
+        pthread_mutex_unlock(&mTransMutex);
         if (FAILED(rc)) {
             LOGE(mModule, "Failed fexDownloadFiles");
         }
