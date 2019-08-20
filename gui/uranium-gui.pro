@@ -85,10 +85,10 @@ RC_ICONS   = "logo.ico"
 
 RESOURCES += resources/pictures.qrc
 
-FORMS += \
-        designer/DebuggerSetting.ui \
-        designer/MainWindow.ui      \
-        designer/AboutDialog.ui
+FORMS     += \
+             designer/DebuggerSetting.ui \
+             designer/MainWindow.ui      \
+             designer/AboutDialog.ui
 
 # Default rules for deployment.
 qnx: target.path = /tmp/$${TARGET}/bin

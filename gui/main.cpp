@@ -17,7 +17,6 @@ int main(int argc, char *argv[])
 
     rc = w.construct();
     if (SUCCEED(rc)) {
-        w.setWindowFlags(w.windowFlags() & ~Qt::WindowMaximizeButtonHint);
         w.show();
         rc = a.exec();
     } else {

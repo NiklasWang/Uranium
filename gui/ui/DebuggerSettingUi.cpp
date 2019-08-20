@@ -1,5 +1,10 @@
 #include "common.h"
 #include "DebuggerSettingUi.h"
+#include "Dialogs.h"
+
+static const int32_t gDevMonitorScale = 192;
+
+#define SCALE(x) (static_cast<int32_t>((x) * uranium::gCurMonitorScale * 1.0f / gDevMonitorScale))
 
 namespace uranium {
 

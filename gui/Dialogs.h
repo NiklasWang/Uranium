@@ -10,6 +10,8 @@ class MainWindow;
 // only one main window in this application
 extern MainWindow *gMW;
 
+extern int32_t gCurMonitorScale;
+
 enum MessageType {
     MESSAGE_TYPE_INFORMATION,
     MESSAGE_TYPE_QUESTION,

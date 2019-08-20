@@ -55,7 +55,8 @@ public:
 private:
     int32_t onCoreReady();
     int32_t onIPCData(const QByteArray &data);
-    int32_t onConfig(const QString &value);
+    int32_t onGetConfig(const QString &value);
+    int32_t onSetConfig(const QString &value);
     int32_t sendCoreMessage(QString &msg);
     int32_t killCore();
     int32_t launchCore();
