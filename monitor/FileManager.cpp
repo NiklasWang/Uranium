@@ -243,6 +243,9 @@ int32_t FileManager::owner_unTar(const char* tarfile)
         LOGE(mModule, "unknown version\n");
         return UNKNOWN_ERROR;
     }
+
+    fclose(fin);
+    
     return NO_ERROR;
 }
 
