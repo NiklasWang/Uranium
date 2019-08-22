@@ -1,6 +1,7 @@
 #include "CoreImpl.h"
 #include "ThreadPoolEx.h"
 
+
 namespace uranium
 {
 
@@ -13,13 +14,19 @@ int32_t CoreImpl::start()
         std::string name;
         std::string passwd;
         std::string path;
+        if(ISNULL(mConfig)) {
+            LOGE(mModule, "mConfig is nullptr");
+            return UNKNOWN_ERROR;
+        }
+        mConfig->save();
         get(CONFIG_LOCAL_PATH, path);
         get(CONFIG_USERNAME, name);
         get(CONFIG_PASSWORD, passwd);
-        path = "test";
+        // path = "test";
         LOGI(mModule, "LocalPath = %s", path.c_str());
         LOGI(mModule, "Username  = %s", name.c_str());
         LOGI(mModule, "Password  = %s", passwd.c_str());
+
         serCore = new ServiceCore(TRAN_CLINET, path, name, passwd);
         serCore->construct();
         serCore->initialize();

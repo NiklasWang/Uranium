@@ -2,6 +2,7 @@
 #include "ServiceCore.h"
 #include "ServiceCore.hpp"
 #include "Configs.h"
+#include <algorithm>
 
 namespace uranium
 {
@@ -807,10 +808,25 @@ ServiceCore::ServiceCore(TRANSFER_STATUS_ENUM  tranStatus, const std::string loc
     mTransCore = NULL;
 #endif
     int32_t rc = NO_ERROR;
-
+    LOGD(mModule, "MLocalPath origin = %s", mLocalPath.c_str());
     if ('/' != mLocalPath[mLocalPath.size() - 1]) {
         mLocalPath += "/";
     }
+
+#if defined(__CYGWIN__)
+    auto point = mLocalPath.find(":");
+    if (point != mLocalPath.npos) {
+        /* not found point */
+        auto tmp_str = mLocalPath.substr(point + 1);
+        auto tmp_char = mLocalPath.substr(point - 1, point);
+        transform(tmp_char.begin(), tmp_char.end(), tmp_char.begin(), ::tolower);
+        mLocalPath = "/cygdrive/" + tmp_char + tmp_str;
+
+        // transform(tmp_char.begin(),tmp_char.end(),tmp_char.begin(),::tolower);
+        LOGE(mModule, "MLocalPath dest = %s", mLocalPath.c_str());
+        /* cygdrive */
+    }
+#endif
 
     folder_mkdirs(mLocalPath.c_str());
 
