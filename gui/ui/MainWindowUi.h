@@ -43,6 +43,7 @@ public:
     int32_t destructCore();
     int32_t updateConfig(ConfigItem item, bool value);
     int32_t updateConfig(ConfigItem item, const QString &value);
+    int32_t updateConfigResult(ConfigItem item, bool value);
 
 public:
     int32_t onStarted(int32_t rc);
@@ -56,6 +57,7 @@ public:
     void getRemoteControlSetting(QFont &, QString &);
 
 private:
+    int32_t saveSettings();
     bool eventFilter(QObject *obj, QEvent *event) override;
 
 Q_SIGNALS:
@@ -78,6 +80,11 @@ public Q_SLOTS:
 private:
     bool         mStarted;
     CoreHandler *mCore;
+    QString      mDebugColor;
+    QString      mDebugBg;
+    QString      mShellColor;
+    QString      mShellBg;
+    bool         mUpdatingItem[CONFIG_MAX_INVALID];
 
 private:
     QAction     *mActionAbout;

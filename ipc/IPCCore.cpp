@@ -211,8 +211,6 @@ int32_t IPCCore::handleGetConfig(const char *msg)
     std::istringstream stream(msg);
     std::string key;
     ConfigItem item;
-    bool isBool;
-    bool boolResult;
     std::string stringResult;
     std::stringstream reply;
 
@@ -235,29 +233,7 @@ int32_t IPCCore::handleGetConfig(const char *msg)
     }
 
     if (SUCCEED(rc)) {
-        switch (item) {
-            case CONFIG_MASTER_MODE:
-            case CONFIG_ENCRYPTION:
-            case CONFIG_DEBUG_MODE:
-            case CONFIG_REMOTE_SHELL: {
-                isBool = true;
-            } break;
-            case CONFIG_USERNAME:
-            case CONFIG_PASSWORD:
-            case CONFIG_LOCAL_PATH:
-            case CONFIG_REMOTE_PATH:
-            default: {
-                isBool = false;
-            } break;
-        }
-    }
-
-    if (SUCCEED(rc)) {
-        if (isBool) {
-            rc = mCore->getConfig(item, boolResult);
-        } else {
-            rc = mCore->getConfig(item, stringResult);
-        }
+        rc = mCore->getConfig(item, stringResult);
         if (FAILED(rc)) {
             LOGE(mModule, "Failed to get config %s, %d",
                 whoamI(item), rc);
@@ -265,11 +241,12 @@ int32_t IPCCore::handleGetConfig(const char *msg)
     }
 
     if (SUCCEED(rc)) {
-        reply << msg << " ";
-        if (isBool) {
-            reply << (boolResult ? BOOL_TRUE : BOOL_FALSE);
+        if (stringResult.size() <= 0) {
+            LOGE(mModule, "Config %s get result is NULL",
+                whoamI(item));
+            rc = BAD_PROTOCAL;
         } else {
-            reply << stringResult;
+            reply << msg << " " << stringResult;
         }
     }
 
@@ -290,7 +267,6 @@ int32_t IPCCore::handleSetConfig(const char *msg)
     std::string key;
     std::string value;
     ConfigItem item;
-    bool isBool;
 
     if (SUCCEED(rc)) {
         stream >> key;
@@ -311,33 +287,28 @@ int32_t IPCCore::handleSetConfig(const char *msg)
     }
 
     if (SUCCEED(rc)) {
-        switch (item) {
-            case CONFIG_MASTER_MODE:
-            case CONFIG_ENCRYPTION:
-            case CONFIG_DEBUG_MODE:
-            case CONFIG_REMOTE_SHELL: {
-                isBool = true;
-            }
-            case CONFIG_USERNAME:
-            case CONFIG_PASSWORD:
-            case CONFIG_LOCAL_PATH:
-            case CONFIG_REMOTE_PATH:
-            default: {
-                isBool = false;
-            }
+        stream >> value;
+        if (value.size() <= 0) {
+            LOGE(mModule, "Wrong format, value is NULL");
+            rc = BAD_PROTOCAL;
         }
     }
 
     if (SUCCEED(rc)) {
-        stream >> value;
-        if (isBool) {
-            rc = mCore->setConfig(item, value == BOOL_TRUE);
-        } else {
-            rc = mCore->setConfig(item, value);
-        }
+        rc = mCore->setConfig(item, value);
         if (FAILED(rc)) {
             LOGE(mModule, "Failed to set config %s:%s %d",
                 whoamI(item), value.c_str(), rc);
+        }
+    }
+
+
+    if (SUCCEED(rc) || FAILED(rc)) {
+        std::stringstream reply;
+        reply << msg << " " << (SUCCEED(rc) ? REPLY_SUCCEED : REPLY_FAILED);
+        rc = mIPCClient->sendMessage(reply.str());
+        if (FAILED(rc)) {
+            LOGE(mModule, "Failed reply IPC, %s, %d", reply.str().c_str(), rc);
         }
     }
 

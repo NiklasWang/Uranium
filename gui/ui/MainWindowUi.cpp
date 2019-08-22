@@ -30,6 +30,10 @@
 #define MAX_DEBUG_LINE_COUNT  65535
 #define MAX_SHELL_LINE_COUNT  65535
 
+static const int32_t gDevMonitorScale = 192;
+
+#define SCALE(x) (static_cast<int32_t>((x) * uranium::gCurMonitorScale * 1.0f / gDevMonitorScale))
+
 namespace uranium {
 
 MainWindowUi::MainWindowUi() :
@@ -55,7 +59,7 @@ int32_t MainWindowUi::setupUi(QMainWindow *MainWindow)
         if (MainWindow->objectName().isEmpty()) {
             MainWindow->setObjectName(QStringLiteral("MainWindow"));
         }
-        MainWindow->resize(DEFAULT_WINDOW_WIDTH, DEFAULT_WINDOW_HEIGHT);
+        MainWindow->resize(SCALE(DEFAULT_WINDOW_WIDTH), SCALE(DEFAULT_WINDOW_HEIGHT));
     }
 
     if (SUCCEED(rc)) {
@@ -105,7 +109,7 @@ int32_t MainWindowUi::setupUi(QMainWindow *MainWindow)
     if (SUCCEED(rc)) {
         mMasterCheckBox = new QCheckBox(mVerticalLayoutWidget);
         mMasterCheckBox->setObjectName(QStringLiteral("mMasterCheckBox"));
-        checkBoxFont.setPointSize(14);
+        checkBoxFont.setPointSize(13);
         checkBoxFont.setBold(true);
         checkBoxFont.setWeight(75);
         mMasterCheckBox->setFont(checkBoxFont);
@@ -380,10 +384,64 @@ void MainWindowUi::ShowDebugTextEditMenu(QPoint)
     mDebugTextEditorMenu->show();
 }
 
-void MainWindowUi::onDebugTextEditorNewSetting(const QFont font, const QString style)
+void MainWindowUi::onDebugTextEditorNewSetting(const QFont newFont, const QString newStyle)
 {
-    mDebugTextEdit->setFont(font);
-    mDebugTextEdit->setStyleSheet(style);
+    int32_t rc = NO_ERROR;
+
+    if (SUCCEED(rc)) {
+        for (uint32_t i = 0; i < sizeof(mUpdatingItem); i++) {
+            mUpdatingItem[i] = false;
+        }
+        QFont curFont = mDebugTextEdit->font();
+        if (curFont.pointSize() != newFont.pointSize()) {
+            mUpdatingItem[CONFIG_DEBUG_SIZE] = true;
+        }
+        if (curFont.family() != newFont.family()) {
+            mUpdatingItem[CONFIG_DEBUG_FONT] = true;
+        }
+    }
+
+    if (SUCCEED(rc)) {
+        QString curBg, curColor, newBg, newColor;
+        QStringList newSections = newStyle.split(QRegExp("[;]"));
+        if (newSections.at(0).contains("background")) {
+            newBg = newSections.at(0);
+            newColor = newSections.at(1);
+        } else {
+            newBg = newSections.at(1);
+            newColor = newSections.at(0);
+        }
+        QStringList curSections = mDebugTextEdit->styleSheet().split(QRegExp("[;]"));
+        if (curSections.at(0).contains("background")) {
+            curBg = curSections.at(0);
+            curColor = curSections.at(1);
+        } else {
+            curBg = curSections.at(1);
+            curColor = curSections.at(0);
+        }
+        if (curBg != newBg) {
+            mUpdatingItem[CONFIG_DEBUG_BG] = true;
+        }
+        if (curColor != newColor) {
+            mUpdatingItem[CONFIG_DEBUG_COLOR] = true;
+        }
+        mDebugBg = newBg;
+        mDebugColor = newColor;
+    }
+
+    if (SUCCEED(rc)) {
+        mDebugTextEdit->setFont(newFont);
+        mDebugTextEdit->setStyleSheet(newStyle);
+    }
+
+    if (SUCCEED(rc)) {
+        rc = saveSettings();
+        if (FAILED(rc)) {
+            appendDebugger("Failed to save settings.");
+        }
+    }
+
+    return;
 }
 
 void MainWindowUi::onRemoteControlEditorNewSetting(const QFont font, const QString style)
@@ -410,7 +468,7 @@ void MainWindowUi::retranslateUi(QMainWindow *MainWindow)
     mActionAbout->setText(QApplication::translate("MainWindow", "About", nullptr));
     mActionExit->setText(QApplication::translate("MainWindow", "Exit", nullptr));
     mSettingGroupBox->setTitle(QApplication::translate("MainWindow", "Settings", nullptr));
-    mMasterCheckBox->setText(QApplication::translate("MainWindow", "Master to Override Remote", nullptr));
+    mMasterCheckBox->setText(QApplication::translate("MainWindow", "Override Remote", nullptr));
     mStartPushButton->setText(QApplication::translate("MainWindow", " Start ", nullptr));
     mDebugCheckBox->setText(QApplication::translate("MainWindow", "Debug Mode", nullptr));
     mRemoteControlCheckBox->setText(QApplication::translate("MainWindow", "Enable Remote Control", nullptr));
@@ -462,6 +520,105 @@ int32_t MainWindowUi::setupCore()
                 showError("Failed to construct core.");
             }
         }
+    }
+
+    return rc;
+}
+
+int32_t MainWindowUi::saveSettings()
+{
+    int32_t rc = NO_ERROR;
+    QFont font = mDebugTextEdit->font();
+
+    if (SUCCEED(rc)) {
+        if (mUpdatingItem[CONFIG_DEBUG_SIZE]) {
+            QByteArray value = QString::number(font.pointSize()).toLatin1();
+            std::string result = value.data();
+            rc = mCore->setConfig(CONFIG_DEBUG_SIZE, result);
+            if (!SUCCEED(rc)) {
+                QString err = "Failed to set debug size ";
+                showError(err + value);
+            }
+            rc = JUMP_DONE;
+        }
+    }
+
+    if (SUCCEED(rc)) {
+        if (mUpdatingItem[CONFIG_DEBUG_FONT]) {
+            QByteArray value = font.family().toLatin1();
+            std::string result = value.data();
+            rc = mCore->setConfig(CONFIG_DEBUG_FONT, result);
+            if (!SUCCEED(rc)) {
+                QString err = "Failed to set debug font ";
+                showError(err + value);
+            }
+            rc = JUMP_DONE;
+        }
+    }
+
+    if (SUCCEED(rc)) {
+        if (mUpdatingItem[CONFIG_DEBUG_COLOR]) {
+            QStringList sections = mDebugColor.split(QRegExp("[()]"));
+            QByteArray value = sections.at(1).toLatin1();
+            if (value.size() == 0) {
+                showError("Invalid origin color, NULL");
+                rc = BAD_PROTOCAL;
+            } else {
+                std::string setting = value.data();
+                rc = mCore->setConfig(CONFIG_DEBUG_COLOR, setting);
+                if (!SUCCEED(rc)) {
+                    QString err = "Failed to set debug color ";
+                    showError(err + value);
+                }
+            }
+            rc = JUMP_DONE;
+        }
+    }
+
+    if (SUCCEED(rc)) {
+        if (mUpdatingItem[CONFIG_DEBUG_BG]) {
+            QStringList sections = mDebugBg.split(QRegExp("[()]"));
+            QByteArray value = sections.at(1).toLatin1();
+            if (value.size() == 0) {
+                showError("Invalid origin background, NULL");
+                rc = BAD_PROTOCAL;
+            } else {
+                std::string setting = value.data();
+                rc = mCore->setConfig(CONFIG_DEBUG_BG, setting);
+                if (!SUCCEED(rc)) {
+                    QString err = "Failed to set debug size ";
+                    showError(err + value);
+                }
+            }
+            rc = JUMP_DONE;
+        }
+    }
+
+    return RETURNIGNORE(rc, JUMP_DONE);
+}
+
+int32_t MainWindowUi::updateConfigResult(ConfigItem item, bool)
+{
+    int32_t rc = NO_ERROR;
+
+    switch (item) {
+        case CONFIG_DEBUG_SIZE:
+        case CONFIG_DEBUG_FONT:
+        case CONFIG_DEBUG_COLOR:
+        case CONFIG_DEBUG_BG:
+        case CONFIG_SHELL_SIZE:
+        case CONFIG_SHELL_FONT:
+        case CONFIG_SHELL_COLOR:
+        case CONFIG_SHELL_BG: {
+            mUpdatingItem[item] = false;
+            rc = saveSettings();
+        } break;
+        default: {
+        }break;
+    }
+
+    if (FAILED(rc)) {
+        appendDebugger("Update config result error.");
     }
 
     return rc;
@@ -567,9 +724,10 @@ int32_t MainWindowUi::appendShell(const QString &str)
 
 void MainWindowUi::showShellWindow(bool checked)
 {
-    mMainWindow->resize(
-        checked ? WINDOW_SHELL_WIDTH : DEFAULT_WINDOW_WIDTH,
-        DEFAULT_WINDOW_HEIGHT);
+    int32_t width = checked ? SCALE(WINDOW_SHELL_WIDTH) : SCALE(DEFAULT_WINDOW_WIDTH);
+    int32_t height = SCALE(DEFAULT_WINDOW_HEIGHT);
+    mMainWindow->resize(width, height);
+    mMainWindow->setFixedSize(width, height);
 }
 
 int32_t MainWindowUi::onStartButtonClicked()
@@ -686,6 +844,33 @@ int32_t MainWindowUi::updateConfig(ConfigItem item, const QString &value)
             connect(mRemoteDirLineEdit, SIGNAL(textChanged(const QString &)),
                     this, SLOT(setConfig(const QString &)));
         } break;
+        case CONFIG_DEBUG_SIZE:
+        case CONFIG_DEBUG_FONT: {
+            QFont font = mDebugTextEdit->font();
+            if (item == CONFIG_DEBUG_SIZE) {
+                font.setPointSize(value.toInt());
+            } else {
+                font.setFamily(value);
+            }
+            mDebugTextEdit->setFont(font);
+        } break;
+        case CONFIG_DEBUG_COLOR:
+        case CONFIG_DEBUG_BG: {
+            int32_t r, g, b;
+            QByteArray byte = value.toLatin1();
+            sscanf(byte.data(), "%d,%d,%d", &r, &g, &b);
+            if (item == CONFIG_DEBUG_COLOR) {
+                mDebugColor = QString("color:rgb(%1,%2,%3);").arg(r).arg(g).arg(b);
+            } else {
+                mDebugBg = QString("background-color:rgb(%1,%2,%3);").arg(r).arg(g).arg(b);
+            }
+            mDebugTextEdit->setStyleSheet(mDebugColor + mDebugBg);
+        } break;
+        case CONFIG_SHELL_SIZE:
+        case CONFIG_SHELL_FONT:
+        case CONFIG_SHELL_COLOR:
+        case CONFIG_SHELL_BG: {
+        } break;
         default: {
             rc = UNKNOWN_ERROR;
         } break;
@@ -697,8 +882,8 @@ int32_t MainWindowUi::updateConfig(ConfigItem item, const QString &value)
 int32_t MainWindowUi::setConfig(bool checked)
 {
     int32_t rc = NO_ERROR;
-
     QString name = sender()->objectName();
+
     if (name == "mMasterCheckBox") {
         rc = mCore->setConfig(CONFIG_MASTER_MODE, checked);
     } else if (name == "mDebugCheckBox") {
@@ -710,8 +895,7 @@ int32_t MainWindowUi::setConfig(bool checked)
     }
 
     if (FAILED(rc)) {
-        QString err = "failed to set config.";
-        showError(err + name);
+        appendDebugger(name + " Failed to set config.");
     }
 
     return rc;
@@ -734,8 +918,7 @@ int32_t MainWindowUi::setConfig(const QString &set)
     }
 
     if (FAILED(rc)) {
-        QString err = "failed to set config.";
-        showError(err + name);
+        appendDebugger(name + " Failed to set config.");
     }
 
     return rc;

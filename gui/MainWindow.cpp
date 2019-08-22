@@ -11,6 +11,8 @@ namespace uranium {
 
 MainWindow *gMW = nullptr;
 
+int32_t gCurMonitorScale = 192;
+
 MainWindow::MainWindow(QApplication *app, QWidget *parent) :
     QMainWindow(parent),
     mConstructed(false),
@@ -45,6 +47,7 @@ int32_t MainWindow::construct()
     }
 
     if (SUCCEED(rc)) {
+        gCurMonitorScale = 192;//QApplication::desktop()->logicalDpiX();
         setWindowIcon(QIcon(":/icon/logo1"));
     }
 
@@ -64,6 +67,8 @@ int32_t MainWindow::construct()
     }
 
     if (SUCCEED(rc)) {
+        setWindowFlags(windowFlags() & ~Qt::WindowMaximizeButtonHint);
+        setFixedSize(width(), height());
         mConstructed = true;
     }
 

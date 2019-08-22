@@ -257,7 +257,7 @@ int32_t CoreHandler::loadConfig()
     return rc;
 }
 
-int32_t CoreHandler::onConfig(const QString &value)
+int32_t CoreHandler::onGetConfig(const QString &value)
 {
     int32_t rc = NO_ERROR;
     QByteArray byte = value.toLatin1();
@@ -318,7 +318,15 @@ int32_t CoreHandler::onConfig(const QString &value)
             case CONFIG_USERNAME:
             case CONFIG_PASSWORD:
             case CONFIG_LOCAL_PATH:
-            case CONFIG_REMOTE_PATH: {
+            case CONFIG_REMOTE_PATH:
+            case CONFIG_DEBUG_SIZE:
+            case CONFIG_DEBUG_FONT:
+            case CONFIG_DEBUG_COLOR:
+            case CONFIG_DEBUG_BG:
+            case CONFIG_SHELL_SIZE:
+            case CONFIG_SHELL_FONT:
+            case CONFIG_SHELL_COLOR:
+            case CONFIG_SHELL_BG: {
                 rc = exec(
                     [&]() -> int32_t {
                         return mUi->updateConfig(item, QString(result.c_str()));
@@ -332,6 +340,44 @@ int32_t CoreHandler::onConfig(const QString &value)
                 rc = INVALID_FORMAT;
                 LOGE(mModule, "Invalid item type got, %s", str);
             }
+        }
+    }
+
+    return rc;
+}
+
+int32_t CoreHandler::onSetConfig(const QString &value)
+{
+    int32_t rc = NO_ERROR;
+    QByteArray byte = value.toLatin1();
+    const char *str = byte.data();
+    ConfigItem item = CONFIG_MAX_INVALID;
+    std::string tmp;
+    std::istringstream ss(str);
+
+    if (SUCCEED(rc)) {
+        ss >> tmp;
+        if (tmp != CORE_SET_CONFIG) {
+            rc = INVALID_FORMAT;
+            LOGE(mModule, "Unknown msg received, %s", str);
+        }
+    }
+
+    if (SUCCEED(rc)) {
+        ss >> tmp;
+        item = getConfigItem(tmp.c_str());
+    }
+
+    if (SUCCEED(rc)) {
+        ss >> tmp;
+        ss >> tmp;
+        rc = exec(
+            [&]() -> int32_t {
+                return mUi->updateConfigResult(item, ss.str() == REPLY_SUCCEED);
+            }
+        );
+        if (FAILED(rc)) {
+            LOGE(mModule, "Failed to update config, %s", whoamI(item));
         }
     }
 
@@ -491,9 +537,9 @@ int32_t CoreHandler::onIPCData(const QByteArray &data)
         int32_t _rc = NOTNULL(strstr(str, REPLY_SUCCEED)) ? NO_ERROR : UNKNOWN_ERROR;
         onStopped(_rc);
     } else if (COMPARE_SAME_LEN_STRING(str, CORE_GET_CONFIG, strlen(CORE_GET_CONFIG))) {
-        onConfig(str);
+        onGetConfig(str);
     } else if (COMPARE_SAME_LEN_STRING(str, CORE_SET_CONFIG, strlen(CORE_SET_CONFIG))) {
-        // don't care set config reply
+        onSetConfig(str);
     }
 
     return rc;

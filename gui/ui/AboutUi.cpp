@@ -4,11 +4,16 @@
 #include "version.h"
 #include "utils/common.h"
 #include "ui/AboutUi.h"
+#include "Dialogs.h"
 
 #define ABOUT_DIALOG_WIDTH  500
 #define ABOUT_DIALOG_HEIGHT 280
 #define ABOUT_DIALOG_LEFT_MARGIN 10
 #define ABOUT_DIALOG_TOP_MARGIN  10
+
+static const int32_t gDevMonitorScale = 144;
+
+#define SCALE(x) (static_cast<int32_t>((x) * uranium::gCurMonitorScale * 1.0f / gDevMonitorScale))
 
 namespace uranium {
 
@@ -46,16 +51,16 @@ int32_t AboutUi::setupUi()
         if (mDialog->objectName().isEmpty()) {
             mDialog->setObjectName(QStringLiteral("AboutDialog"));
         }
-        mDialog->resize(ABOUT_DIALOG_WIDTH, ABOUT_DIALOG_HEIGHT);
+        mDialog->resize(SCALE(ABOUT_DIALOG_WIDTH), SCALE(ABOUT_DIALOG_HEIGHT));
     }
 
     if (SUCCEED(rc)) {
         mGridLayoutWidget = new QWidget(mDialog);
         mGridLayoutWidget->setObjectName(QStringLiteral("mGridLayoutWidget"));
         mGridLayoutWidget->setGeometry(QRect(
-            ABOUT_DIALOG_LEFT_MARGIN, ABOUT_DIALOG_TOP_MARGIN,
-            ABOUT_DIALOG_WIDTH - 2 * ABOUT_DIALOG_LEFT_MARGIN,
-            ABOUT_DIALOG_HEIGHT - 2 * ABOUT_DIALOG_TOP_MARGIN));
+            SCALE(ABOUT_DIALOG_LEFT_MARGIN), SCALE(ABOUT_DIALOG_TOP_MARGIN),
+            SCALE(ABOUT_DIALOG_WIDTH - 2 * ABOUT_DIALOG_LEFT_MARGIN),
+            SCALE(ABOUT_DIALOG_HEIGHT - 2 * ABOUT_DIALOG_TOP_MARGIN)));
         mGridLayout = new QGridLayout(mGridLayoutWidget);
         mGridLayout->setObjectName(QStringLiteral("mGridLayout"));
         mGridLayout->setContentsMargins(0, 0, 0, 0);

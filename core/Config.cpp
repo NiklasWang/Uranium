@@ -14,6 +14,14 @@ const char *const gConfigName[] = {
     [CONFIG_PASSWORD]     = "password",
     [CONFIG_LOCAL_PATH]   = "local_path",
     [CONFIG_REMOTE_PATH]  = "remote_path",
+    [CONFIG_DEBUG_SIZE]   = "debug_size",
+    [CONFIG_DEBUG_FONT]   = "debug_font",
+    [CONFIG_DEBUG_COLOR]  = "debug_color",
+    [CONFIG_DEBUG_BG]     = "debug_bg",
+    [CONFIG_SHELL_SIZE]   = "shell_size",
+    [CONFIG_SHELL_FONT]   = "shell_font",
+    [CONFIG_SHELL_COLOR]  = "shell_color",
+    [CONFIG_SHELL_BG]     = "shell_bg",
     [CONFIG_MAX_INVALID]  = "max_invalid",
 };
 
