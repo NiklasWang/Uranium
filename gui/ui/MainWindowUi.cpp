@@ -770,16 +770,9 @@ int32_t MainWindowUi::onSelectButonClicked()
         if (path.length() <= 0) {
             rc = NOT_READY;
         } else {
+            QByteArray value = path.toLatin1();
             mLocalDirLineEdit->setText(QApplication::translate("MainWindow",
-                path.toLocal8Bit().data(), nullptr));
-        }
-    }
-
-    if (SUCCEED(rc)) {
-        rc = mCore->setConfig(CONFIG_LOCAL_PATH, path.toLocal8Bit().data());
-        if (!SUCCEED(rc)) {
-            QString err = "Failed to set local path to";
-            showError(err + path.toLocal8Bit().data());
+                value.data(), nullptr));
         }
     }
 
