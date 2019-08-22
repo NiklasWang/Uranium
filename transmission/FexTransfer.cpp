@@ -229,10 +229,15 @@ int32_t FexTransfer::fexDownloadFile(std::string& filelist, std::string storageF
     }
 
     if (SUCCEED(rc)) {
+#if 0
         std::string httpPath = "http://fex.lenovo.com/uploads/";
         httpPath += mName.c_str();
         httpPath += "/";
         httpPath += filelist;
+#else
+        std::string httpPath = "http://fex.lenovo.com/downfile/0";
+        LOGE(mModule, "LHB %s", httpPath.c_str());
+#endif
         curl_easy_setopt(curl, CURLOPT_URL, httpPath.c_str());
         curl_easy_setopt(curl, CURLOPT_COOKIEFILE, COKIES_FILE); // 指定cookie文件
         // curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, wirte_data);
