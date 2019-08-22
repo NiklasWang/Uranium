@@ -46,6 +46,8 @@ build-uranium-gui*/*
 
 # External
 external/fswatch/fswatch-master/*
+external/libarchive/*
+external/libcurl/curl-7.50.3/*
 
 # makefile dependency cache
 *.cache
