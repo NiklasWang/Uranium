@@ -147,6 +147,10 @@ int32_t Dictionary::construct()
         }
     }
 
+    if (SUCCEED(rc)) {
+        mConstructed = true;
+    }
+
     return rc;
 }
 
@@ -155,14 +159,15 @@ int32_t Dictionary::destruct()
     int32_t rc = NO_ERROR;
 
     if (!mConstructed) {
+        LOGE(mModule, "Dictionary not inited");
         rc = NOT_INITED;
     } else {
         mConstructed = false;
     }
 
-    if (SUCCEED(rc)) {
-        SECURE_FREE(mKeys);
-    }
+    SECURE_FREE(mKeys);
+    fKeyInit = false;
+    mDynamicKey = false;
     return rc;
 }
 

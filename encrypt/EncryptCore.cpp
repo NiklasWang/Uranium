@@ -111,6 +111,9 @@ int32_t EncryptCore::construct()
         mEncryMan = new EncryptFile();
     }
 
+    if (SUCCEED(rc)) {
+        mConstructed = true;
+    }
     return rc;
 }
 
@@ -119,12 +122,17 @@ int32_t EncryptCore::destruct()
     int32_t rc = NO_ERROR;
 
     if (!mConstructed) {
+        LOGE(mModule, "EncryptCore not inited");
         rc = NOT_INITED;
     } else {
         mConstructed = false;
     }
 
-    if (SUCCEED(rc)) {
+    if (NOTNULL(mEncryMan)) {
+        SECURE_DELETE(mEncryMan);
+    }
+
+    if (NOTNULL(mDiction)) {
         rc = mDiction->destruct();
         if (FAILED(rc)) {
             LOGE(mModule, "Failed ServiceCore destruct mTransCore\n");
@@ -132,9 +140,17 @@ int32_t EncryptCore::destruct()
         SECURE_DELETE(mDiction);
     }
 
-    if (SUCCEED(rc)) {
-        SECURE_DELETE(mEncryMan);
+
+
+    if (NOTNULL(mThreads)) {
+        mThreads->removeInstance();
+        mThreads = NULL;
     }
+
+    {
+        mSyncFlage = false;
+    }
+
     return rc;
 }
 
