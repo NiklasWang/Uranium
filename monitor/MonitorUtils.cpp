@@ -60,6 +60,7 @@ int32_t MonitorUtils::filtrationEvents(event event, uint32_t &evnFlage)
 
 int32_t MonitorUtils::stop()
 {
+    LOGD(mModule, "MonitorUtils stop *************************");
     mActiveMonitor->stop();
     sleep(0.5);
     return NO_ERROR;
@@ -71,6 +72,7 @@ int32_t MonitorUtils::start()
 
     /* if succeed this funcion not return */
     if (SUCCEED(rc)) {
+        LOGD(mModule, "MonitorUtils start *************************");
         mActiveMonitor->start();
     }
 
@@ -81,6 +83,7 @@ int32_t MonitorUtils::construct()
 {
     int32_t rc = NO_ERROR;
     if (mConstructed) {
+        LOGE(mModule, "construct has ALREADY_INITED");
         rc = ALREADY_INITED;
     } else {
         if (ISNULL(mActiveMonitor)) {
@@ -97,7 +100,7 @@ int32_t MonitorUtils::construct()
     }
 
     if (SUCCEED(rc)) {
-        LOGD(mModule, "Set monitors param\n");
+        LOGD(mModule, "mActiveMonitor set monitors param\n");
         mActiveMonitor->set_allow_overflow(false);
         mActiveMonitor->set_latency(true);
         // mActiveMonitor->set_recursive(ture);
@@ -110,6 +113,9 @@ int32_t MonitorUtils::construct()
         mActiveMonitor->set_watch_access(false);
     }
 
+    if (SUCCEED(rc)) {
+        mConstructed = true;
+    }
     return rc;
 }
 
@@ -117,11 +123,19 @@ int32_t MonitorUtils::destruct()
 {
     int32_t rc  = NO_ERROR;
     if (!mConstructed) {
+        LOGE(mModule, "MonitorUtils is not inited");
         rc = NOT_INITED;
     } else {
         mConstructed = false;
     }
 
+    LOGD(mModule,"MonitorUtils::destruct 111");
+    if (NOTNULL(mActiveMonitor)) {
+        // mActiveMonitor->stop();
+        /** --FIXME-- 无法删除 **/
+        SECURE_DELETE(mActiveMonitor);
+    }
+    LOGD(mModule,"MonitorUtils::destruct 222");
     return rc;
 }
 

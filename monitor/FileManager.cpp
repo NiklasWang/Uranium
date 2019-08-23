@@ -245,7 +245,7 @@ int32_t FileManager::owner_unTar(const char* tarfile)
     }
 
     fclose(fin);
-    
+
     return NO_ERROR;
 }
 

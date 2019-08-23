@@ -59,11 +59,13 @@ int32_t MonitorCore::monitorDirInfosScan(void)
 int32_t MonitorCore::monitorDirStart(void)
 {
     if (mMoniStarFlag) {
+        LOGE(mModule, "monitorDirStart has already runing....");
         return mMoniStarFlag;
     }
-
+    mMoniStarFlag = true;
     return mThreads->run(
     [this]() -> int32_t{
+        LOGD(mModule, "monitor start dir runing....");
         return mMonitor->start();
     });
 }
@@ -71,10 +73,13 @@ int32_t MonitorCore::monitorDirStart(void)
 int32_t MonitorCore::monitorDirStop(void)
 {
     if (!mMoniStarFlag) {
+        LOGE(mModule, "monitorDirStop had already runing...");
         return mMoniStarFlag;
     }
+    mMoniStarFlag = false;
     return mThreads->run(
     [this]() -> int32_t {
+        LOGD(mModule, "monitor stop dir runing....");
         return mMonitor->stop();
     });
 }
@@ -97,7 +102,7 @@ int32_t MonitorCore::monitorLoopProcess(std::function<int32_t (std::map<std::str
         std::map<std::string, uint32_t>::iterator iter_tmp;
         do
         {
-            sleep(10);
+            sleep(3);
             pthread_mutex_lock(&infoMutex);
 
             for (iter = mFileModify.begin(); iter != mFileModify.end();) {
@@ -117,7 +122,7 @@ int32_t MonitorCore::monitorLoopProcess(std::function<int32_t (std::map<std::str
             for (iter_tmp = tmpDiffFile.begin(); iter_tmp != tmpDiffFile.end();) {
                 iter_tmp = tmpDiffFile.erase(iter_tmp);
             }
-
+            LOGI(mModule, "monitorLoop runing....");
         } while (mLoopRuning);
         return NO_ERROR;
     });
@@ -126,7 +131,7 @@ int32_t MonitorCore::monitorLoopProcess(std::function<int32_t (std::map<std::str
 int32_t MonitorCore::monitorLoopStop(void)
 {
     mLoopRuning = false;
-    sleep(2);
+    sleep(3);
     return NO_ERROR;
 }
 
@@ -135,6 +140,7 @@ int32_t MonitorCore::construct()
     int32_t rc = NO_ERROR;
 
     if (mConstructed) {
+        LOGE(mModule, "MonitorCore has already inited");
         rc = ALREADY_INITED;
     }
 
@@ -187,6 +193,7 @@ int32_t MonitorCore::destruct()
     int32_t rc = NO_ERROR;
 
     if (!mConstructed) {
+        LOGE(mModule, "MonitorCore destruct failed with not inited");
         rc = NOT_INITED;
     } else {
         mConstructed = false;
@@ -196,7 +203,7 @@ int32_t MonitorCore::destruct()
         monitorLoopStop();
     }
 
-    {
+    if (NOTNULL(mMonitor)) {
         rc = mMonitor->stop();
         if (FAILED(rc)) {
             LOGE(mModule, "Failed to stop core mMonitor\n");
@@ -205,17 +212,20 @@ int32_t MonitorCore::destruct()
         rc = mMonitor->destruct();
         if (FAILED(rc)) {
             LOGE(mModule, "Failed to destruct core mMonitor\n");
-        } else {
-            SECURE_DELETE(mMonitor);
         }
+
+        SECURE_DELETE(mMonitor);
     }
 
-    rc = mFileMage->destruct();
-    if (FAILED(rc)) {
-        LOGE(mModule, "Failed to destruct core mFileMage\n");
-    } else {
+    if (NOTNULL(mFileMage)) {
+        rc = mFileMage->destruct();
+        if (FAILED(rc)) {
+            LOGE(mModule, "Failed to destruct core mFileMage\n");
+        }
+
         SECURE_DELETE(mFileMage);
     }
+
 
     {
         mThreads->removeInstance();
