@@ -31,6 +31,8 @@ private:
     TransferCore &operator=(const TransferCore &rhs) = delete;
 
 private:
+    bool            mRuning;
+    bool            mConstructed;
     ModuleType      mModule;
     TransferManager *mTransMang;
     ThreadPoolEx    *mThreads;

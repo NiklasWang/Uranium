@@ -45,11 +45,22 @@ int32_t TransferCore::receive(std::function<int32_t (std::string &filePath)> cb)
         char buffer[1024];
         std::string mPath;
         std::string destPath;
+        if (mRuning)
+        {
+            LOGE(mModule, "Receive has already runing ...");
+            return NOT_INITED;
+        } else
+        {
+            mRuning  = true;
+        }
+
         TRANSFER_BUFFER_T *pTranBuffer = mTransMang->createTransferBuffer(TRAN_MODE_FEX, buffer, 1024);
         do
         {
-            sleep(5);
-
+            if (!mRuning) {
+                break;
+            }
+            sleep(3);
             __rc = mTransMang->pullData(*pTranBuffer);
             if (SUCCEED(__rc)) {
                 mPath = buffer;
@@ -58,10 +69,13 @@ int32_t TransferCore::receive(std::function<int32_t (std::string &filePath)> cb)
                     destPath += ".decry";
                     mEncrypt->decryptStream(mPath, destPath, defaultPublicKeys);
                 }
-
-                cb(destPath);
+                if (NOTNULL(cb)) {
+                    cb(destPath);
+                } else {
+                    LOGE(mModule, "Call back funtion is not exit");
+                }
             }
-        } while (true);
+        } while (mRuning);
         mTransMang->destoryTransferBuffer(pTranBuffer);
         return NO_ERROR;
     });
@@ -72,15 +86,9 @@ int32_t TransferCore::construct()
 {
     int32_t rc = NO_ERROR;
 
-    if (SUCCEED(rc)) {
-        mTransMang = mTranFact->createTransferObject(TRAN_MODE_FEX, mTranStatus, mName, mPassWd);
-        if (NOTNULL(mTransMang)) {
-            rc = mTransMang->construct();
-            LOGE(mModule, "construct  return = %d\n", rc);
-        } else {
-            LOGE(mModule, "create object failed\n");
-            rc = NOT_FOUND;
-        }
+    if (mConstructed) {
+        LOGE(mModule, "TransferCore construct has already inited");
+        rc = ALREADY_INITED;
     }
 
     if (SUCCEED(rc)) {
@@ -91,6 +99,20 @@ int32_t TransferCore::construct()
         }
     }
 
+    if (SUCCEED(rc)) {
+        mTransMang = mTranFact->createTransferObject(TRAN_MODE_FEX, mTranStatus, mName, mPassWd);
+        if (NOTNULL(mTransMang)) {
+            rc = mTransMang->construct();
+            if (FAILED(rc)) {
+                LOGE(mModule, "construct  return = %d\n", rc);
+            }
+
+        }
+    }
+    if (SUCCEED(rc)) {
+        mConstructed = true;
+    }
+
     return rc;
 }
 
@@ -98,11 +120,28 @@ int32_t TransferCore::destruct()
 {
     int32_t rc = NO_ERROR;
 
-    if (SUCCEED(rc)) {
+    if (!mConstructed) {
+        LOGE(mModule, "Not inited");
+        rc = NOT_INITED;
+    } else {
+        mConstructed = false;
+    }
+
+    mRuning = false;
+    sleep(4);
+    mEncrypt = NULL;
+
+    if (NOTNULL(mTransMang)) {
+        rc = mTransMang->destruct();
+        if (FAILED(rc)) {
+            LOGE(mModule, "construct  return = %d\n", rc);
+        }
         SECURE_DELETE(mTransMang);
     }
 
-    {
+
+
+    if (NOTNULL(mThreads)) {
         mThreads->removeInstance();
         mThreads = NULL;
     }
@@ -111,6 +150,8 @@ int32_t TransferCore::destruct()
 }
 
 TransferCore::TransferCore(TRANSFER_STATUS_ENUM tranStatus, EncryptCore *encrypt, std::string name, std::string passwd):
+    mRuning(false),
+    mConstructed(false),
     mModule(MODULE_TRANSMITION),
     mTransMang(NULL),
     mThreads(NULL),
@@ -124,8 +165,7 @@ TransferCore::TransferCore(TRANSFER_STATUS_ENUM tranStatus, EncryptCore *encrypt
 
 TransferCore::~TransferCore()
 {
-    //SECURE_DELETE(mTransMang);
-    // SECURE_DELETE(mThreads);
+    SECURE_DELETE(mTranFact);
 }
 
 }

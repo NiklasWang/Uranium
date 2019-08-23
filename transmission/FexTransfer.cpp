@@ -83,9 +83,11 @@ int32_t FexTransfer::destruct()
     if (!mInitalized) {
         LOGE(mModule, "Thid moudle has not initalized\n");
         rc = NOT_INITED;
+    } else {
+        mInitalized = false;
     }
 
-    mInitalized = false;
+
 
     return rc;
 }
