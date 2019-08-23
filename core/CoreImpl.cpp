@@ -7,14 +7,16 @@ namespace uranium
 
 int32_t CoreImpl::start()
 {
-    // LOGD(mModule, "Core start() called.");
+    LOGD(mModule, "Core start() called.");
     // sleep(1);
+#if 1
     mThreads->run(
     [this]()->int32_t {
         std::string name;
         std::string passwd;
         std::string path;
-        if(ISNULL(mConfig)) {
+        if (ISNULL(mConfig))
+        {
             LOGE(mModule, "mConfig is nullptr");
             return UNKNOWN_ERROR;
         }
@@ -33,25 +35,30 @@ int32_t CoreImpl::start()
         serCore->start();
         return NO_ERROR;
     });
+#endif
     return NO_ERROR;
 }
 
 int32_t CoreImpl::stop()
 {
-
     mThreads->run(
     [this]()->int32_t {
-        serCore->stop();
-        serCore->destruct();
-        delete serCore;
-        serCore = nullptr;
+        // serCore->stop();
+        if (NOTNULL(serCore))
+        {
+            serCore->stop();
+            serCore->destruct();
+            SECURE_DELETE(serCore);
+        }
+
         return NO_ERROR;
     });
-
+    LOGD(mModule, "Core stop() called.");
     return NO_ERROR;
 }
 
 int32_t CoreImpl::initialize()
+
 {
     LOGD(mModule, "Core initialize() called.");
     sleep(1);

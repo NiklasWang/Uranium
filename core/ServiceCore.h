@@ -129,6 +129,8 @@ private:
     ServiceCore &operator =(const ServiceCore &rhs) = delete;
 
 private:
+    bool                    mServerBreak;
+    bool                    mStartRuning;
     bool                    mConstructed;
     bool                    mSemEnable;
     bool                    mCodesSync;          /* Code synchronization status */

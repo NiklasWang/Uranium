@@ -14,10 +14,18 @@ int32_t ServiceCore::start()
         int32_t __rc = NO_ERROR;
         if (TRAN_CLINET == mTranStatus)
         {
-            while (1) {
+            LOGD(mModule, "+++++++++++++++++++++++++++++++++++++++++++++++++++++++");
+            if (mStartRuning == true) {
+                LOGE(mModule, "Server is already runing");
+                return NO_ERROR;
+            }
+
+            mStartRuning = true;
+
+            while (mStartRuning) {
                 if (mCodesSync) {
                     if (SUCCEED(__rc)) {
-                        LOGD(mModule, "Start monitorDirStart");
+                        LOGD(mModule, "ServiceCore Start monitorDirStart");
                         __rc = mMonitorCore->monitorDirStart();
                         if (FAILED(__rc)) {
                             LOGE(mModule, "runing monitorDirStart failed");
@@ -25,6 +33,7 @@ int32_t ServiceCore::start()
                     }
 
                     if (SUCCEED(__rc)) {
+                        LOGD(mModule, "ServiceCore monitorLoopProcess init");
                         __rc = mMonitorCore->monitorLoopProcess(
                         [this](std::map<std::string, uint32_t>&diffFile)-> int32_t {
                             return monitorDirCallBack(diffFile);
@@ -38,6 +47,7 @@ int32_t ServiceCore::start()
                 sleep(1);
             }
         }
+        LOGD(mModule, "+++++++++++++++++ start end");
         return __rc;
     });
 }
@@ -46,7 +56,9 @@ int32_t ServiceCore::stop()
 {
     return mThreads->run(
     [this]()->int32_t {
-        LOGD(mModule, "Stop runing ....\n");
+        mStartRuning = false;
+        sleep(1);
+        LOGD(mModule, "Stop runing ....");
         return NO_ERROR;
     });
 }
@@ -64,6 +76,10 @@ int32_t ServiceCore::clientInitialize()
         do {
             rc = transferDictionaryCMD(CONFIG_EVT, CONFIG_READY_STATUS, true);
             rc |= mSemTime->wait();
+            if (mServerBreak) {
+                LOGD(mModule, "mServerBreak is true");
+                rc = NOT_FOUND;
+            }
         } while (FAILED(rc));
         mSemEnable = false;
     }
@@ -75,6 +91,9 @@ int32_t ServiceCore::clientInitialize()
         do {
             rc = transferDictionaryCMD(CONFIG_EVT, CONFIG_DIC_LOAD, true);
             rc = mSemTime->wait();
+            if (mServerBreak) {
+                rc = NOT_FOUND;
+            }
         } while (FAILED(rc)); //(FAILED(rc) || (SUCCEED(mSemTime->wait())));
         mSemEnable = false;
     }
@@ -87,7 +106,7 @@ int32_t ServiceCore::clientInitialize()
                 /* load source from remote to local */
                 rc = transferDictionaryCMD(DIR_MO_EVT, DIR_MO_EVT_LOAD, true);
                 if (FAILED(rc)) {
-                    LOGE(mModule, "Failed to load source from remote transferDictionaryCMD\n");
+                    LOGE(mModule, "Failed to load source from remote transferDictionaryCMD");
                 }
             } else {
                 /* ask for remote source codes infors */
@@ -97,14 +116,14 @@ int32_t ServiceCore::clientInitialize()
                     rc = NOT_INITED;
                     LOGE(mModule, "Runing monitorDirInfosScan failed!\n");
                 }
-#if 0
+#if 1
                 mMonitorCore->monitorDirInfosSave("localInofs.bin", [this]()->int32_t {
                     return 0;
                 });
 #endif
                 rc = transferDictionaryCMD(DIR_MO_EVT, DIR_MO_EVT_LOAD_MD5INFOS, true);
                 if (FAILED(rc)) {
-                    LOGE(mModule, "Failed to load code infors from remote transferDictionaryCMD\n");
+                    LOGE(mModule, "Failed to load code infors from remote transferDictionaryCMD");
                 }
             }
         }
@@ -116,14 +135,19 @@ int32_t ServiceCore::clientInitialize()
                 /* wait for result returned */
                 rc = mSemTime->wait();
                 if (FAILED(rc)) {
-                    LOGE(mModule, "SemaphoreTimeout\n");
+                    LOGI(mModule, "SemaphoreTimeout");
+                }
+                if (mServerBreak) {
+                    LOGD(mModule, "server need to return");
+                    rc = NOT_FOUND;
                 }
             } while (FAILED(rc));
             mCodesSync = true;
             mSemEnable = false;
         }
+        LOGD(mModule, "================== Setp3 code sync succeed ===================\n");
     }
-    LOGD(mModule, "================== Setp3 code sync succeed ===================\n");
+    LOGD(mModule, "Runing serverInitialize end");
     /* step4:  do nothings */
     return rc;
 }
@@ -157,6 +181,9 @@ int32_t ServiceCore::serverInitialize()
             mSemEnable = true;
             do {
                 rc = mSemTime->wait();
+                if (mServerBreak) {
+                    rc = NOT_FOUND;
+                }
                 if (mServerConfigStatus) {
                     rc = config->load();
                     if (SUCCEED(rc)) {
@@ -335,7 +362,10 @@ int32_t ServiceCore::construct()
     int32_t rc = NO_ERROR;
 
     if (mConstructed) {
+        LOGE(mModule, "ServiceCore construct has already inited");
         rc = ALREADY_INITED;
+    } else {
+        mServerBreak = false;
     }
 
     if (SUCCEED(rc)) {
@@ -346,32 +376,38 @@ int32_t ServiceCore::construct()
         }
     }
 
-    {
-        if (SUCCEED(rc)) {
-            mEncryptCore = new EncryptCore();
-            if (NOTNULL(mEncryptCore)) {
-                rc =  mEncryptCore->construct();
-                if (FAILED(rc)) {
-                    LOGE(mModule, "Failed core construct mEncryptCore\n");
-                }
-            }
+    if (SUCCEED(rc)) {
+        mSemTime = new SemaphoreTimeout(60000);
+        if (ISNULL(mSemTime)) {
+            rc = SYS_ERROR;
+            LOGE(mModule, "Create SemaphoreTimeout failed\n");
         }
+    }
 
-        if (SUCCEED(rc)) {
-            if (mTranStatus != TRAN_CLINET) {
-                rc = mEncryptCore->generateDictionKeys();
-                if (FAILED(rc)) {
-                    LOGE(mModule, "Failed runing generateDictionKeys\n");
-                } else {
-                    mDirctionLoad = true;
-                }
-
+    if (SUCCEED(rc)) {
+        mEncryptCore = new EncryptCore();
+        if (NOTNULL(mEncryptCore)) {
+            rc =  mEncryptCore->construct();
+            if (FAILED(rc)) {
+                LOGE(mModule, "Failed core construct mEncryptCore\n");
             }
         }
     }
 
     if (SUCCEED(rc)) {
-        /* --TODO-- */
+        if (mTranStatus != TRAN_CLINET) {
+            rc = mEncryptCore->generateDictionKeys();
+            if (FAILED(rc)) {
+                LOGE(mModule, "Failed runing generateDictionKeys\n");
+            } else {
+                mDirctionLoad = true;
+            }
+
+        }
+    }
+
+
+    if (SUCCEED(rc)) {
         mTransCore = new TransferCore(mTranStatus, mEncryptCore, mName, mPasswd);
         if (NOTNULL(mTransCore)) {
             rc = mTransCore->construct();
@@ -398,15 +434,6 @@ int32_t ServiceCore::construct()
     }
 
     if (SUCCEED(rc)) {
-        mSemTime = new SemaphoreTimeout(60000);
-        if (ISNULL(mSemTime)) {
-            rc = SYS_ERROR;
-            LOGE(mModule, "Create SemaphoreTimeout failed\n");
-        }
-    }
-
-
-    if (SUCCEED(rc)) {
         mConstructed = true;
     }
 
@@ -418,12 +445,22 @@ int32_t ServiceCore::destruct()
     int32_t rc = NO_ERROR;
 
     if (!mConstructed) {
+        LOGE(mModule, "Not inited");
         rc = NOT_INITED;
     } else {
         mConstructed = false;
+        mServerBreak = true;
     }
 
-    if (SUCCEED(rc)) {
+    if (NOTNULL(mMonitorCore)) {
+        rc = mMonitorCore->destruct();
+        if (FAILED(rc)) {
+            LOGE(mModule, "Failed core destruct mMonitorCore\n");
+        }
+        SECURE_DELETE(mMonitorCore);
+    }
+
+    if (NOTNULL(mTransCore)) {
         rc = mTransCore->destruct();
         if (FAILED(rc)) {
             LOGE(mModule, "Failed ServiceCore destruct mTransCore\n");
@@ -431,15 +468,27 @@ int32_t ServiceCore::destruct()
         SECURE_DELETE(mTransCore);
     }
 
-    if (SUCCEED(rc)) {
-        mThreads->removeInstance();
+
+    if (NOTNULL(mEncryptCore)) {
+        rc = mEncryptCore->destruct();
+        if (FAILED(rc)) {
+            LOGE(mModule, "Failed core destruct mEncryptCore\n");
+        }
+        SECURE_DELETE(mEncryptCore);
+
     }
 
-    SECURE_DELETE(mSemTime);
+    if (NOTNULL(mThreads)) {
+        mThreads->removeInstance();
+        mThreads = NULL;
+    }
+
+
     if (SUCCEED(rc)) {
         mSemEnable = false;
         mCodesSync = false;
         mDirctionLoad = false;
+        SECURE_DELETE(mSemTime);
     }
 
     return RETURNIGNORE(rc, NOT_INITED);
@@ -782,6 +831,7 @@ int32_t ServiceCore::doHandleConAck(const TRAN_HEADE_T& traHead)
 }
 
 ServiceCore::ServiceCore(TRANSFER_STATUS_ENUM  tranStatus, const std::string localPath, const std::string name, const std::string passwd):
+    mStartRuning(false),
     mConstructed(false),
     mSemEnable(false),
     mCodesSync(false),
@@ -849,7 +899,19 @@ ServiceCore::ServiceCore(TRANSFER_STATUS_ENUM  tranStatus, const std::string loc
 
 ServiceCore::~ServiceCore()
 {
+    std::string workPath = WORK_DIRPATH;
+    workPath += SERVER_PATH;
+    /* --TODO-- 循环删除文件 */
+#if 0
+    LOGD(mModule, "Path = %s", workPath.c_str());
+    remove(workPath.c_str());
+    workPath = WORK_DIRPATH;
+    workPath +=  CLINET_PATH;
+    remove(workPath.c_str());
 
+    workPath = WORK_DIRPATH;
+    remove(workPath.c_str());
+#endif
 }
 
 }
