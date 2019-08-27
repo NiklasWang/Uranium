@@ -491,6 +491,8 @@ int32_t ServiceCore::destruct()
         SECURE_DELETE(mSemTime);
     }
 
+    LOGD(mModule,"MonitorUtils::destruct END ========== ");
+    
     return RETURNIGNORE(rc, NOT_INITED);
 }
 
