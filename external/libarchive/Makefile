@@ -26,6 +26,7 @@ endif
 define BUILD
 	cd libarchive-3.3.3;   \
 	cd build;\
+	chmod +x autogen.sh; \
 	./autogen.sh;\
 	cd ../; \
 	chmod +x configure; \
