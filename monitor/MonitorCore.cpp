@@ -111,7 +111,7 @@ int32_t MonitorCore::monitorLoopProcess(std::function<int32_t (std::map<std::str
                 } else if (iter->second.envFlages & (MONITOR_Removed | MONITOR_Renamed)) {
                     tmpDiffFile[iter->first] = MONITOR_Removed;
                 }
-                // std::cout << iter->first << "=" << std::hex << iter->second.envFlages << std::endl;
+                LOGI(mModule, "%s %d", iter->first.c_str(), iter->second.envFlages);
                 iter = mFileModify.erase(iter);
             }
             // mFileModify[key] = value;
@@ -122,7 +122,7 @@ int32_t MonitorCore::monitorLoopProcess(std::function<int32_t (std::map<std::str
             for (iter_tmp = tmpDiffFile.begin(); iter_tmp != tmpDiffFile.end();) {
                 iter_tmp = tmpDiffFile.erase(iter_tmp);
             }
-            LOGI(mModule, "monitorLoop runing....");
+
         } while (mLoopRuning);
         return NO_ERROR;
     });
@@ -213,7 +213,6 @@ int32_t MonitorCore::destruct()
         if (FAILED(rc)) {
             LOGE(mModule, "Failed to destruct core mMonitor\n");
         }
-
         SECURE_DELETE(mMonitor);
     }
 

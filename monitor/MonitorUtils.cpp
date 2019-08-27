@@ -4,12 +4,31 @@
 namespace uranium
 {
 
+void porcessEnvetC(fsw_cevent const *const events,
+                   const unsigned int event_num,
+                   void *data)
+{
+    MonitorUtils *tmpPrt = (MonitorUtils*) data;
+    std::string path(events->path);
+    std::vector<fsw_event_flag> flags;
+    flags.push_back(*(events->flags));
+    event  eventClinet(path, events->evt_time, flags);
+    std::vector<event> eventVect;
+    eventVect.push_back(eventClinet);
+
+    if (tmpPrt->mFunc) {
+        tmpPrt->mFunc(eventVect);
+    }
+
+}
 // static FSW_EVENT_CALLBACK processEvnets;
 //void MonitorUtils::porcessEnvet(const std::function<void (std::vector<event>&, void*) > cb)
 void MonitorUtils::porcessEnvet(const std::vector<event>& events, void *context)
 {
     MonitorUtils *tmpPrt = (MonitorUtils*) context;
-    tmpPrt->mFunc(events);
+    if (tmpPrt->mFunc) {
+        tmpPrt->mFunc(events);
+    }
 }
 
 int32_t MonitorUtils::filtrationEvents(const std::string filePath)
@@ -61,8 +80,12 @@ int32_t MonitorUtils::filtrationEvents(event event, uint32_t &evnFlage)
 int32_t MonitorUtils::stop()
 {
     LOGD(mModule, "MonitorUtils stop *************************");
+#if 0
     mActiveMonitor->stop();
     sleep(0.5);
+#else
+    fsw_stop_monitor(handle);
+#endif
     return NO_ERROR;
 }
 
@@ -73,7 +96,11 @@ int32_t MonitorUtils::start()
     /* if succeed this funcion not return */
     if (SUCCEED(rc)) {
         LOGD(mModule, "MonitorUtils start *************************");
+#if 0
         mActiveMonitor->start();
+#else
+        fsw_start_monitor(handle);
+#endif
     }
 
     return rc;
@@ -87,6 +114,7 @@ int32_t MonitorUtils::construct()
         rc = ALREADY_INITED;
     } else {
         if (ISNULL(mActiveMonitor)) {
+#if 0
             mActiveMonitor = monitor_factory::create_monitor(
                                  fsw_monitor_type::system_default_monitor_type,
                                  mPaths,
@@ -96,11 +124,18 @@ int32_t MonitorUtils::construct()
                 rc = SYS_ERROR;
                 LOGE(mModule, "create monitor_factory failed!\n");
             }
+#else
+            fsw_init_library();
+            handle = fsw_init_session(system_default_monitor_type);
+            fsw_add_path(handle, mPaths[0].c_str());
+            fsw_set_callback(handle, porcessEnvetC, this);
+#endif
         }
     }
 
     if (SUCCEED(rc)) {
         LOGD(mModule, "mActiveMonitor set monitors param\n");
+#if 0
         mActiveMonitor->set_allow_overflow(false);
         mActiveMonitor->set_latency(true);
         // mActiveMonitor->set_recursive(ture);
@@ -111,6 +146,12 @@ int32_t MonitorUtils::construct()
         // mActiveMonitor->set_filters(filters);
         mActiveMonitor->set_follow_symlinks(false);
         mActiveMonitor->set_watch_access(false);
+#else
+        fsw_set_allow_overflow(handle, false);
+        fsw_set_latency(handle, false);
+        fsw_set_directory_only(handle, false);
+        fsw_set_follow_symlinks(handle, false);
+#endif
     }
 
     if (SUCCEED(rc)) {
@@ -129,13 +170,33 @@ int32_t MonitorUtils::destruct()
         mConstructed = false;
     }
 
-    LOGD(mModule,"MonitorUtils::destruct 111");
+    if (NOTNULL(mFunc)) {
+        mFunc = nullptr;
+    }
+
+#if 0
     if (NOTNULL(mActiveMonitor)) {
         // mActiveMonitor->stop();
         /** --FIXME-- 无法删除 **/
-        SECURE_DELETE(mActiveMonitor);
+        try {
+            while (mActiveMonitor->is_running()) {
+                LOGE(mModule, "mActiveMonitor is_running() wait for stop");
+                mActiveMonitor->stop();
+                sleep(1);
+            }
+            LOGE(mModule, "Stoped mActiveMonitors ");
+            delete mActiveMonitor;
+            mActiveMonitor = nullptr;
+            // SECURE_DELETE(mActiveMonitor);
+        } catch (libfsw_exception& lex) {
+            LOGE(mModule, "Failed ...... ");
+            LOGE(mModule, "%s Status code: 0x%x", lex.what(), lex.error_code());
+        }
     }
-    LOGD(mModule,"MonitorUtils::destruct 222");
+#endif
+    fsw_stop_monitor(handle);
+    fsw_destroy_session(handle);
+
     return rc;
 }
 
@@ -152,7 +213,7 @@ MonitorUtils::MonitorUtils(const std::vector<std::string> path, std::function<vo
 
 MonitorUtils::~MonitorUtils()
 {
-    SECURE_DELETE(mActiveMonitor);
+
 }
 
 }  /* class MonitorUtils */

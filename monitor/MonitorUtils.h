@@ -60,6 +60,7 @@ public:
     int32_t filtrationEvents(const std::string filePath);
     int32_t filtrationEvents(event event, uint32_t &evnFlage);
     static FSW_EVENT_CALLBACK porcessEnvet;
+    friend  void porcessEnvetC(fsw_cevent const *const events, const unsigned int event_num, void *data);
 
 public:
     int32_t construct();
@@ -79,6 +80,7 @@ private:
     ModuleType                      mModule;
     std::vector<MONITOR_FILES_T>    mMonitorFiles;
     std::function<void (const std::vector<event>&)> mFunc;
+    FSW_HANDLE                      handle;
 };  /* class MonitorUtils */
 
 }  /* namespace uranium */
