@@ -98,9 +98,14 @@ int32_t FileManager::owner_tarFile(const std::string& filename, FILE* fpOut)
 #endif
 
     std::string::size_type pos = filename.find(mDirPath);
-    pos += mDirPath.length();
-    std::string relaPath = filename.substr(pos);
-    fprintf(fpOut, "f\n%s\n%d\n", relaPath.c_str(), (int)stat_buf.st_size);
+    if (pos != filename.npos) {
+        pos += mDirPath.length();
+        std::string relaPath = filename.substr(pos);
+        fprintf(fpOut, "f\n%s\n%d\n", relaPath.c_str(), (int)stat_buf.st_size);
+    } else {
+        LOGE(mModule, "DANGER*****  not find[ %s] in [ %s]", mDirPath.c_str(), filename.c_str());
+    }
+
     FILE *fpIn = fopen(filename.c_str(), "r");
     char buf[4096];
     while (1) {

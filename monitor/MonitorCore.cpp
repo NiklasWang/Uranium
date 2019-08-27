@@ -262,6 +262,10 @@ void MonitorCore::processHandle(const std::vector<event>& events)
         value.time =    evt.get_time();
 
         auto point = key.find(mMonitorPath);
+        if (point == key.npos) {
+            LOGE(mModule, "DANGER***** not find[ %s] in [ %s]", mMonitorPath.c_str(), key.c_str());
+            continue;
+        }
         point += mMonitorPath.length();
         auto tmp_str = key.substr(point);
 
@@ -276,6 +280,7 @@ void MonitorCore::processHandle(const std::vector<event>& events)
             /* updata eventFlages */
             value.envFlages |= result->second.envFlages;
         }
+
         pthread_mutex_lock(&infoMutex);
         mFileModify[key] = value;
         pthread_mutex_unlock(&infoMutex);
