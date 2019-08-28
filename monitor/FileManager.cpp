@@ -97,13 +97,25 @@ int32_t FileManager::owner_tarFile(const std::string& filename, FILE* fpOut)
 
 #endif
 
-    std::string::size_type pos = filename.find(mDirPath);
+    /* Intercept relative path */
+    auto commStrDirs = mDirPath;
+    commStrDirs[commStrDirs.length() - 1] = 0;
+
+    auto posend = commStrDirs.find_last_of("/");
+    if (posend == commStrDirs.npos) {
+        LOGE(mModule, "%s find '/' in %s failed", __func__, commStrDirs.c_str());
+        return UNKNOWN_ERROR;
+    }
+
+    auto strSubName = commStrDirs.substr(0, posend + 1);
+
+    auto pos = filename.find(strSubName);
     if (pos != filename.npos) {
-        pos += mDirPath.length();
+        pos += strSubName.length();
         std::string relaPath = filename.substr(pos);
         fprintf(fpOut, "f\n%s\n%d\n", relaPath.c_str(), (int)stat_buf.st_size);
     } else {
-        LOGE(mModule, "DANGER*****  not find[ %s] in [ %s]", mDirPath.c_str(), filename.c_str());
+        LOGE(mModule, "DANGER*****  not find[ %s] in [ %s]", strSubName.c_str(), filename.c_str());
     }
 
     FILE *fpIn = fopen(filename.c_str(), "r");
@@ -131,17 +143,32 @@ int32_t FileManager::owner_tarDIr(const std::string& dirname, FILE* fpOut)
 {
     // char filepath[1024];
     std::string filePath = dirname;
-#if 1
 
-    std::string::size_type pos = filePath.find(mDirPath);
-    pos += mDirPath.length();
+
+    /* Intercept relative path */
+    auto commStrDirs = mDirPath;
+    commStrDirs[commStrDirs.length() - 1] = 0;
+
+    auto posend = commStrDirs.find_last_of("/");
+    if (posend == commStrDirs.npos) {
+        LOGE(mModule, "%s find '/' in %s failed", __func__, commStrDirs.c_str());
+        return UNKNOWN_ERROR;
+    }
+
+    auto strSubName = commStrDirs.substr(0, posend + 1);
+
+    auto pos = filePath.find(strSubName);
+    if (pos == filePath.npos) {
+        LOGE(mModule, "%s find %s in %s failed\n", __func__, strSubName.c_str(), filePath.c_str());
+        return UNKNOWN_ERROR;
+    }
+
+    pos += strSubName.length();
     std::string relaPath = filePath.substr(pos);
     if (relaPath.size()) {
         fprintf(fpOut, "d\n"); //d目录标记
         fprintf(fpOut, "%s\n", relaPath.c_str()); //打包的根目录
     }
-
-#endif
 
     DIR* dir = opendir(dirname.c_str()); //打开文件目录项
     struct dirent* entry = readdir(dir);
@@ -181,6 +208,7 @@ int32_t FileManager::owner_tar(const char *outfile)
     }
     fprintf(fpOut, "xgltar\n"); //标记打包文件类型
     fprintf(fpOut, "1.0\n"); //版本
+    /* --FIXME-- 循环打包多个目录 */
     int ret = owner_tarDIr(mDirPath, fpOut); //打包目录
     fclose(fpOut);
     mFileCount = 0;
@@ -928,6 +956,7 @@ int32_t FileManager::fileTarFromPath(const std::string compreFile)
         std::string encryFilename = compreFile + ".owner_tar";
 
         rc = owner_tar(encryFilename.c_str());
+        /* 压缩文件 */
         rc = owner_compressFile(encryFilename.c_str(), compreFile.c_str());
         // bsdTar(true, compreFile);
         // rc = compressFile2Disk(compreFile.c_str(), "/home/binson/libarchive");
