@@ -3,7 +3,7 @@
 
 namespace uranium {
 
-#define SOCKET_DATA_MAX_LEN        128 // byte
+#define SOCKET_DATA_MAX_LEN        4096 // byte
 
 #define SERVER_PULL_CLIENT_TIMEOUT 100 // ms
 #define SERVER_POLL_DATA_TIMEOUT   200

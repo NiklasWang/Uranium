@@ -37,8 +37,8 @@ int32_t CoreHandler::construct()
             rc = NO_MEMORY;
         } else {
             connect(this, SIGNAL(exitServer()), mIPCServer, SIGNAL(exitServer()));
-            mIPCServer->start();
             mIPCServer->moveToThread(mIPCServer);
+            mIPCServer->start();
         }
     }
 
@@ -193,9 +193,9 @@ int32_t CoreHandler::destruct()
 
     if (SUCCEED(rc)) {
         exitServer();
-        mIPCServer->wait(MAX_WAIT_SERVER_EXIT);
         mIPCServer->exit();
-        SECURE_DELETE(mIPCServer);
+        mIPCServer->wait(MAX_WAIT_SERVER_EXIT);
+        mIPCServer = nullptr;
     }
 
     if (SUCCEED(rc)) {
@@ -507,9 +507,13 @@ int32_t CoreHandler::onIPCData(const QByteArray &data)
     char *str = byte.data();
 
     if (!COMPARE_SAME_LEN_STRING(str, GUI_DEBUG, strlen(GUI_DEBUG)) &&
-        !COMPARE_SAME_LEN_STRING(str, GUI_SHELL, strlen(GUI_SHELL))) {
+        !COMPARE_SAME_LEN_STRING(str, GUI_SHELL, strlen(GUI_SHELL)) &&
+        !COMPARE_SAME_LEN_STRING(str, CORE_SET_CONFIG, strlen(CORE_SET_CONFIG))) {
         LOGD(mModule, "Received msg: '%s'", str);
-    } else {
+    }
+
+    if (COMPARE_SAME_LEN_STRING(str, GUI_DEBUG, strlen(GUI_DEBUG)) ||
+        COMPARE_SAME_LEN_STRING(str, GUI_SHELL, strlen(GUI_SHELL))) {
         bool debug = COMPARE_SAME_LEN_STRING(str, GUI_DEBUG, strlen(GUI_DEBUG));
         QString orig = QString(data).trimmed();
         QStringList subsList = orig.split(debug ? GUI_DEBUG : GUI_SHELL, QString::SkipEmptyParts);
