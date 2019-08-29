@@ -1067,7 +1067,19 @@ int32_t FileManager::fileInfosLoad(const std::string path)
 
 int32_t FileManager::fileScanToInis()
 {
-    return fileScanToInis(mDirPath);
+    /* 解析拆解路径, 保留最后路径最后一级 */
+    /* Intercept relative path */
+    auto commStrDirs = mDirPath;
+    commStrDirs[commStrDirs.length() - 1] = 0;
+    auto posend = commStrDirs.find_last_of("/");
+    if (posend == commStrDirs.npos) {
+        LOGE(mModule, "%s find '/' in %s failed", __func__, commStrDirs.c_str());
+        return UNKNOWN_ERROR;
+    }
+
+    auto strSubName = commStrDirs.substr(0, posend + 1);
+    // LOGD(mModule, "Interception of string is %s", strSubName.c_str());
+    return fileScanToInis(mDirPath, strSubName);
 }
 
 bool FileManager::dirCompareWithLocal(const std::string file, \
@@ -1125,7 +1137,7 @@ bool FileManager::dirNotExit(void)
     return stat(mDirPath.c_str(), &sb);
 }
 
-int32_t FileManager::fileScanToInis(const std::string path)
+int32_t FileManager::fileScanToInis(const std::string path, const std::string &topPath)
 {
     int32_t rc = 0;
     DIR    *dir;
@@ -1160,7 +1172,7 @@ int32_t FileManager::fileScanToInis(const std::string path)
                 /* this is dir */
                 std::string nPath = thisPath + ptr->d_name;
                 nPath += "/";
-                fileScanToInis(nPath);
+                fileScanToInis(nPath, topPath);
             } else if (DT_REG  == ptr->d_type) {
                 /* this is files*/
                 /* calcule md5sum */
@@ -1177,13 +1189,13 @@ int32_t FileManager::fileScanToInis(const std::string path)
                     for (int jj = 0; jj < 4; jj++) {
                         sst << std::hex << checksum[jj];
                     }
-                    std::string::size_type pos = filePath.find(mDirPath);
-                    pos += mDirPath.length();
+
+                    std::string::size_type pos = filePath.find(topPath);
+                    pos += topPath.length();
                     std::string relaPath = filePath.substr(pos);
                     mFileInfos[relaPath] = sst.str();
 #if 0
-                    LOGE(mModule, "%s = %s", filePath.c_str(), mFileInfos[filePath].c_str());
-                    std::cout << filePath << "=" << mFileInfos[filePath] << std::endl;
+                    LOGE(mModule, "%s = %s", relaPath.c_str(), mFileInfos[relaPath].c_str());
 #endif
                     fclose(pFile);
                 }

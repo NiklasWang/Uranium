@@ -62,7 +62,7 @@ private:
     int32_t uncompressFil2Disk(const char *file, const char *to_path);
 
 private:
-    int32_t fileScanToInis(const std::string path);
+    int32_t fileScanToInis(const std::string path, const std::string &topPath);
     int32_t fileInfoErase(void);
 
 private:
