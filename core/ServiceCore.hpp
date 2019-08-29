@@ -184,7 +184,6 @@ int32_t ServiceCore::createEntryFile(const std::string &fileName, uint32_t value
 {
     std::string storageFile = appendBasePath(TRA_SYNC_FILE_NAME);
     std::string origFile = mLocalPath + fileName;
-    std::cout << "LHB my origFilePath = " << origFile << "value = 0x" << std::hex << value << std::endl;
     std::ofstream ouStream;
     int32_t rc = NO_ERROR;
     TRANSFER_ENTRY_FILE_T entry;
@@ -210,7 +209,7 @@ int32_t ServiceCore::createEntryFile(const std::string &fileName, uint32_t value
         switch (value) {
             case MONITOR_Removed:
                 entry.fileSize = 0;
-                std::cout << "LHB " << fileName << " value = " << value << std::endl;
+                LOGD(mModule, "remove %s %d", fileName.c_str(), value);
                 ouStream.write((char *)&entry, sizeof(TRANSFER_ENTRY_FILE_T));
                 break;
             case MONITOR_Updated:
@@ -224,7 +223,7 @@ int32_t ServiceCore::createEntryFile(const std::string &fileName, uint32_t value
                     }
                 }
                 if (SUCCEED(rc)) {
-                    std::cout << "LHB " << fileName << " value = " << value << std::endl;
+                    LOGD(mModule, "update %s %d", fileName.c_str(), value);
                     entry.fileSize = inStream.tellg();
                     inStream.seekg(0);
                 }
@@ -255,7 +254,7 @@ int32_t ServiceCore::createEntryFile(const std::string &fileName, uint32_t value
             }
             break;
             default:
-                LOGE(mModule, "Do not suppot\n");
+                LOGE(mModule, "DANGER*** Do not suppot\n");
                 break;
         }
     }
@@ -285,18 +284,48 @@ int32_t ServiceCore::praseEntryFile(const std::string& inPath)
         while (!inStream.eof()) {
             memset(&entry, 0, sizeof(entry));
             inStream.read((char *)&entry, sizeof(TRANSFER_ENTRY_FILE_T));
-            LOGD(mModule, "LHB Flages = 0x%x 0x%x", entry.flages, MOENTRY_FLAGE_MASK);
+            LOGD(mModule, "Flages = 0x%x 0x%x", entry.flages, MOENTRY_FLAGE_MASK);
             if (entry.flages != MOENTRY_FLAGE_MASK) {
                 std::cout << "Flage not match error\n";
                 break;
             }
 
+            /* Intercept relative path */
+            std::string tmpFilePath;
+            auto commStrDirs = mLocalPath;
+            commStrDirs[commStrDirs.length() - 1] = 0;
+            auto posend = commStrDirs.find_last_of("/");
+            if (posend == commStrDirs.npos) {
+                LOGE(mModule, "%s find '/' in %s failed", __func__, commStrDirs.c_str());
+                rc = UNKNOWN_ERROR;
+            }
+
+            auto strSubPath = commStrDirs.substr(0, posend + 1);
+            commStrDirs = mLocalPath.substr(strSubPath.length());
+            LOGD(mModule, "Dirname = %s", commStrDirs.c_str());
+            std::string encryFileName = entry.fileName;
+            posend = encryFileName.find(commStrDirs);
+            if (posend != 0) {
+                LOGE(mModule, "Dir not matching origFilePath=%s",  entry.fileName);
+                LOGE(mModule, "Dir not matching origFilePath=%s",  entry.fileName);
+                LOGE(mModule, "Dir not matching origFilePath=%s",  entry.fileName);
+                rc = UNKNOWN_ERROR;
+            }
+
+            if (SUCCEED(rc)) {
+                tmpFilePath = strSubPath;
+                tmpFilePath += encryFileName;
+                LOGD(mModule, "Update file Path = %s", tmpFilePath.c_str());
+            }
+
+            LOGD(mModule, "SYNC file path = %s", tmpFilePath.c_str());
+
             switch (entry.value) {
                 case MONITOR_Removed: {
+                    /* --TODO-- need to change */
                     LOGD(mModule, "MONITOR_Removed runing...");
                     std::string cmdStr = "rm -rf ";
-                    cmdStr += mLocalPath;
-                    cmdStr +=  entry.fileName;
+                    cmdStr += tmpFilePath;
                     system(cmdStr.c_str());
                 }
                 break;
@@ -313,11 +342,8 @@ int32_t ServiceCore::praseEntryFile(const std::string& inPath)
                     }
 
                     if (SUCCEED(rc)) {
-                        std::string tmpFilePath = mLocalPath;
-                        tmpFilePath += entry.fileName;
-                        LOGD(mModule, "SYNC file path = %s", tmpFilePath.c_str());
                         std::ofstream ouStream(tmpFilePath, std::ios::binary | std::ios::trunc);
-                        \
+
                         if (!ouStream.is_open()) {
                             LOGE(mModule, "Open %s failed\n", tmpFilePath.c_str());
                             rc = NOT_FOUND;
