@@ -63,7 +63,7 @@ typedef struct TRANSFER_HEADE_TAG {
 
 typedef struct TRANSFER_ENTRY_FILE_TAG {
     uint32_t        flages;
-    char            fileName[128];
+    char            fileName[512];
     uint32_t        value;
     uint32_t        fileSize;
     // uint32_t        offset;
@@ -87,12 +87,16 @@ private:
 
 public:
     ServiceCore(TRANSFER_STATUS_ENUM  tranStatus, const std::string localPath, const std::string name, const std::string passwd);
+    ServiceCore(TRANSFER_STATUS_ENUM  tranStatus, const std::string localPath, const std::vector<std::string> remotePaths,
+                const std::string name, const std::string passwd);
     virtual~ServiceCore();
     int32_t construct();
     int32_t destruct();
 
 private:
-    int32_t tarnsferServer2Clinet(void);
+    int32_t sendReomotePaths(std::string &remotePath);
+    std::string praseRemotePath(const std::string &filePath);
+    int32_t tarnsferServer2Clinet(std::string &filePath);
     int32_t praseStora2Local(const std::string &filePath);
     int32_t transferLoadFileInfos();
     int32_t transferStoraFilelInfos(const std::string &filePath);
@@ -145,6 +149,9 @@ private:
     EncryptCore             *mEncryptCore;
     std::string             mLocalPath;
     std::string             mRemotePath;
+    std::string             mActivePath;
+    std::vector<std::string> mRemotePathVector;
+    std::map<std::string, std::string> mRemoteDirNames;
     std::string             mName;
     std::string             mPasswd;
     // std::map<std::string, uint32_t> &diffFile

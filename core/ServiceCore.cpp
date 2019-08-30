@@ -70,7 +70,7 @@ int32_t ServiceCore::clientInitialize()
     // getUserName();
 
     /* step1: --TODO-- send configs file */
-    /* wati for server is ready ok */
+    /* Waiting for server is ready ok */
     if (SUCCEED(rc)) {
         mSemEnable = true;
         do {
@@ -102,9 +102,37 @@ int32_t ServiceCore::clientInitialize()
     /* step3:  check if the local folder is empty*/
     {
         if (SUCCEED(rc)) {
+            for (auto it = mRemoteDirNames.begin(); it != mRemoteDirNames.end(); it++) {
+                std::string dirs = mLocalPath + it->first;
+                mActivePath = dirs;
+                LOGD(mModule, "Local dirs is %s", dirs.c_str());
+                if (isEmpty(dirs)) {
+                    LOGD(mModule, "dirs %s is empty need to downloads",  dirs.c_str());
+                    /* load source from remote to local */
+                    rc = transferDictionaryCMD(DIR_MO_EVT, DIR_MO_EVT_LOAD, false);
+                    if (FAILED(rc)) {
+                        LOGE(mModule, "Failed to load source from remote transferDictionaryCMD");
+                    }
+                    if (SUCCEED(rc)) {
+                        rc = sendReomotePaths(mRemoteDirNames[it->first]);
+                        if (FAILED(rc)) {
+                            LOGE(mModule, "Runing sendReomotePaths failed");
+                        }
+                    }
+                    if (SUCCEED(rc)) {
+                        rc = transferAppendData(appendBasePath(REMOTE_PATH_BIN));
+                        if (FAILED(rc)) {
+                            LOGE(mModule, "Runing transferAppendData failed");
+                        }
+                    }
+                } else {
+                    LOGD(mModule, "dirs %s need to compare md5sums",  dirs.c_str());
+                }
+            }
+#if 0
             if (isEmpty(mLocalPath)) {
                 /* load source from remote to local */
-                rc = transferDictionaryCMD(DIR_MO_EVT, DIR_MO_EVT_LOAD, true);
+                rc = transferDictionaryCMD(DIR_MO_EVT, DIR_MO_EVT_LOAD, flase);
                 if (FAILED(rc)) {
                     LOGE(mModule, "Failed to load source from remote transferDictionaryCMD");
                 }
@@ -126,6 +154,7 @@ int32_t ServiceCore::clientInitialize()
                     LOGE(mModule, "Failed to load code infors from remote transferDictionaryCMD");
                 }
             }
+#endif
         }
 
         if (SUCCEED(rc)) {
@@ -491,12 +520,12 @@ int32_t ServiceCore::destruct()
         SECURE_DELETE(mSemTime);
     }
 
-    LOGD(mModule,"MonitorUtils::destruct END ========== ");
-    
+    LOGD(mModule, "MonitorUtils::destruct END ========== ");
+
     return RETURNIGNORE(rc, NOT_INITED);
 }
 
-int32_t ServiceCore::tarnsferServer2Clinet(void)
+int32_t ServiceCore::tarnsferServer2Clinet(std::string &filePath)
 {
     int32_t rc = NO_ERROR;
 
@@ -511,7 +540,7 @@ int32_t ServiceCore::tarnsferServer2Clinet(void)
         rc = folder_mkdirs(cmd.c_str());
         tarFileName += TAR_MODIR_NAME;
         rc = remove(tarFileName.c_str());
-
+#if 0
         rc = mMonitorCore->monitorTarExec(tarFileName,
         [ = ](void)-> int32_t{
             int32_t __rc = NO_ERROR;
@@ -532,7 +561,7 @@ int32_t ServiceCore::tarnsferServer2Clinet(void)
             // __rc = system(cmd.c_str());
             return __rc;
         });
-
+#endif
         if (FAILED(rc)) {
             LOGE(mModule, "Failed runing mMonitorCore->monitorTarExec filename=%s\n", tarFileName.c_str());
         }
@@ -669,7 +698,7 @@ int32_t ServiceCore::praseStora2Local(const std::string &filePath)
 
         if (SUCCEED(__rc))
         {
-            __rc = mMonitorCore->monitorUntarExec(storagePath,
+            __rc = mMonitorCore->monitorUntarExec(storagePath, mActivePath,
             [this]()->int32_t {
                 if (mSemEnable)
                 {
@@ -694,7 +723,9 @@ int32_t ServiceCore::doHandleMoEvt(const TRAN_HEADE_T& traHead, const std::strin
             if (!isEmpty(mLocalPath)) {
                 /* 压缩文件并发送返回 */
                 rc = transferDictionaryCMD(DIR_MO_ACK, DIR_MO_ACK_OK, true);
-                rc = tarnsferServer2Clinet();
+                std::string dirPath = praseRemotePath(filePath);
+                LOGE(mModule, "origfilePath = %s, dirPath = %s", filePath.c_str(), dirPath.c_str());
+                rc = tarnsferServer2Clinet(dirPath);
             } else {
                 /* 发送失败的标志 */
                 rc = transferDictionaryCMD(DIR_MO_ACK, DIR_MO_ACK_EMPTY, true);
@@ -830,6 +861,97 @@ int32_t ServiceCore::doHandleConAck(const TRAN_HEADE_T& traHead)
     int32_t rc = NO_ERROR;
 
     return rc;
+}
+
+ServiceCore::ServiceCore(TRANSFER_STATUS_ENUM  tranStatus, const std::string localPath, const std::vector<std::string> remotePaths,
+                         const std::string name, const std::string passwd):
+    mStartRuning(false),
+    mConstructed(false),
+    mSemEnable(false),
+    mCodesSync(false),
+    mDirctionLoad(false),
+    mServerConfigStatus(false),
+    mModule(MODULE_MONITOR_SERVER),
+    mThreads(NULL),
+    mSemTime(NULL),
+    mTranStatus(tranStatus),
+    mTransCore(NULL),
+    mMonitorCore(NULL),
+    mEncryptCore(NULL),
+    mLocalPath(localPath),
+    mRemotePathVector(remotePaths),
+    mName(name),
+    mPasswd(passwd)
+{
+#if 0
+    mSemEnable = false;
+    mSemTime = NULL;
+    mConstructed = false,      //mModule
+    mCodesSync = false,
+    mThreads = NULL,
+    mMonitorCore = NULL,
+    mTransCore = NULL;
+#endif
+    int32_t rc = NO_ERROR;
+    LOGD(mModule, "MLocalPath origin = %s", mLocalPath.c_str());
+    if ('/' != mLocalPath[mLocalPath.size() - 1]) {
+        mLocalPath += "/";
+    }
+
+#if defined(__CYGWIN__)
+    auto point = mLocalPath.find(":");
+    if (point != mLocalPath.npos) {
+        /* not found point */
+        auto tmp_str = mLocalPath.substr(point + 1);
+        auto tmp_char = mLocalPath.substr(point - 1, point);
+        transform(tmp_char.begin(), tmp_char.end(), tmp_char.begin(), ::tolower);
+        mLocalPath = "/cygdrive/" + tmp_char + tmp_str;
+
+        // transform(tmp_char.begin(),tmp_char.end(),tmp_char.begin(),::tolower);
+        LOGE(mModule, "MLocalPath dest = %s", mLocalPath.c_str());
+        /* cygdrive */
+    }
+#endif
+
+    folder_mkdirs(mLocalPath.c_str());
+    /* foreath creat dirs */
+    for (auto it = mRemotePathVector.begin(); it != mRemotePathVector.end(); it++) {
+        if ((*it)[it->length() - 1] != '/') {
+            *it += "/";
+        }
+        LOGD(mModule, "REMOTE_PATH=%s", it->c_str());
+    }
+
+    for (auto it = mRemotePathVector.begin(); it != mRemotePathVector.end(); it++) {
+        auto tmpStr = *it;
+        if (tmpStr[tmpStr.length() - 1] == '/') {
+            tmpStr[tmpStr.length() - 1] = 0;
+        }
+        auto pos = tmpStr.find_last_of("/");
+        if (pos != tmpStr.npos) {
+            auto dirNames = it->substr(pos + 1);
+            mRemoteDirNames[dirNames] = *it; // .push_back(dirNames);
+            dirNames = mLocalPath + dirNames;
+            LOGE(mModule, "Create dirs = %s", dirNames.c_str());
+            folder_mkdirs(dirNames.c_str());
+        }
+    }
+
+    std::string cmdStr;
+    cmdStr = WORK_DIRPATH;
+    cmdStr += SERVER_PATH;
+    rc = folder_mkdirs(cmdStr.c_str());
+    if (FAILED(rc)) {
+        LOGE(mModule, "Create dictions failed\n");
+    }
+
+    cmdStr = WORK_DIRPATH;
+    cmdStr += CLINET_PATH;
+    rc = folder_mkdirs(cmdStr.c_str());
+    if (FAILED(rc)) {
+        LOGE(mModule, "Create dictions failed\n");
+    }
+
 }
 
 ServiceCore::ServiceCore(TRANSFER_STATUS_ENUM  tranStatus, const std::string localPath, const std::string name, const std::string passwd):

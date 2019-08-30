@@ -180,6 +180,68 @@ int32_t ServiceCore::reduceTranHeaderData(const std::string &inPath, const std::
     return rc;
 }
 
+int32_t ServiceCore::sendReomotePaths(std::string &remotePath)
+{
+    int32_t rc = NO_ERROR;
+    std::string storageFile = appendBasePath(REMOTE_PATH_BIN);
+    TRANSFER_ENTRY_FILE_T entry;
+    std::ofstream ouStream;
+
+    ouStream.open(storageFile, std::ios::binary | std::ios::trunc);
+    if (!ouStream.is_open()) {
+        LOGE(mModule, "Open %s failed\n", storageFile.c_str());
+        rc = NOT_FOUND;
+    }
+
+    if (SUCCEED(rc)) {
+        memset(&entry, 0, sizeof(entry));
+        entry.flages = MOENTRY_FLAGE_MASK;
+        if (remotePath.length() >= sizeof(entry.fileName)) {
+            LOGE(mModule, "remotePath length is more than 512 bits");
+            rc = NOT_FOUND;
+        } else {
+            strcpy(entry.fileName, remotePath.c_str());
+        }
+    }
+
+    if (SUCCEED(rc)) {
+        ouStream.write((char *)&entry, sizeof(TRANSFER_ENTRY_FILE_T));
+    }
+    ouStream.close();
+
+    return rc;
+}
+
+std::string ServiceCore::praseRemotePath(const std::string &filePath)
+{
+    std::string storagePath = appendBasePath(REMOTE_PATH_BIN);
+    int32_t rc = NO_ERROR;
+    std::string retString;
+    storagePath += ".dest";
+    rc = reduceTranHeaderData(filePath, storagePath);
+    if (FAILED(rc)) {
+        LOGE(mModule, "Failed runing reduceTranHeaderData");
+    }
+
+    if (SUCCEED(rc)) {
+        std::ifstream inStream(storagePath, std::ios::binary);
+        if (!inStream.is_open()) {
+            LOGE(mModule, "Open faile %s failed\n", storagePath.c_str());
+            rc = NOT_FOUND;
+        } else {
+            inStream.seekg(0);
+            TRANSFER_ENTRY_FILE_T entry;
+            memset(&entry, 0, sizeof(entry));
+            inStream.read((char *)&entry, sizeof(TRANSFER_ENTRY_FILE_T));
+            LOGD(mModule, "Read Tar File Path=%s", entry.fileName);
+            retString = entry.fileName;
+        }
+
+    }
+    LOGD(mModule, "%s return is %s", __func__, retString.c_str());
+    return retString;
+}
+
 int32_t ServiceCore::createEntryFile(const std::string &fileName, uint32_t value, bool fistFlage)
 {
     std::string storageFile = appendBasePath(TRA_SYNC_FILE_NAME);

@@ -22,8 +22,8 @@ typedef struct FILEINFOS_TAG {
 class FileManager
 {
 public:
-    int32_t fileTarFromPath(const std::string compreFile);
-    int32_t fileUntarToPath(const std::string compreFile);
+    int32_t fileTarFromPath(const std::string &compreFile, const std::string &dirPath);
+    int32_t fileUntarToPath(const std::string &compreFile, const std::string &dirPath);
     int32_t fileInfosSave(const std::string path = NULL);
     int32_t fileInfosLoad(const std::string path = NULL);
     int32_t fileScanToInis();
@@ -39,15 +39,15 @@ public:
 
 private:
     int32_t folder_mkdirs(const char *folder_path);
-    int32_t owner_tarFile(const std::string& filename, FILE* fpOut);
-    int32_t owner_tarDIr(const std::string& dirname, FILE* fpOut);
-    int32_t owner_unTarFile(FILE *fin);
+    int32_t owner_tarFile(const std::string& filename, const std::string &dirPath, FILE* fpOut);
+    int32_t owner_tarDIr(const std::string& dirname, const std::string &dirPath, FILE* fpOut);
+    int32_t owner_unTarFile(const std::string &dirPath, FILE *fin);
     size_t owner_fileSize(const char *filename);
     int32_t owner_fileHeadErase(void);
 
 private:
-    int32_t owner_tar(const char *outfile);
-    int32_t owner_unTar(const char* tarfile);
+    int32_t owner_tar(const std::string  &outfile, const std::string &dirPath);
+    int32_t owner_unTar(const std::string &tarfile, const std::string &dirPath);
     int32_t owner_decompressFile(const char *infilename, const  char *outfilename);
     int32_t owner_compressFile(const char *infilename, const char *outfilename);
 
