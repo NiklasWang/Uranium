@@ -128,6 +128,23 @@ int32_t ServiceCore::clientInitialize()
                 } else {
                     LOGD(mModule, "dirs %s need to compare md5sums",  dirs.c_str());
                 }
+
+                if (SUCCEED(rc)) {
+                    /* Waiting for message to return */
+                    mSemEnable = true;
+                    do {
+                        /* wait for result returned */
+                        rc = mSemTime->wait();
+                        if (FAILED(rc)) {
+                            LOGI(mModule, "SemaphoreTimeout");
+                        }
+                        if (mServerBreak) {
+                            LOGD(mModule, "server need to return");
+                            rc = NOT_FOUND;
+                        }
+                    } while (FAILED(rc));
+                    mSemEnable = false;
+                }
             }
 #if 0
             if (isEmpty(mLocalPath)) {
@@ -156,7 +173,7 @@ int32_t ServiceCore::clientInitialize()
             }
 #endif
         }
-
+#if  0
         if (SUCCEED(rc)) {
             /* Waiting for message to return */
             mSemEnable = true;
@@ -174,6 +191,11 @@ int32_t ServiceCore::clientInitialize()
             mCodesSync = true;
             mSemEnable = false;
         }
+#endif
+        if (SUCCEED(rc)) {
+            mCodesSync = true;
+        }
+
         LOGD(mModule, "================== Setp3 code sync succeed ===================\n");
     }
     LOGD(mModule, "Runing serverInitialize end");
@@ -540,8 +562,8 @@ int32_t ServiceCore::tarnsferServer2Clinet(std::string &filePath)
         rc = folder_mkdirs(cmd.c_str());
         tarFileName += TAR_MODIR_NAME;
         rc = remove(tarFileName.c_str());
-#if 0
-        rc = mMonitorCore->monitorTarExec(tarFileName,
+
+        rc = mMonitorCore->monitorTarExec(tarFileName, filePath,
         [ = ](void)-> int32_t{
             int32_t __rc = NO_ERROR;
 
@@ -561,7 +583,7 @@ int32_t ServiceCore::tarnsferServer2Clinet(std::string &filePath)
             // __rc = system(cmd.c_str());
             return __rc;
         });
-#endif
+
         if (FAILED(rc)) {
             LOGE(mModule, "Failed runing mMonitorCore->monitorTarExec filename=%s\n", tarFileName.c_str());
         }
