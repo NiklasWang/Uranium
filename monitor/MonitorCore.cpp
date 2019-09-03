@@ -16,20 +16,20 @@ bool MonitorCore::monitorDirCompareWithLocal(const std::string file, \
     return mFileMage->dirCompareWithLocal(file, diffFile);
 }
 
-int32_t MonitorCore::monitorTarExec(const std::string files, std::function<int32_t ()>cb)
+int32_t MonitorCore::monitorTarExec(const std::string &files, const std::string &dirPath, std::function<int32_t ()>cb)
 {
     return mThreads->run(
-    [this, files, cb]() -> int32_t{
-        mFileMage->fileTarFromPath(files);
+    [this, files, dirPath, cb]() -> int32_t{
+        mFileMage->fileTarFromPath(files, dirPath);
         return cb();
     });
 }
 
-int32_t MonitorCore::monitorUntarExec(const std::string files, std::function<int32_t ()>cb)
+int32_t MonitorCore::monitorUntarExec(const std::string &files, const std::string &dirPath, std::function<int32_t ()>cb)
 {
     return mThreads->run(
-    [this, files, cb]() -> int32_t{
-        mFileMage->fileUntarToPath(files);
+    [this, files, dirPath, cb]() -> int32_t{
+        mFileMage->fileUntarToPath(files, dirPath);
         return cb();
     });
 }
@@ -54,6 +54,12 @@ int32_t MonitorCore::monitorDirInfosLoad(const std::string path)
 int32_t MonitorCore::monitorDirInfosScan(void)
 {
     return  mFileMage->fileScanToInis();
+}
+
+int32_t MonitorCore::monitorDirInfosScan(const std::string &moPath)
+{
+    LOGD(mModule, "monitor dir infos scan %s", moPath.c_str());
+    return mFileMage->fileScanToInis(moPath);
 }
 
 int32_t MonitorCore::monitorDirStart(void)
