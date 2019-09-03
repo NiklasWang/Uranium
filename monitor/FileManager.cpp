@@ -346,7 +346,6 @@ int32_t FileManager::bsdTar(bool compress, std::string filePath)
     argvp[2] = buf2;
     argvp[3] = buf3;
     Exbsdtar(4, argvp);
-    printf("LHB %s \n", pwdPath);
     chdir(pwdPath);
     free(pwdPath);
 
@@ -423,7 +422,6 @@ int32_t FileManager::Compress_write_hierarchy(struct archive *disk, struct archi
 
     if (SUCCEED(rc)) {
         for (;;) {
-            printf("LHB.....\n");
             archive_entry_free(entry);
             entry = archive_entry_new();
             ret =  archive_read_next_header2(disk, entry);
@@ -1047,6 +1045,7 @@ bool FileManager::dirCompareWithLocal(const std::string file, \
         if (point != std::string::npos) {
             key = ss.substr(0, point);
             value = ss.substr(point + 1);
+            LOGI(mModule, "tmpFileinfo %s = %d", key.c_str(), value);
             tmpFileInfo[key] = value;
         }
     }
@@ -1059,9 +1058,11 @@ bool FileManager::dirCompareWithLocal(const std::string file, \
         if (result != mFileInfos.end()) {
             /* find the value */
             if (result->second != it->second) {
+                LOGI(mModule, "it->first %s MONITOR_Updated", it->first.c_str());
                 diffFile[it->first] = MONITOR_Updated;
             }
         } else {
+            LOGI(mModule, "it->first %s MONITOR_Updated", it->first.c_str());
             diffFile[it->first] = MONITOR_Removed;
         }
     }
@@ -1071,10 +1072,11 @@ bool FileManager::dirCompareWithLocal(const std::string file, \
         auto result = tmpFileInfo.find(it->first);
         if (result == tmpFileInfo.end()) {
             diffFile[it->first] = MONITOR_Created;
+            LOGI(mModule, "it->first %s MONITOR_Updated", it->first.c_str());
         }
     }
 
-    return false;
+    return NO_ERROR;
 
 }
 
@@ -1084,15 +1086,24 @@ bool FileManager::dirNotExit(void)
     return stat(mDirPath.c_str(), &sb);
 }
 
-int32_t FileManager::fileScanToInis(const std::string path)
+int32_t FileManager::fileScanToInis(const std::string &path)
 {
-    int32_t rc = 0;
+    std::string topPath = path;
+    fileInfoErase();
+    return fileScanToInis(path, topPath);
+}
+
+int32_t FileManager::fileScanToInis(const std::string &path, const std::string &topPath)
+{
+    int32_t rc = NO_ERROR;
     DIR    *dir;
     std::string thisPath = path;
 
     if (thisPath.empty()) {
-        rc = -1;
+        LOGE(mModule, "dir %s is empty", thisPath.c_str());
+        rc = UNKNOWN_ERROR;
     }
+
     /*  */
     if (SUCCEED(rc)) {
 
@@ -1119,7 +1130,7 @@ int32_t FileManager::fileScanToInis(const std::string path)
                 /* this is dir */
                 std::string nPath = thisPath + ptr->d_name;
                 nPath += "/";
-                fileScanToInis(nPath);
+                fileScanToInis(nPath, topPath);
             } else if (DT_REG  == ptr->d_type) {
                 /* this is files*/
                 /* calcule md5sum */
@@ -1136,14 +1147,19 @@ int32_t FileManager::fileScanToInis(const std::string path)
                     for (int jj = 0; jj < 4; jj++) {
                         sst << std::hex << checksum[jj];
                     }
-                    std::string::size_type pos = filePath.find(mDirPath);
-                    pos += mDirPath.length();
-                    std::string relaPath = filePath.substr(pos);
-                    mFileInfos[relaPath] = sst.str();
+
+                    std::string::size_type pos = filePath.find(topPath);
+                    if (pos != filePath.npos) {
+                        pos += topPath.length();
+                        std::string relaPath = filePath.substr(pos);
+                        mFileInfos[relaPath] = sst.str();
 #if 0
-                    LOGE(mModule, "%s = %s", filePath.c_str(), mFileInfos[filePath].c_str());
-                    std::cout << filePath << "=" << mFileInfos[filePath] << std::endl;
+                        LOGE(mModule, "%s = %s", relaPath.c_str(), mFileInfos[relaPath].c_str());
 #endif
+                    } else {
+                        LOGE(mModule, "%s cant find %s", filePath.c_str(), topPath.c_str());
+                    }
+
                     fclose(pFile);
                 }
             }

@@ -8,7 +8,7 @@ namespace uranium
 int32_t CoreImpl::start()
 {
     LOGD(mModule, "Core start() called.");
-    
+
     mThreads->run(
     [this]()->int32_t {
         std::string name;
@@ -27,7 +27,7 @@ int32_t CoreImpl::start()
         get(CONFIG_REMOTE_PATH, remotePaths);
 
         // path = "test";
-        remotePaths = "/home/lihb13/Templates/opt:/home/lihb13/Templates/test:/home/lihb13/Templates/good";
+        // remotePaths = "/home/lihb13/Templates/autoload:/home/lihb13/Templates/opt:/home/lihb13/Templates/sources_forked";
         LOGI(mModule, "LocalPath = %s", path.c_str());
         LOGI(mModule, "Username  = %s", name.c_str());
         LOGI(mModule, "Password  = %s", passwd.c_str());
@@ -35,21 +35,22 @@ int32_t CoreImpl::start()
 
         std::vector<std::string> remotePathVector;
 
-        do{
+        do
+        {
             auto pos = remotePaths.find(":");
-            if(pos == remotePaths.npos) {
+            if (pos == remotePaths.npos) {
                 LOGD(mModule, "End path = %s", remotePaths.c_str());
                 remotePathVector.push_back(remotePaths);
                 break;
             }
 
-            auto tmpStr = remotePaths.substr(0,pos);
+            auto tmpStr = remotePaths.substr(0, pos);
             remotePathVector.push_back(tmpStr);
             LOGI(mModule, " path = %s", tmpStr.c_str());
-            remotePaths = remotePaths.substr(pos+1);
+            remotePaths = remotePaths.substr(pos + 1);
             // LOGI(mModule, "reserved path = %s", remotePaths.c_str());
 
-        }while(true);
+        } while (true);
 
         serCore = new ServiceCore(TRAN_CLINET, path, remotePathVector, name, passwd);
         serCore->construct();

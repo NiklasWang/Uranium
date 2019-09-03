@@ -23,6 +23,7 @@ public:
     int32_t monitorDirInfosSave(const std::string path, std::function<int32_t (void)> cb);
     int32_t monitorDirInfosLoad(const std::string path);
     int32_t monitorDirInfosScan();
+    int32_t monitorDirInfosScan(const std::string &moPath);
 
 public:
     int32_t monitorDirStart(void);

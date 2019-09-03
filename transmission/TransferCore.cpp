@@ -30,7 +30,6 @@ int32_t TransferCore::send(const std::string path)
     mTransMang->pushData(*pTranBuffer);
     mTransMang->destoryTransferBuffer(pTranBuffer);
     pthread_mutex_unlock(&mSendMutex);
-    sleep(3);
     return NO_ERROR;
     // return __rc;
 }

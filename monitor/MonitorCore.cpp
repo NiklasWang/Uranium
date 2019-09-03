@@ -56,6 +56,12 @@ int32_t MonitorCore::monitorDirInfosScan(void)
     return  mFileMage->fileScanToInis();
 }
 
+int32_t MonitorCore::monitorDirInfosScan(const std::string &moPath)
+{
+    LOGD(mModule, "monitor dir infos scan %s", moPath.c_str());
+    return mFileMage->fileScanToInis(moPath);
+}
+
 int32_t MonitorCore::monitorDirStart(void)
 {
     if (mMoniStarFlag) {

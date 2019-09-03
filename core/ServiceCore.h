@@ -98,7 +98,7 @@ private:
     std::string praseRemotePath(const std::string &filePath);
     int32_t tarnsferServer2Clinet(std::string &filePath);
     int32_t praseStora2Local(const std::string &filePath);
-    int32_t transferLoadFileInfos();
+    int32_t transferLoadFileInfos(const std::string &dirPath);
     int32_t transferStoraFilelInfos(const std::string &filePath);
     // int32_t transferStoraFilelInfos(const std::string &filePath)
     int32_t createEntryFile(const std::string &fileName, uint32_t value, bool fistFlage);
@@ -150,6 +150,7 @@ private:
     std::string             mLocalPath;
     std::string             mRemotePath;
     std::string             mActivePath;
+    std::string             mActiveName;
     std::vector<std::string> mRemotePathVector;
     std::map<std::string, std::string> mRemoteDirNames;
     std::string             mName;
