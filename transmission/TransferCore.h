@@ -39,6 +39,7 @@ private:
     TransferFactory *mTranFact;
     EncryptCore     *mEncrypt;
     TRANSFER_STATUS_ENUM    mTranStatus;
+    pthread_mutex_t  mSendMutex;
     std::string     mName;
     std::string     mPassWd;
 };

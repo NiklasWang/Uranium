@@ -215,8 +215,8 @@ int main(int argc, char **argv)
     uranium::FileManager fileManager("URI_TMP_LHB");
     fileManager.construct();
     // fileManager.fileTarFromPath("lhb.tar.bz2");
-    fileManager.fileUntarToPath("lhb.tar.bz2");
-    #endif 
+    fileManager.fileUntarToPath("lhb.tar.bz2", "URI_TMP_LHB");
+#endif
 #if 0
     uranium::MonitorCore monitCore("/mnt/d/lenvov_wokspace/source/Uranium");
 

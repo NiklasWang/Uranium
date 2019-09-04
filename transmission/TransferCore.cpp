@@ -10,31 +10,28 @@ static const uint8_t defaultPublicKeys[16] = {
 
 int32_t TransferCore::send(const std::string path)
 {
-    return mThreads->run(
-    [this, path]()->int32_t {
-        // int32_t __rc = NO_ERROR;
-        TRANSFER_BUFFER_T *pTranBuffer = mTransMang->createTransferBuffer();
-        pTranBuffer->mode = TRAN_MODE_FEX;
-        std::string encryPath = path + ".encry";
-        std::string sendPath;
+    // int32_t __rc = NO_ERROR;
+    pthread_mutex_lock(&mSendMutex);
+    TRANSFER_BUFFER_T *pTranBuffer = mTransMang->createTransferBuffer();
+    pTranBuffer->mode = TRAN_MODE_FEX;
+    std::string encryPath = path + ".encry";
+    std::string sendPath;
 
-        /* ecry path */
-        if (NOTNULL(mEncrypt))
-        {
-            mEncrypt->encryptStream(path, encryPath, defaultPublicKeys);
-            sendPath = encryPath;
-        } else
-        {
-            sendPath = path;
-            LOGD(mModule, "Encrypt manager not support\n");
-        }
+    /* ecry path */
+    if (NOTNULL(mEncrypt)) {
+        mEncrypt->encryptStream(path, encryPath, defaultPublicKeys);
+        sendPath = encryPath;
+    } else {
+        sendPath = path;
+        LOGD(mModule, "Encrypt manager not support\n");
+    }
 
-        pTranBuffer->buffer = (void*) sendPath.c_str();
-        mTransMang->pushData(*pTranBuffer);
-        mTransMang->destoryTransferBuffer(pTranBuffer);
-        return NO_ERROR;
-        // return __rc;
-    });
+    pTranBuffer->buffer = (void*) sendPath.c_str();
+    mTransMang->pushData(*pTranBuffer);
+    mTransMang->destoryTransferBuffer(pTranBuffer);
+    pthread_mutex_unlock(&mSendMutex);
+    return NO_ERROR;
+    // return __rc;
 }
 
 int32_t TransferCore::receive(std::function<int32_t (std::string &filePath)> cb)
@@ -160,11 +157,13 @@ TransferCore::TransferCore(TRANSFER_STATUS_ENUM tranStatus, EncryptCore *encrypt
     mName(name),
     mPassWd(passwd)
 {
+    pthread_mutex_init(&mSendMutex, NULL);
     mTranFact = TransferFactory::create();
 }
 
 TransferCore::~TransferCore()
 {
+    pthread_mutex_destroy(&mSendMutex);
     SECURE_DELETE(mTranFact);
 }
 

@@ -66,7 +66,7 @@ int32_t FileManager::owner_fileHeadErase(void)
     return 0;
 }
 
-int32_t FileManager::owner_tarFile(const std::string& filename, FILE* fpOut)
+int32_t FileManager::owner_tarFile(const std::string& filename, const std::string &dirPath, FILE* fpOut)
 {
     struct stat stat_buf;
     stat(filename.c_str(), &stat_buf);
@@ -97,13 +97,13 @@ int32_t FileManager::owner_tarFile(const std::string& filename, FILE* fpOut)
 
 #endif
 
-    std::string::size_type pos = filename.find(mDirPath);
+    std::string::size_type pos = filename.find(dirPath);
     if (pos != filename.npos) {
-        pos += mDirPath.length();
+        pos += dirPath.length();
         std::string relaPath = filename.substr(pos);
         fprintf(fpOut, "f\n%s\n%d\n", relaPath.c_str(), (int)stat_buf.st_size);
     } else {
-        LOGE(mModule, "DANGER*****  not find[ %s] in [ %s]", mDirPath.c_str(), filename.c_str());
+        LOGE(mModule, "DANGER*****  not find[ %s] in [ %s]", dirPath.c_str(), filename.c_str());
     }
 
     FILE *fpIn = fopen(filename.c_str(), "r");
@@ -127,14 +127,14 @@ int32_t FileManager::owner_tarFile(const std::string& filename, FILE* fpOut)
     return 0;
 }
 
-int32_t FileManager::owner_tarDIr(const std::string& dirname, FILE* fpOut)
+int32_t FileManager::owner_tarDIr(const std::string& dirname, const std::string &dirPath, FILE* fpOut)
 {
     // char filepath[1024];
     std::string filePath = dirname;
 #if 1
 
-    std::string::size_type pos = filePath.find(mDirPath);
-    pos += mDirPath.length();
+    std::string::size_type pos = filePath.find(dirPath);
+    pos += dirPath.length();
     std::string relaPath = filePath.substr(pos);
     if (relaPath.size()) {
         fprintf(fpOut, "d\n"); //d目录标记
@@ -154,14 +154,14 @@ int32_t FileManager::owner_tarDIr(const std::string& dirname, FILE* fpOut)
         }
         filePath += entry->d_name;
         if (entry->d_type == DT_REG) { //判断是否为文件
-            owner_tarFile(filePath, fpOut); //打包文件
+            owner_tarFile(filePath, dirPath, fpOut); //打包文件
         } else if (entry->d_type == DT_DIR) { //判断是否为目录,若是就继续递归
             if ((strcmp(entry->d_name, ".") == 0) ||
                 (strcmp(entry->d_name, "..") == 0)) { //. ..忽略
                 entry = readdir(dir);
                 continue;
             }
-            owner_tarDIr(filePath, fpOut);
+            owner_tarDIr(filePath, dirPath, fpOut);
         }
         entry = readdir(dir);
     }
@@ -169,28 +169,28 @@ int32_t FileManager::owner_tarDIr(const std::string& dirname, FILE* fpOut)
     return 0;
 }
 
-int32_t FileManager::owner_tar(const char *outfile)
+int32_t FileManager::owner_tar(const std::string  &outfile, const std::string &dirPath)
 {
     owner_fileHeadErase();
     mFileCount = 0;
-    LOGE(mModule, "Out file is %s\n", outfile);
-    FILE* fpOut = fopen(outfile, "w");
+    LOGE(mModule, "Out file is %s\n", outfile.c_str());
+    FILE* fpOut = fopen(outfile.c_str(), "w");
     if (ISNULL(fpOut)) {
         LOGE(mModule, "fopen file failed");
         return NOT_READY;
     }
     fprintf(fpOut, "xgltar\n"); //标记打包文件类型
     fprintf(fpOut, "1.0\n"); //版本
-    int ret = owner_tarDIr(mDirPath, fpOut); //打包目录
+    int ret = owner_tarDIr(dirPath, dirPath, fpOut); //打包目录
     fclose(fpOut);
     mFileCount = 0;
     owner_fileHeadErase();
     return NO_ERROR;
 }
 
-int32_t FileManager::owner_unTarFile(FILE *fin)
+int32_t FileManager::owner_unTarFile(const std::string &dirPath, FILE *fin)
 {
-    std::string pathTemp = mDirPath;
+    std::string pathTemp = dirPath;
     char buf[1024];
     if (fgets(buf, sizeof(buf), fin) == NULL) {
         return -1;
@@ -199,12 +199,12 @@ int32_t FileManager::owner_unTarFile(FILE *fin)
     if (strcmp(buf, "d\n") == 0) { //目录标记
         fgets(buf, sizeof(buf), fin);
         buf[strlen(buf) - 1] = 0;
-        pathTemp = mDirPath + buf;
+        pathTemp = dirPath + buf;
         folder_mkdirs(pathTemp.c_str());
     } else if (strcmp(buf, "f\n") == 0) { //文件标记
         fgets(buf, sizeof(buf), fin);
         buf[strlen(buf) - 1] = 0;
-        pathTemp = mDirPath + buf;
+        pathTemp = dirPath + buf;
         FILE *out = fopen(pathTemp.c_str(), "w");
         fgets(buf, sizeof(buf), fin);
         int len = atol(buf);
@@ -227,10 +227,10 @@ int32_t FileManager::owner_unTarFile(FILE *fin)
     return NO_ERROR;
 }
 
-int32_t FileManager::owner_unTar(const char* tarfile)
+int32_t FileManager::owner_unTar(const std::string &tarfile, const std::string &dirPath)
 {
     char buf[1024];
-    FILE *fin = fopen(tarfile, "r");
+    FILE *fin = fopen(tarfile.c_str(), "r");
     fgets(buf, sizeof(buf), fin);
     if (strcmp(buf, "xgltar\n") != 0) { //判断是否为打包文件类型
         LOGE(mModule, "unknown file format\n");
@@ -239,7 +239,7 @@ int32_t FileManager::owner_unTar(const char* tarfile)
     fgets(buf, sizeof(buf), fin);
     if (strcmp(buf, "1.0\n") == 0) { //判断版本是否正确
         while (1) {
-            int ret = owner_unTarFile(fin); //解包
+            int ret = owner_unTarFile(dirPath, fin); //解包
             if (ret != NO_ERROR) {
                 break;
             }
@@ -346,7 +346,6 @@ int32_t FileManager::bsdTar(bool compress, std::string filePath)
     argvp[2] = buf2;
     argvp[3] = buf3;
     Exbsdtar(4, argvp);
-    printf("LHB %s \n", pwdPath);
     chdir(pwdPath);
     free(pwdPath);
 
@@ -423,7 +422,6 @@ int32_t FileManager::Compress_write_hierarchy(struct archive *disk, struct archi
 
     if (SUCCEED(rc)) {
         for (;;) {
-            printf("LHB.....\n");
             archive_entry_free(entry);
             entry = archive_entry_new();
             ret =  archive_read_next_header2(disk, entry);
@@ -910,36 +908,24 @@ int32_t FileManager::compressFile2Disk(const char *tar_file, const char *file1, 
     }
     return rc;
 }
-int32_t FileManager::fileTarFromPath(const std::string compreFile)
+int32_t FileManager::fileTarFromPath(const std::string &compreFile, const std::string &dirPath)
 {
     int32_t rc = 0;
-    std::string tmpStr = mDirPath;
 
     if (SUCCEED(rc)) {
         /* exam file and path is exited */
-        rc = access(tmpStr.c_str(), F_OK);
+        rc = access(dirPath.c_str(), F_OK);
         if (FAILED(rc)) {
-            LOGE(mModule, "File/Path %s not exit\n", tmpStr.c_str());
+            LOGE(mModule, "File/Path %s not exit\n", dirPath.c_str());
         }
     }
 
     if (SUCCEED(rc)) {
-        LOGE(mModule, "Runing....");
+        LOGD(mModule, "Runing....");
         std::string encryFilename = compreFile + ".owner_tar";
 
-        rc = owner_tar(encryFilename.c_str());
+        rc = owner_tar(encryFilename, dirPath);
         rc = owner_compressFile(encryFilename.c_str(), compreFile.c_str());
-        // bsdTar(true, compreFile);
-        // rc = compressFile2Disk(compreFile.c_str(), "/home/binson/libarchive");
-#if 0
-        std::string cmd = ("cd ");
-        cmd += tmpStr;
-        cmd += ";tar -jcf ";
-        cmd += compreFile;
-        cmd += " *";
-
-        rc = system(cmd.c_str());
-#endif
         if (FAILED(rc)) {
             LOGE(mModule, "compressFile2Disk() failed!\n");
         }
@@ -948,10 +934,10 @@ int32_t FileManager::fileTarFromPath(const std::string compreFile)
     return rc;
 }
 
-int32_t FileManager::fileUntarToPath(const std::string compreFile)
+int32_t FileManager::fileUntarToPath(const std::string &compreFile, const std::string &dirPath)
 {
     int32_t rc = 0;
-    std::string tmpStr = mDirPath;
+
     if (SUCCEED(rc)) {
         /* exam file and path is exited */
         rc = access(compreFile.c_str(), F_OK);
@@ -964,7 +950,7 @@ int32_t FileManager::fileUntarToPath(const std::string compreFile)
         std::string encryFilename = compreFile + ".owner_untar";
         owner_decompressFile(compreFile.c_str(), encryFilename.c_str());
         // owner_compressFile
-        rc = owner_unTar(encryFilename.c_str());
+        rc = owner_unTar(encryFilename, dirPath);
         // rc = bsdUnTar(true, compreFile);
         // rc = uncompressFil2Disk(compreFile.c_str(), tmpStr.c_str());
 #if 0
@@ -1059,6 +1045,7 @@ bool FileManager::dirCompareWithLocal(const std::string file, \
         if (point != std::string::npos) {
             key = ss.substr(0, point);
             value = ss.substr(point + 1);
+            LOGI(mModule, "tmpFileinfo %s = %d", key.c_str(), value);
             tmpFileInfo[key] = value;
         }
     }
@@ -1071,9 +1058,11 @@ bool FileManager::dirCompareWithLocal(const std::string file, \
         if (result != mFileInfos.end()) {
             /* find the value */
             if (result->second != it->second) {
+                LOGI(mModule, "it->first %s MONITOR_Updated", it->first.c_str());
                 diffFile[it->first] = MONITOR_Updated;
             }
         } else {
+            LOGI(mModule, "it->first %s MONITOR_Updated", it->first.c_str());
             diffFile[it->first] = MONITOR_Removed;
         }
     }
@@ -1083,10 +1072,11 @@ bool FileManager::dirCompareWithLocal(const std::string file, \
         auto result = tmpFileInfo.find(it->first);
         if (result == tmpFileInfo.end()) {
             diffFile[it->first] = MONITOR_Created;
+            LOGI(mModule, "it->first %s MONITOR_Updated", it->first.c_str());
         }
     }
 
-    return false;
+    return NO_ERROR;
 
 }
 
@@ -1096,15 +1086,24 @@ bool FileManager::dirNotExit(void)
     return stat(mDirPath.c_str(), &sb);
 }
 
-int32_t FileManager::fileScanToInis(const std::string path)
+int32_t FileManager::fileScanToInis(const std::string &path)
 {
-    int32_t rc = 0;
+    std::string topPath = path;
+    fileInfoErase();
+    return fileScanToInis(path, topPath);
+}
+
+int32_t FileManager::fileScanToInis(const std::string &path, const std::string &topPath)
+{
+    int32_t rc = NO_ERROR;
     DIR    *dir;
     std::string thisPath = path;
 
     if (thisPath.empty()) {
-        rc = -1;
+        LOGE(mModule, "dir %s is empty", thisPath.c_str());
+        rc = UNKNOWN_ERROR;
     }
+
     /*  */
     if (SUCCEED(rc)) {
 
@@ -1131,7 +1130,7 @@ int32_t FileManager::fileScanToInis(const std::string path)
                 /* this is dir */
                 std::string nPath = thisPath + ptr->d_name;
                 nPath += "/";
-                fileScanToInis(nPath);
+                fileScanToInis(nPath, topPath);
             } else if (DT_REG  == ptr->d_type) {
                 /* this is files*/
                 /* calcule md5sum */
@@ -1148,14 +1147,19 @@ int32_t FileManager::fileScanToInis(const std::string path)
                     for (int jj = 0; jj < 4; jj++) {
                         sst << std::hex << checksum[jj];
                     }
-                    std::string::size_type pos = filePath.find(mDirPath);
-                    pos += mDirPath.length();
-                    std::string relaPath = filePath.substr(pos);
-                    mFileInfos[relaPath] = sst.str();
+
+                    std::string::size_type pos = filePath.find(topPath);
+                    if (pos != filePath.npos) {
+                        pos += topPath.length();
+                        std::string relaPath = filePath.substr(pos);
+                        mFileInfos[relaPath] = sst.str();
 #if 0
-                    LOGE(mModule, "%s = %s", filePath.c_str(), mFileInfos[filePath].c_str());
-                    std::cout << filePath << "=" << mFileInfos[filePath] << std::endl;
+                        LOGE(mModule, "%s = %s", relaPath.c_str(), mFileInfos[relaPath].c_str());
 #endif
+                    } else {
+                        LOGE(mModule, "%s cant find %s", filePath.c_str(), topPath.c_str());
+                    }
+
                     fclose(pFile);
                 }
             }
