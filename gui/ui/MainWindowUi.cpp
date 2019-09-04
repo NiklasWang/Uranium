@@ -486,6 +486,16 @@ void MainWindowUi::updateRemoteDirTextEditor()
         mRemoteDirTextEdit->insertPlainText(sections.at(i));
         mRemoteDirTextEdit->append("");
     }
+
+    if (sections.size() == 0) {
+        mRemoteDirTextEdit->setTextColor(Qt::lightGray);
+        mRemoteDirTextEdit->setFontItalic(true);
+        mRemoteDirTextEdit->insertPlainText(QString("Dir 1 > "));
+        mRemoteDirTextEdit->setTextColor(Qt::black);
+        mRemoteDirTextEdit->setFontItalic(false);
+        mRemoteDirTextEdit->insertPlainText("Loading ...");
+        mRemoteDirTextEdit->append("");
+    }
     mRemoteDirTextEdit->setTextColor(Qt::lightGray);
     mRemoteDirTextEdit->setFontItalic(true);
     mRemoteDirTextEdit->insertPlainText(QString("Dir N > " REMOTE_PATH_USAGE));
@@ -558,8 +568,16 @@ void MainWindowUi::onRemoteDirTextEditCursorPositionChanged()
         mRemoteDirTextEdit->setReadOnly(false);
     }
 
+    // Insert blank we removed in last block
+    if (selectLine.size() > 1) {
+        if (pos == selectLine.size() &&
+            selectLine.at(selectLine.size() - 1 - 1) == '>') {
+            mRemoteDirTextEdit->insertPlainText(" ");
+        }
+    }
+
     // Reset font color if the line is empty
-    if (pos == selectLine.size()) {
+    if (pos <= selectLine.size()) {
         mRemoteDirTextEdit->setTextColor(Qt::black);
         mRemoteDirTextEdit->setFontItalic(false);
     }
