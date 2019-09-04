@@ -778,16 +778,16 @@ int32_t ServiceCore::doHandleMoEvt(const TRAN_HEADE_T& traHead, const std::strin
         case DIR_MO_EVT_LOAD:
             LOGD(mModule, "do runing DIR_MO_EVT_LOAD\n");
             /* exam if the dir is empty */
-            if (!isEmpty(mLocalPath)) {
-                /* 压缩文件并发送返回 */
-                rc = transferDictionaryCMD(DIR_MO_ACK, DIR_MO_ACK_OK, true);
-                dirPath = praseRemotePath(filePath);
-                LOGE(mModule, "origfilePath = %s, dirPath = %s", filePath.c_str(), dirPath.c_str());
-                rc = tarnsferServer2Clinet(dirPath);
-            } else {
-                /* 发送失败的标志 */
-                rc = transferDictionaryCMD(DIR_MO_ACK, DIR_MO_ACK_EMPTY, true);
-            }
+            // if (!isEmpty(mLocalPath)) {
+            /* 压缩文件并发送返回 */
+            rc = transferDictionaryCMD(DIR_MO_ACK, DIR_MO_ACK_OK, true);
+            dirPath = praseRemotePath(filePath);
+            LOGE(mModule, "origfilePath = %s, dirPath = %s", filePath.c_str(), dirPath.c_str());
+            rc = tarnsferServer2Clinet(dirPath);
+            // } else {
+            /* 发送失败的标志 */
+            //    rc = transferDictionaryCMD(DIR_MO_ACK, DIR_MO_ACK_EMPTY, true);
+            // }
             break;
         case DIR_MO_EVT_LOAD_MD5INFOS:
             LOGD(mModule, "do runing DIR_MO_EVT_LOAD_MD5INFOS\n");
