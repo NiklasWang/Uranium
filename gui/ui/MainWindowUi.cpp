@@ -295,6 +295,7 @@ int32_t MainWindowUi::setupUi(QMainWindow *MainWindow)
         font6.setFamily(QStringLiteral("Consolas"));
         font6.setPointSize(10);
         mDebugTextEdit->setFont(font6);
+        mDebugTextEdit->setStyleSheet("color:rgb(0,0,0);""background-color:rgb(255,255,255);");
         mDebugTextEdit->document()->setMaximumBlockCount(MAX_DEBUG_LINE_COUNT);
         mDebugTextEdit->setReadOnly(true);
         mDebugTextEditorMenu = nullptr;
@@ -659,6 +660,7 @@ int32_t MainWindowUi::setupCore()
     if (SUCCEED(rc)) {
         mCore = new CoreHandler(this);
         if (NOTNULL(mCore)) {
+            connect(mCore, SIGNAL(quit()), this, SIGNAL(quit()));
             rc = mCore->construct();
             if (FAILED(rc)) {
                 showError("Failed to construct core.");

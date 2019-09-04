@@ -219,7 +219,8 @@ int32_t AboutUi::retranslateUi()
     mTitleLabel->setText(QApplication::translate("mDialog",
         proj.toLocal8Bit().data(), nullptr));
     QString ver = VERSION;
-    QString version = "Version " + ver + " - 32bit";
+    QString version = QString("Version ") + ver + " - " +
+        (sizeof(void *) == 8 ? "64bit" : "32bit");
     mVersionLabel->setText(QApplication::translate("mDialog",
         version.toLocal8Bit().data(), nullptr));
     mCopyrightLabel->setText(QApplication::translate("mDialog",

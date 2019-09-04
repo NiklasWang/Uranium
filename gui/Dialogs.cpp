@@ -6,7 +6,12 @@ namespace uranium {
 
 int32_t showError(const QString &msg)
 {
-    return showDialog(MESSAGE_TYPE_ERROR, msg);
+    QString newMsg = msg;
+    newMsg.append("\n");
+    newMsg.append("Please contact author for technical support:\n");
+    newMsg.append(" - " AUTHOR1 "\n");
+    newMsg.append(" - " AUTHOR0 "\n");
+    return showDialog(MESSAGE_TYPE_ERROR, newMsg);
 }
 
 int32_t showWarning(const QString &msg)
@@ -16,7 +21,12 @@ int32_t showWarning(const QString &msg)
 
 int32_t showCritical(const QString &msg)
 {
-    return showDialog(MESSAGE_TYPE_CRITICAL, msg);
+    QString newMsg = msg;
+    newMsg.append("\n");
+    newMsg.append("Please contact author for technical support:\n");
+    newMsg.append(" - " AUTHOR1 "\n");
+    newMsg.append(" - " AUTHOR0 "\n");
+    return showDialog(MESSAGE_TYPE_CRITICAL, newMsg);
 }
 
 int32_t showQuestion(const QString &msg)

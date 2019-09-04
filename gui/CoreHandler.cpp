@@ -7,6 +7,7 @@
 
 #include "version.h"
 #include "common.h"
+#include "Dialogs.h"
 #include "IPCInstruction.h"
 #include "CoreHandler.h"
 #include "IPCClient.h"
@@ -106,7 +107,16 @@ int32_t CoreHandler::onCoreReady()
 int32_t CoreHandler::onCoreLost()
 {
     mCoreReady = false;
-    LOGE(mModule, "Lost control with core.");
+    LOGI(mModule, "Lost control with core.");
+
+    if (mConstructed) {
+        QString msg = "Process " PROJNAME ".exe unexpected terminated.\n";
+        msg.append("Unable to recover, please restart this application.\n");
+        QByteArray array = msg.toLatin1();
+        LOGF(mModule, "%s", array.data());
+        showError(msg);
+        quit();
+    }
 
     return NO_ERROR;
 }
@@ -583,7 +593,11 @@ void CoreHandler::onProcessError(QProcess::ProcessError error)
     LOGE(mModule, "Core process error, %d", error);
 
     if (error == QProcess::FailedToStart) {
-        LOGF(mModule, "Core process failed to start.");
+        QString msg = "Failed to launch " PROJNAME ".exe Version " VERSION "\n";
+        msg.append("Make sure " PROJNAME ".exe is located in same dir or system environment path.\n");
+        QByteArray array = msg.toLatin1();
+        LOGF(mModule, "%s", array.data());
+        showCritical(msg);
     }
 }
 

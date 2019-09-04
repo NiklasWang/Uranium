@@ -40,6 +40,7 @@ public:
 signals:
     int32_t exec(std::function<int32_t ()> func);
     void exitServer();
+    void quit();
 
 private slots:
     int32_t onExec(std::function<int32_t ()> func);
