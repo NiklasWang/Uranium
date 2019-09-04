@@ -1,4 +1,5 @@
 #include <QtCore/QVariant>
+#include <QTextBlock>
 #include <QtWidgets/QAction>
 #include <QtWidgets/QApplication>
 #include <QtWidgets/QCheckBox>
@@ -29,6 +30,9 @@
 #define DEFAULT_WINDOW_HEIGHT 848
 #define MAX_DEBUG_LINE_COUNT  65535
 #define MAX_SHELL_LINE_COUNT  65535
+#define REMOTE_PATH_SPLITTER  ":"
+#define REMOTE_PATH_MAX_LINES 7
+#define REMOTE_PATH_USAGE     "Type a new remote path to sync."
 
 static const int32_t gDevMonitorScale = 192;
 
@@ -113,6 +117,7 @@ int32_t MainWindowUi::setupUi(QMainWindow *MainWindow)
         checkBoxFont.setBold(true);
         checkBoxFont.setWeight(75);
         mMasterCheckBox->setFont(checkBoxFont);
+        mMasterCheckBox->setEnabled(false);
         mCheckBoxGridLayout->addWidget(mMasterCheckBox, 1, 0, 1, 1);
     }
 
@@ -262,10 +267,16 @@ int32_t MainWindowUi::setupUi(QMainWindow *MainWindow)
         mRemoteDirLabel->setFont(lineEditFont);
         mInputBoxGridLayout->addWidget(mRemoteDirLabel, 2, 0, 1, 1);
 
-        mRemoteDirLineEdit = new QLineEdit(mVerticalLayoutWidget);
-        mRemoteDirLineEdit->setObjectName(QStringLiteral("mRemoteDirLineEdit"));
-        mRemoteDirLineEdit->setFont(lineEditFont);
-        mInputBoxGridLayout->addWidget(mRemoteDirLineEdit, 2, 1, 1, 2);
+        mRemoteDirTextEdit = new QTextEdit(mVerticalLayoutWidget);
+        mRemoteDirTextEdit->setObjectName(QStringLiteral("mRemoteDirTextEdit"));
+        lineEditFont.setPointSize(12);
+        lineEditFont.setWeight(26);
+        mRemoteDirTextEdit->setFont(lineEditFont);
+        mRemoteDirTextEdit->document()->setMaximumBlockCount(MAX_DEBUG_LINE_COUNT);
+        mRemoteDirTextEdit->setReadOnly(false);
+        QSizePolicy expandingPolicy(QSizePolicy::Preferred, QSizePolicy::MinimumExpanding);
+        mRemoteDirTextEdit->setSizePolicy(expandingPolicy);
+        mInputBoxGridLayout->addWidget(mRemoteDirTextEdit, 2, 1, 1, 2);
     }
 
     if (SUCCEED(rc)) {
@@ -332,11 +343,11 @@ int32_t MainWindowUi::setupUi(QMainWindow *MainWindow)
         QWidget::setTabOrder(mDebugCheckBox, mRemoteControlCheckBox);
         QWidget::setTabOrder(mRemoteControlCheckBox, mUserNameLineEdit);
         QWidget::setTabOrder(mUserNameLineEdit, mPasswordLineEdit);
-        QWidget::setTabOrder(mPasswordLineEdit, mRemoteDirLineEdit);
-        QWidget::setTabOrder(mRemoteDirLineEdit, mLocalDirLineEdit);
+        QWidget::setTabOrder(mPasswordLineEdit, mRemoteDirTextEdit);
+        QWidget::setTabOrder(mRemoteDirTextEdit, mLocalDirLineEdit);
         QWidget::setTabOrder(mLocalDirLineEdit, mLocalDirLineEdit);
-        QWidget::setTabOrder(mLocalDirLineEdit, mRemoteDirLineEdit);
-        QWidget::setTabOrder(mRemoteDirLineEdit, mPasswordLineEdit);
+        QWidget::setTabOrder(mLocalDirLineEdit, mRemoteDirTextEdit);
+        QWidget::setTabOrder(mRemoteDirTextEdit, mPasswordLineEdit);
         QWidget::setTabOrder(mPasswordLineEdit, mUserNameLineEdit);
         QWidget::setTabOrder(mUserNameLineEdit, mSelectPushButton);
         QWidget::setTabOrder(mSelectPushButton, mSelectPushButton);
@@ -462,6 +473,122 @@ void MainWindowUi::getRemoteControlSetting(QFont &font, QString &style)
     style = mShellTextEditor->styleSheet();
 }
 
+void MainWindowUi::updateRemoteDirTextEditor()
+{
+    mRemoteDirTextEdit->clear();
+    QStringList sections = mRemoteDir.split(REMOTE_PATH_SPLITTER, QString::SkipEmptyParts);
+    for (int32_t i = 0; i < sections.size(); i++) {
+        mRemoteDirTextEdit->setTextColor(Qt::lightGray);
+        mRemoteDirTextEdit->setFontItalic(true);
+        mRemoteDirTextEdit->insertPlainText(QString("Dir %1 > ").arg(i + 1));
+        mRemoteDirTextEdit->setTextColor(Qt::black);
+        mRemoteDirTextEdit->setFontItalic(false);
+        mRemoteDirTextEdit->insertPlainText(sections.at(i));
+        mRemoteDirTextEdit->append("");
+    }
+    mRemoteDirTextEdit->setTextColor(Qt::lightGray);
+    mRemoteDirTextEdit->setFontItalic(true);
+    mRemoteDirTextEdit->insertPlainText(QString("Dir N > " REMOTE_PATH_USAGE));
+    mRemoteDirTextEdit->setTextColor(Qt::black);
+    mRemoteDirTextEdit->setFontItalic(false);
+
+    adjustRemoteDirTextEditorHeight();
+
+    return;
+}
+
+void MainWindowUi::adjustRemoteDirTextEditorHeight()
+{
+    QStringList sections = mRemoteDir.split(REMOTE_PATH_SPLITTER, QString::SkipEmptyParts);
+    QFontMetrics m(mRemoteDirTextEdit->font());
+    int32_t RowHeight = m.lineSpacing();
+    int32_t lines = sections.size() > 1 ? sections.size() : 2;
+    lines = lines < REMOTE_PATH_MAX_LINES ? lines : REMOTE_PATH_MAX_LINES;
+    int32_t height = mRemoteDirTextEdit->height() > lines * RowHeight ?
+        mRemoteDirTextEdit->height() : lines * RowHeight;
+    mRemoteDirTextEdit->setFixedHeight(height);
+
+    return;
+}
+
+void MainWindowUi::updateRemoteDir()
+{
+    QString newRemoteDir;
+    QString text = mRemoteDirTextEdit->toPlainText();
+
+    QStringList lines = text.split("\n", QString::SkipEmptyParts);
+    for (int32_t i = 0; i < lines.size(); i++) {
+        QStringList words = lines.at(i).split('>', QString::SkipEmptyParts);
+        if (words.size() > 1) {
+            QString word = words.at(1);
+            word = word.trimmed();
+            if (word.size() > 0 && word != REMOTE_PATH_USAGE) {
+                newRemoteDir.append(word);
+                newRemoteDir.append(REMOTE_PATH_SPLITTER);
+            }
+        }
+    }
+    if (newRemoteDir.size() > 1) {
+        newRemoteDir.chop(1);
+        mRemoteDir = newRemoteDir;
+    }
+
+    QByteArray value = mRemoteDir.toLatin1();
+    std::string path = value.data();
+    mCore->setConfig(CONFIG_REMOTE_PATH, path);
+
+    return;
+}
+
+void MainWindowUi::onRemoteDirTextEditCursorPositionChanged()
+{
+    QTextCursor cursor = mRemoteDirTextEdit->textCursor();
+    int32_t lineNum = cursor.blockNumber();
+    int32_t colNum = cursor.columnNumber();
+
+    QTextDocument *document = mRemoteDirTextEdit->document();
+    QTextBlock textBlock = document->findBlockByLineNumber(lineNum);
+    QString selectLine = textBlock.text();
+
+    // Lock the line ID
+    int32_t pos = selectLine.indexOf('>') + 1 /* '>' itself */ + 1 /* the blank after '>' */;
+    if (colNum <= pos && pos < selectLine.size()) {
+        mRemoteDirTextEdit->setReadOnly(true);
+    } else {
+        mRemoteDirTextEdit->setReadOnly(false);
+    }
+
+    // Reset font color if the line is empty
+    if (pos == selectLine.size()) {
+        mRemoteDirTextEdit->setTextColor(Qt::black);
+        mRemoteDirTextEdit->setFontItalic(false);
+    }
+
+    // Auto append line ID
+    if (colNum == 0 && selectLine.size() == 0) {
+        mRemoteDirTextEdit->setTextColor(Qt::lightGray);
+        mRemoteDirTextEdit->setFontItalic(true);
+        mRemoteDirTextEdit->insertPlainText(QString("Dir %1 > ").arg(lineNum + 1));
+        mRemoteDirTextEdit->setTextColor(Qt::black);
+        mRemoteDirTextEdit->setFontItalic(false);
+        mRemoteDirTextEdit->setReadOnly(false);
+        QFontMetrics m(mRemoteDirTextEdit->font());
+        int32_t height = m.lineSpacing() + mRemoteDirTextEdit->height();
+        int32_t maxHeight = REMOTE_PATH_MAX_LINES * m.lineSpacing();
+        mRemoteDirTextEdit->setFixedHeight(height > maxHeight ? maxHeight : height);
+    }
+
+    // Lock last line
+    if (document->lineCount() == lineNum + 1) {
+        QTextBlock textBlock = document->findBlockByLineNumber(lineNum);
+        if (textBlock.text().contains(REMOTE_PATH_USAGE)) {
+            mRemoteDirTextEdit->setReadOnly(true);
+        }
+    }
+
+    return;
+}
+
 void MainWindowUi::retranslateUi(QMainWindow *MainWindow)
 {
     MainWindow->setWindowTitle(QApplication::translate("MainWindow", PROJNAME " " VERSION, nullptr));
@@ -502,8 +629,7 @@ void MainWindowUi::retranslateUi(QMainWindow *MainWindow)
             "Unknown@Remote:/home/Unknown$</p></body></html>", nullptr));
     mPasswordLineEdit->setText(QApplication::translate("MainWindow", "Loading...", nullptr));
     mUserNameLineEdit->setText(QApplication::translate("MainWindow", "Loading...", nullptr));
-    mRemoteDirLineEdit->setText(QApplication::translate("MainWindow", "Loading...", nullptr));
-    mLocalDirLineEdit->setText(QApplication::translate("MainWindow", "Loading...", nullptr));
+    updateRemoteDirTextEditor();
     mMenuFile->setTitle(QApplication::translate("MainWindow", "File", nullptr));
     mMenuHelp->setTitle(QApplication::translate("MainWindow", "Help", nullptr));
 }
@@ -833,9 +959,12 @@ int32_t MainWindowUi::updateConfig(ConfigItem item, const QString &value)
                     this, SLOT(setConfig(const QString &)));
         } break;
         case CONFIG_REMOTE_PATH: {
-            mRemoteDirLineEdit->setText(value);
-            connect(mRemoteDirLineEdit, SIGNAL(textChanged(const QString &)),
-                    this, SLOT(setConfig(const QString &)));
+            mRemoteDir = value;
+            updateRemoteDirTextEditor();
+            connect(mRemoteDirTextEdit, SIGNAL(textChanged()),
+                    this, SLOT(updateRemoteDir()));
+            connect(mRemoteDirTextEdit, SIGNAL(cursorPositionChanged()),
+                    this, SLOT(onRemoteDirTextEditCursorPositionChanged()) );
         } break;
         case CONFIG_DEBUG_SIZE:
         case CONFIG_DEBUG_FONT: {
@@ -904,8 +1033,6 @@ int32_t MainWindowUi::setConfig(const QString &set)
         rc = mCore->setConfig(CONFIG_PASSWORD, value);
     } else if (name == "mUserNameLineEdit") {
         rc = mCore->setConfig(CONFIG_USERNAME, value);
-    } else if (name == "mRemoteDirLineEdit") {
-        rc = mCore->setConfig(CONFIG_REMOTE_PATH, value);
     } else if (name == "mLocalDirLineEdit") {
         rc = mCore->setConfig(CONFIG_LOCAL_PATH, value);
     }

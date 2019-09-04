@@ -59,6 +59,8 @@ public:
 private:
     int32_t saveSettings();
     bool eventFilter(QObject *obj, QEvent *event) override;
+    void updateRemoteDirTextEditor();
+    void adjustRemoteDirTextEditorHeight();
 
 Q_SIGNALS:
     void quit();
@@ -71,7 +73,9 @@ private Q_SLOTS:
     void ShowDebugTextEditMenu(QPoint);
     int32_t setConfig(bool checked);
     int32_t setConfig(const QString &setting);
+    void updateRemoteDir();
     void showShellWindow(bool checked);
+    void onRemoteDirTextEditCursorPositionChanged();
 
 public Q_SLOTS:
     void onDebugTextEditorNewSetting(const QFont, const QString);
@@ -85,6 +89,7 @@ private:
     QString      mShellColor;
     QString      mShellBg;
     bool         mUpdatingItem[CONFIG_MAX_INVALID];
+    QString      mRemoteDir;
 
 private:
     QAction     *mActionAbout;
@@ -112,7 +117,7 @@ private:
     QPushButton *mSelectPushButton;
     QLabel      *mUserNameLabel;
     QLabel      *mRemoteDirLabel;
-    QLineEdit   *mRemoteDirLineEdit;
+    QTextEdit   *mRemoteDirTextEdit;
     QLineEdit   *mPasswordLineEdit;
     QLineEdit   *mUserNameLineEdit;
     QLabel      *mSettingBlanking2;

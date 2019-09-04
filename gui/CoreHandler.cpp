@@ -306,6 +306,7 @@ int32_t CoreHandler::onGetConfig(const QString &value)
             case CONFIG_ENCRYPTION:
             case CONFIG_DEBUG_MODE:
             case CONFIG_REMOTE_SHELL: {
+                std::transform(result.begin(), result.end(), result.begin(), ::toupper);
                 rc = exec(
                     [&]() -> int32_t {
                         return mUi->updateConfig(item, result == BOOL_TRUE);
