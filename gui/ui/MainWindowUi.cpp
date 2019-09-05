@@ -274,6 +274,7 @@ int32_t MainWindowUi::setupUi(QMainWindow *MainWindow)
         mRemoteDirTextEdit->setFont(lineEditFont);
         mRemoteDirTextEdit->document()->setMaximumBlockCount(MAX_DEBUG_LINE_COUNT);
         mRemoteDirTextEdit->setReadOnly(false);
+        mRemoteDirTextEdit->setWordWrapMode(QTextOption::NoWrap);
         QSizePolicy expandingPolicy(QSizePolicy::Preferred, QSizePolicy::MinimumExpanding);
         mRemoteDirTextEdit->setSizePolicy(expandingPolicy);
         mInputBoxGridLayout->addWidget(mRemoteDirTextEdit, 2, 1, 1, 2);
@@ -513,7 +514,7 @@ void MainWindowUi::adjustRemoteDirTextEditorHeight()
     QStringList sections = mRemoteDir.split(REMOTE_PATH_SPLITTER, QString::SkipEmptyParts);
     QFontMetrics m(mRemoteDirTextEdit->font());
     int32_t RowHeight = m.lineSpacing();
-    int32_t lines = sections.size() > 1 ? sections.size() : 2;
+    int32_t lines = sections.size() > 4 ? sections.size() : 4;
     lines = lines < REMOTE_PATH_MAX_LINES ? lines : REMOTE_PATH_MAX_LINES;
     int32_t height = mRemoteDirTextEdit->height() > lines * RowHeight ?
         mRemoteDirTextEdit->height() : lines * RowHeight;
@@ -595,6 +596,13 @@ void MainWindowUi::onRemoteDirTextEditCursorPositionChanged()
         int32_t height = m.lineSpacing() + mRemoteDirTextEdit->height();
         int32_t maxHeight = REMOTE_PATH_MAX_LINES * m.lineSpacing();
         mRemoteDirTextEdit->setFixedHeight(height > maxHeight ? maxHeight : height);
+    }
+
+    // Do not allow enter in middle line
+    if (colNum == 0 && (!(selectLine.contains("Dir") && selectLine.contains('<')))) {
+        cursor.deletePreviousChar();
+        lineNum = cursor.blockNumber();
+        colNum = cursor.columnNumber();
     }
 
     // Lock last line
